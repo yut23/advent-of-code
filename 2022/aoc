@@ -1,0 +1,116 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: aoc [day] [-t] [-d|-f] [-e [example number]|-i <input file name>]"
+}
+
+# cd to directory of this script (repository root)
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+source ./lib.sh
+
+input_name=input.txt
+day=$(date +%-d)
+bin_dir=build/release
+use_time=n
+memory_limit=4G
+
+first_iter=y
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -d|--debug)
+      bin_dir=build/debug
+      shift
+      ;;
+    -f|--fast)
+      bin_dir=build/fast
+      shift
+      ;;
+    -t|--time)
+      use_time=y
+      shift
+      ;;
+    -m|--memory-limit)
+      memory_limit=$2
+      shift
+      shift
+      ;;
+    -e|--example)
+      input_name=example1.txt
+      if [[ $# -gt 1 ]]; then
+        # example number given
+        input_name=example$2.txt
+        shift
+      fi
+      shift
+      ;;
+    -i|--input)
+      input_name=$2
+      shift
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Error: unrecognized option '$1'"
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ $first_iter == y ]]; then
+        day=$1
+        shift
+      else
+        echo "Error: day can only be in the first argument"
+        usage
+        exit 1
+      fi
+      ;;
+  esac
+  first_iter=n
+done
+
+# pad with zeros to two digits
+day=$(printf '%02d' "${day#0}")
+
+input_path="input/day$day/$input_name"
+if ! [[ -e "$input_path" ]]; then
+  >&2 echo "ERROR: could not find input file at $input_path"
+  exit 2
+fi
+
+binary=$bin_dir/day$day
+
+# rebuild if make says it's necessary
+make_quiet "$binary"
+
+echo "Day ${day#0}:"
+args=()
+if [[ $use_time == y ]]; then
+  args+=(/usr/bin/time)
+fi
+args+=("$binary" "$input_path")
+
+# run on the specified input
+if [[ $memory_limit = none ]]; then
+  # have ASan print a backtrace when an assertion fails (which triggers an abort)
+  ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}"
+  exit_code=$?
+else
+  # limit memory usage using a systemd transient unit
+  systemctl --quiet --user is-failed aoc.service && systemctl --user reset-failed aoc.service
+  set +e
+  systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}"
+  exit_code=$?
+  set -e
+  if systemctl --quiet --user is-failed aoc.service; then
+    result=$(systemctl --user show aoc | sed -ne 's/^Result=//p')
+    if [[ $result == oom-kill ]]; then
+      >&2 echo "ERROR: ran out of memory (limited to $memory_limit)"
+    fi
+    systemctl --user reset-failed aoc.service
+  fi
+fi
+exit $exit_code

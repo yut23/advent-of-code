@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+# cd to directory of this script (repository root)
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+source ./lib.sh
+
+day=${1:-$(date +%-d)}
+# pad with zeros to two digits
+day=$(printf '%02d' "${day#0}")
+if ! [[ -e input/day$day/input.txt ]]; then
+  args=("$day")
+  if [[ $# -gt 1 ]]; then
+    args+=("$2")
+  elif [[ $(basename "$PWD") =~ [0-9]{4} ]]; then
+    # get year from directory name
+    args+=("${BASH_REMATCH[0]}")
+  else
+    >&2 echo "Need to download input and unable to get year (is it in the directory name?)"
+    exit 1
+  fi
+  bash get_input.sh "${args[@]}"
+fi
+
+declare -a to_edit
+if ! [[ -e input/day$day/example1.txt ]]; then
+  to_edit+=("input/day$day/example1.txt")
+fi
+source_file="src/day$day.cpp"
+if ! [[ -e $source_file ]]; then
+  sed 's/{{DAY}}/'"$day"'/g; s/{{DATE}}/'"$(date +%F)"'/g' src/template.cpp > "$source_file"
+fi
+to_edit+=("$source_file" src/lib.h)
+
+# update the entire compilation database if needed
+make_quiet compile_commands.json -j"$(nproc)" || true
+# build this day's binaries so the compilation database gets updated
+make_targets=()
+shopt -s lastpipe
+make -q "build/release/day$day" 2>/dev/null || make_targets+=("build/release/day$day")
+make -q "build/debug/day$day" 2>/dev/null || make_targets+=("build/debug/day$day")
+if [[ ${#make_targets[@]} -gt 0 ]]; then
+  make -j"${#make_targets[@]}" "${make_targets[@]}" || true
+fi
+
+NVIM_GUI=1 nvim-qt -- -O "${to_edit[@]}"
