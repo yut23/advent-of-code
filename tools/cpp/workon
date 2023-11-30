@@ -1,25 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-# cd to directory of this script (repository root)
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
-source ./lib.sh
+AOC_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=../lib.sh
+source "$AOC_ROOT/tools/lib.sh"
+# cd to the base directory for this year
+cd -- "$AOC_ROOT/$AOC_YEAR"
 
-day=${1:-$(date +%-d)}
-# pad with zeros to two digits
-day=$(printf '%02d' "${day#0}")
+parse_day_args "$@" | read -r day year
 if ! [[ -e input/day$day/input.txt ]]; then
-  args=("$day")
-  if [[ $# -gt 1 ]]; then
-    args+=("$2")
-  elif [[ $(basename "$PWD") =~ [0-9]{4} ]]; then
-    # get year from directory name
-    args+=("${BASH_REMATCH[0]}")
-  else
-    >&2 echo "Need to download input and unable to get year (is it in the directory name?)"
-    exit 1
-  fi
-  bash get_input.sh "${args[@]}"
+  bash "$TOOLS_DIR/get_input.sh" "$day" "$year"
 fi
 
 declare -a to_edit
@@ -43,4 +33,9 @@ if [[ ${#make_targets[@]} -gt 0 ]]; then
   make -j"${#make_targets[@]}" "${make_targets[@]}" || true
 fi
 
-NVIM_GUI=1 nvim-qt -- -O "${to_edit[@]}"
+if [[ $DISPLAY == :* ]] && [[ -z ${SSH_CONNECTION+x} ]]; then
+  # in a local X session, not over ssh
+  NVIM_GUI=1 nvim-qt -- -O "${to_edit[@]}"
+else
+  nvim -O "${to_edit[@]}"
+fi

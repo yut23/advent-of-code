@@ -7,7 +7,7 @@ LDFLAGS = -Wl,--as-needed -fsanitize=undefined -fsanitize=address -fno-omit-fram
 FAST_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fno-omit-frame-pointer -DFAST_MODE
 PROFILE_CXXFLAGS = $(FAST_CXXFLAGS) -g
 FAST_LDFLAGS = -Wl,--as-needed -fno-omit-frame-pointer
-BEAR_ARGS = --config bear_config.json
+BEAR_ARGS = --config ../tools/cpp/bear_config.json
 
 REL_BUILD_DIR = build/release
 DEBUG_BUILD_DIR = build/debug

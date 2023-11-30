@@ -2,21 +2,14 @@
 set -euo pipefail
 # run last command in a pipeline in the current shell environment, rather than a subshell
 shopt -s lastpipe
-if [[ $# -lt 2 ]]; then
-  # year or day not specified on command line
-  date +"%-d %Y" | read -r day year
-  # check if the current directory looks like a year
-  cur_dir=$(basename -- "$PWD")
-  if [[ $cur_dir =~ ^20[0-9][0-9]$ ]]; then
-    year=$cur_dir
-  fi
-fi
-day=${1:-$day}
+
+AOC_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=lib.sh
+source "$AOC_ROOT/tools/lib.sh"
+
+parse_day_args "$@" | read -r day_padded year
 # remove leading zero
-day=${day#0}
-# pad with zeros to two digits
-day_padded=$(printf '%02d' "$day")
-year=${2:-$year}
+day=${day_padded#0}
 dest_dir="input/day$day_padded"
 mkdir -p "$dest_dir"
 filename="$dest_dir/input.txt"

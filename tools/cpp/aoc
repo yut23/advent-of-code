@@ -5,12 +5,13 @@ usage() {
   echo "Usage: aoc [day] [-t] [-d|-f] [-e [example number]|-i <input file name>]"
 }
 
-# cd to directory of this script (repository root)
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
-source ./lib.sh
+AOC_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=../lib.sh
+source "$AOC_ROOT/tools/lib.sh"
+# cd to the base directory for this year
+cd -- "$AOC_ROOT/$AOC_YEAR"
 
 input_name=input.txt
-day=$(date +%-d)
 bin_dir=build/release
 use_time=n
 memory_limit=4G

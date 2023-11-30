@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
-source ./lib.sh
+AOC_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=../lib.sh
+source "$AOC_ROOT/tools/lib.sh"
+cd -- "$AOC_ROOT/$AOC_YEAR"
 
-day=$1
+read -r -d ' ' day < <(parse_day_args "$1")
 num=${2:-1}
 log_file="profiling/logs/day${day}_${num}.folded"
 svg_file="profiling/day${day}_${num}.svg"
