@@ -1,13 +1,13 @@
 /******************************************************************************
- * File:        lib.h
+ * File:        lib.hpp
  *
- * Author:      yut23
+ * Author:      Eric T. Johnson (yut23)
  * Created:     2022-12-01
  * Description: Common functions used in Advent of Code.
  *****************************************************************************/
 
-#ifndef LIB_H_AT4RFPRV
-#define LIB_H_AT4RFPRV
+#ifndef LIB_HPP_0IZKV7KG
+#define LIB_HPP_0IZKV7KG
 
 #include <algorithm>   // for max
 #include <cassert>     // for assert
@@ -218,4 +218,4 @@ std::ifstream parse_args(int argc, char **argv) {
 
 } // namespace aoc
 
-#endif /* end of include guard: LIB_H_AT4RFPRV */
+#endif /* end of include guard: LIB_HPP_0IZKV7KG */

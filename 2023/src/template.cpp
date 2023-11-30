@@ -1,11 +1,11 @@
 /******************************************************************************
  * File:        day{{DAY}}.cpp
  *
- * Author:      yut23
+ * Author:      Eric T. Johnson (yut23)
  * Created:     {{DATE}}
  *****************************************************************************/
 
-#include "lib.h"
+#include "lib.hpp"
 #include <iostream> // for cout
 #include <string>   // for string, getline
 
