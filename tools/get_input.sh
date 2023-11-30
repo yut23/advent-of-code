@@ -5,6 +5,11 @@ shopt -s lastpipe
 if [[ $# -lt 2 ]]; then
   # year or day not specified on command line
   date +"%-d %Y" | read -r day year
+  # check if the current directory looks like a year
+  cur_dir=$(basename -- "$PWD")
+  if [[ $cur_dir =~ ^20[0-9][0-9]$ ]]; then
+    year=$cur_dir
+  fi
 fi
 day=${1:-$day}
 # remove leading zero
@@ -17,7 +22,7 @@ mkdir -p "$dest_dir"
 filename="$dest_dir/input.txt"
 if ! [[ -e "$filename" ]]; then
   # download the input
-  session=$(<.aoc_session)
+  session=$(<~/.config/aoc/key)
   url="https://adventofcode.com/$year/day/$day/input"
   exit_code=0
   curl --fail "$url" --cookie "session=$session" -o "$filename" || exit_code=$?
