@@ -16,22 +16,18 @@ fi
 # usage: parse_day_args [day [year]] | read -r day year
 parse_day_args() {
   local day year
+  read -r day month year < <(date +'%-d %m %Y')
+  if [[ $month -lt 12 ]] || [[ $day -gt 25 ]]; then
+    day=1
+  fi
   if [[ -v AOC_YEAR ]]; then
     year=$AOC_YEAR
-    if [[ $# -lt 1 ]]; then
-      day=$(date +'%-d')
-    fi
-  else
-    if [[ $# -lt 2 ]]; then
-      # get the current year if AOC_YEAR is not set
-      read -r day year < <(date +'%-d %Y')
-    fi
   fi
   # use the arguments if present, and fall back to the current day/year otherwise
   day=${1:-$day}
   year=${2:-$year}
   # pad day number with zeros to two digits
-  printf '%02d %d' "${day#0}" "$year"
+  printf '%02d %d\n' "${day#0}" "$year"
 }
 
 make_quiet() {

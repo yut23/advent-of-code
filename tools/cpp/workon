@@ -7,7 +7,7 @@ source "$AOC_ROOT/tools/lib.sh"
 # cd to the base directory for this year
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
-parse_day_args "$@" | read -r day year
+read -r day year < <(parse_day_args "$@")
 if ! [[ -e input/day$day/input.txt ]]; then
   bash "$TOOLS_DIR/get_input.sh" "$day" "$year"
 fi
@@ -33,7 +33,7 @@ if [[ ${#make_targets[@]} -gt 0 ]]; then
   make -j"${#make_targets[@]}" "${make_targets[@]}" || true
 fi
 
-if [[ $DISPLAY == :* ]] && [[ -z ${SSH_CONNECTION+x} ]]; then
+if [[ -v DISPLAY ]] && [[ $DISPLAY == :* ]] && [[ -z ${SSH_CONNECTION+x} ]]; then
   # in a local X session, not over ssh
   NVIM_GUI=1 nvim-qt -- -O "${to_edit[@]}"
 else
