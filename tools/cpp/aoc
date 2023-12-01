@@ -12,6 +12,7 @@ source "$AOC_ROOT/tools/lib.sh"
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
 input_name=input.txt
+day=$(date +%-d)
 bin_dir=build/release
 use_time=n
 memory_limit=4G
