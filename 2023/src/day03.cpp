@@ -10,22 +10,28 @@
 #include <iostream> // for cout, istream
 #include <map>      // for map
 #include <memory>   // for unique_ptr, make_unique
+#include <set>      // for set
 #include <string>   // for string, getline, stoi
 #include <vector>   // for vector
 
 namespace aoc::day03 {
 
-struct Symbol {
-    char value;
-};
-
 struct Label {
     Pos left;
     Pos right;
     std::string text{};
-    Symbol *symbol{};
 
     explicit Label(const Pos &left) : left(left), right(left) {}
+
+    int value() const { return std::stoi(text); }
+};
+
+struct Symbol {
+    Pos pos;
+    char value;
+    std::set<Label *> labels{};
+
+    Symbol(const Pos &pos, char value) : pos(pos), value(value) {}
 };
 
 struct Grid {
@@ -33,11 +39,15 @@ struct Grid {
     std::vector<std::unique_ptr<Label>> labels;
     std::map<Pos, int> label_positions;
 
+    void add_symbol(const Pos &pos, char c) {
+        symbols.try_emplace(pos, Symbol(pos, c));
+    }
+
     int add_label(const Pos &pos, char c) {
         int index = labels.size();
         Label *label = labels.emplace_back(std::make_unique<Label>(pos)).get();
         label->text.push_back(c);
-        label_positions[pos] = index;
+        label_positions.try_emplace(pos, index);
         return index;
     }
 
@@ -71,7 +81,7 @@ struct Grid {
                     if (label == nullptr) {
                         continue;
                     }
-                    label->symbol = &sym;
+                    sym.labels.emplace(label);
                 }
             }
         }
@@ -93,7 +103,7 @@ std::istream &operator>>(std::istream &is, Grid &grid) {
             } else {
                 label_idx = -1;
                 if (line[x] != '.') {
-                    grid.symbols[Pos(x, y)] = {line[x]};
+                    grid.add_symbol(Pos(x, y), line[x]);
                 }
             }
         }
@@ -114,9 +124,9 @@ int main(int argc, char **argv) {
     infile >> grid;
 
     int part_1 = 0;
-    for (auto &label : grid.labels) {
-        if (label->symbol != nullptr) {
-            part_1 += std::stoi(label->text);
+    for (auto &[pos, sym] : grid.symbols) {
+        for (auto &label : sym.labels) {
+            part_1 += label->value();
         }
     }
     std::cout << part_1 << "\n";
