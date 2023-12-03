@@ -15,7 +15,7 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    int total = 0;
+    int part_1 = 0, part_2 = 0;
     std::string line;
     while (std::getline(infile, line)) {
         int game_id;
@@ -25,17 +25,18 @@ int main(int argc, char **argv) {
         int count;
         std::string color;
         std::optional<char> sep = ';';
-        bool valid = true;
         if constexpr (aoc::DEBUG) {
             std::cerr << "game " << game_id << "\n";
         }
-        for (int i = 1; sep; ++i) {
+        std::map<std::string, int> max_counts;
+        bool valid = true;
+        for (int i = 0; sep; ++i) {
             std::map<std::string, int> counts;
             if constexpr (aoc::DEBUG) {
                 std::cerr << " set " << i << "\n";
             }
             while (ss) {
-                // read "<count> <color>[;,]"
+                // read "<count> <color>[;,]?"
                 ss >> count >> color;
                 sep = color.back();
                 if (*sep == ';' || *sep == ',') {
@@ -48,6 +49,9 @@ int main(int argc, char **argv) {
                               << "\n";
                 }
                 counts[color] = count;
+                if (count > max_counts[color]) {
+                    max_counts[color] = count;
+                }
                 if (*sep == ';') {
                     break;
                 }
@@ -61,14 +65,15 @@ int main(int argc, char **argv) {
             if (counts["red"] > 12 || counts["green"] > 13 ||
                 counts["blue"] > 14) {
                 valid = false;
-                break;
             }
         }
         if (valid) {
-            total += game_id;
+            part_1 += game_id;
         }
+        part_2 += max_counts["red"] * max_counts["green"] * max_counts["blue"];
     }
 
-    std::cout << total << "\n";
+    std::cout << part_1 << "\n";
+    std::cout << part_2 << "\n";
     return 0;
 }
