@@ -20,7 +20,7 @@ source_file="src/day$day.cpp"
 if ! [[ -e $source_file ]]; then
   sed 's/{{DAY}}/'"$day"'/g; s/{{DATE}}/'"$(date +%F)"'/g' src/template.cpp > "$source_file"
 fi
-to_edit+=("$source_file" src/lib.h)
+to_edit+=("$source_file" src/lib.h*)
 
 # update the entire compilation database if needed
 make_quiet compile_commands.json -j"$(nproc)" || true
