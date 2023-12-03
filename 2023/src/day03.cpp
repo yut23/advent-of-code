@@ -22,8 +22,6 @@ struct Label {
     std::string text{};
 
     explicit Label(const Pos &left) : left(left), right(left) {}
-
-    int value() const { return std::stoi(text); }
 };
 
 struct Symbol {
@@ -123,13 +121,20 @@ int main(int argc, char **argv) {
     aoc::day03::Grid grid;
     infile >> grid;
 
-    int part_1 = 0;
+    int part_1 = 0, part_2 = 0;
     for (auto &[pos, sym] : grid.symbols) {
+        int ratio = 1;
         for (auto &label : sym.labels) {
-            part_1 += label->value();
+            int value = std::stoi(label->text);
+            part_1 += value;
+            ratio *= value;
+        }
+        if (sym.value == '*' && sym.labels.size() == 2) {
+            part_2 += ratio;
         }
     }
     std::cout << part_1 << "\n";
+    std::cout << part_2 << "\n";
 
     return 0;
 }
