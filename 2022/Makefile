@@ -1,6 +1,12 @@
 ifeq ($(origin CXX), default)
 	CXX = clang++
 endif
+
+BEAR_INVOCATION = bear --append $(BEAR_ARGS) --
+ifeq ($(DISABLE_BEAR),TRUE)
+	BEAR_INVOCATION =
+endif
+
 LOCAL_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer #$(shell pkg-config --cflags $(libs_$(notdir $*)))
 DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -g -Og -DDEBUG_MODE
 LDFLAGS = -Wl,--as-needed -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer #$(shell pkg-config --libs $(libs_$(notdir $*)))
@@ -60,9 +66,9 @@ $(REL_BUILD_DIR) $(DEBUG_BUILD_DIR) $(FAST_BUILD_DIR) $(PROFILE_BUILD_DIR):
 # the same name as the .o file.
 # Also include order-only dependencies on the build directory
 $(REL_BUILD_DIR)/%.o: src/%.cpp | $(REL_BUILD_DIR)
-	bear --append $(BEAR_ARGS) -- $(CXX) $(LOCAL_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
+	$(BEAR_INVOCATION) $(CXX) $(LOCAL_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
 $(DEBUG_BUILD_DIR)/%.o: src/%.cpp | $(DEBUG_BUILD_DIR)
-	bear --append $(BEAR_ARGS) -- $(CXX) $(DEBUG_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
+	$(BEAR_INVOCATION) $(CXX) $(DEBUG_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
 $(FAST_BUILD_DIR)/%.o: src/%.cpp | $(FAST_BUILD_DIR)
 	$(CXX) $(FAST_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
 $(PROFILE_BUILD_DIR)/%.o: src/%.cpp | $(PROFILE_BUILD_DIR)
