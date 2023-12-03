@@ -12,7 +12,8 @@
     ],
     "compilers_to_exclude": [
       "/usr/bin/clang++-14",
-      "/usr/bin/clang-14"
+      "/usr/bin/clang-14",
+      "/usr/bin/clang++"
     ]
   },
   "output": {
