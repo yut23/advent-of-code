@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: aoc [day] [-t] [-d|-f] [-e [example number]|-i <input file name>]"
+  echo "Usage: aoc [day] [-t] [-d|-f] [--gdb] [-e [example number]|-i <input file name>]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
@@ -14,8 +14,8 @@ cd -- "$AOC_ROOT/$AOC_YEAR"
 input_name=input.txt
 day=$(date +%-d)
 bin_dir=build/release
-use_time=n
 memory_limit=4G
+prefix_args=()
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -t|--time)
-      use_time=y
+      prefix_args=(command time)
       shift
       ;;
     -m|--memory-limit)
@@ -49,6 +49,16 @@ while [[ $# -gt 0 ]]; do
     -i|--input)
       input_name=$2
       shift
+      shift
+      ;;
+    --gdb)
+      bin_dir=build/debug
+      prefix_args=(gdb --args)
+      # run directly in the terminal
+      memory_limit=none
+      # Both gdb and LeakSanitizer use ptrace, but only one process can attach
+      # at a time
+      ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=0
       shift
       ;;
     -h|--help)
@@ -93,11 +103,7 @@ binary=$bin_dir/day$day
 make_quiet "$binary"
 
 echo "Day ${day#0}:"
-args=()
-if [[ $use_time == y ]]; then
-  args+=(/usr/bin/time)
-fi
-args+=("$binary" "$input_path")
+args=("${prefix_args[@]}" "$binary" "$input_path")
 
 # run on the specified input
 if [[ $memory_limit = none ]]; then
