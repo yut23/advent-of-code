@@ -79,8 +79,12 @@ day=$(printf '%02d' "${day#0}")
 
 input_path="input/day$day/$input_name"
 if ! [[ -e "$input_path" ]]; then
-  >&2 echo "ERROR: could not find input file at $input_path"
-  exit 2
+  if [[ $input_name == input.txt ]]; then
+    bash "$TOOLS_DIR/get_input.sh" "$day" "$AOC_YEAR"
+  else
+    >&2 echo "ERROR: could not find input file at $input_path"
+    exit 2
+  fi
 fi
 
 binary=$bin_dir/day$day
