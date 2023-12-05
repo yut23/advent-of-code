@@ -106,17 +106,14 @@ echo "Day ${day#0}:"
 args=("${prefix_args[@]}" "$binary" "$input_path")
 
 # run on the specified input
+exit_code=0
 if [[ $memory_limit = none ]]; then
   # have ASan print a backtrace when an assertion fails (which triggers an abort)
-  ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}"
-  exit_code=$?
+  ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
 else
   # limit memory usage using a systemd transient unit
   systemctl --quiet --user is-failed aoc.service && systemctl --user reset-failed aoc.service
-  set +e
-  systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}"
-  exit_code=$?
-  set -e
+  systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
   if systemctl --quiet --user is-failed aoc.service; then
     result=$(systemctl --user show aoc | sed -ne 's/^Result=//p')
     if [[ $result == oom-kill ]]; then
