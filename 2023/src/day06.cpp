@@ -6,9 +6,10 @@
  *****************************************************************************/
 
 #include "lib.hpp"
+#include <cmath>    // for sqrt
 #include <cstddef>  // for size_t
 #include <iostream> // for cout
-#include <sstream>  // for istringstream
+#include <sstream>  // for istringstream, stringstream
 #include <string>   // for string, getline
 #include <vector>   // for vector
 
@@ -31,16 +32,45 @@ void parse(std::istream &is, std::vector<int> &times,
     }
 }
 
-int count_wins(int time, int distance) {
-    int count = 0;
-    for (int n = 0; n < time; ++n) {
-        if ((time - n) * n > distance) {
-            ++count;
-        }
+long count_wins(long time, long distance) {
+    // get the lower and upper bounds by solving:
+    //  (time - x) * x - distance = 0
+    //    x^2 - time*x + distance = 0
+    // quadratic formula: (-b ± sqrt(b*b - 4*a*c)) / (2*a)
+    double determinant = std::sqrt(time * time - 4 * distance);
+    long lo = (time - determinant) / 2;
+    long hi = (time + determinant) / 2;
+    long count = hi - lo;
+    if constexpr (aoc::DEBUG) {
+        std::cerr << count << "\n";
     }
     return count;
 }
 
+long join_numbers(const std::vector<int> &vec) {
+    std::stringstream ss;
+    for (int x : vec) {
+        ss << x;
+    }
+    long result;
+    ss >> result;
+    return result;
+}
+
+long part_1(const std::vector<int> &times, const std::vector<int> &records) {
+    long product = 1;
+    for (std::size_t i = 0; i < times.size(); ++i) {
+        product *= count_wins(times[i], records[i]);
+    }
+    return product;
+}
+
+long part_2(const std::vector<int> &times, const std::vector<int> &records) {
+    // join all the numbers together
+    long time = join_numbers(times);
+    long distance = join_numbers(records);
+    return count_wins(time, distance);
+}
 } // namespace aoc::day06
 
 int main(int argc, char **argv) {
@@ -50,12 +80,8 @@ int main(int argc, char **argv) {
         aoc::day06::parse(infile, times, records);
     }
 
-    int part_1 = 1;
-    for (std::size_t i = 0; i < times.size(); ++i) {
-        part_1 *= aoc::day06::count_wins(times[i], records[i]);
-    }
-
-    std::cout << part_1 << "\n";
+    std::cout << aoc::day06::part_1(times, records) << "\n";
+    std::cout << aoc::day06::part_2(times, records) << "\n";
 
     return 0;
 }
