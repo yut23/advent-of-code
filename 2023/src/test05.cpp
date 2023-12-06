@@ -24,14 +24,14 @@ namespace aoc::day05::test {
 
 std::size_t test_mapping() {
     ConversionMap map;
-    map.add_entry(MapEntry{.src_start = 98, .dest_start = 50, .length = 2});
-    map.add_entry(MapEntry{.src_start = 50, .dest_start = 52, .length = 48});
-    unit_test::MethodTest<ConversionMap, id_t, id_t> test(
-        std::string{"test05::test_mapping"}, map, &ConversionMap::apply);
+    map.add_entry(MapEntry(50, 98, 2));
+    map.add_entry(MapEntry(52, 50, 48));
+    unit_test::MethodTest<ConversionMap, long, long> test(
+        "test05::test_mapping", map, &ConversionMap::apply);
 
-    std::vector<id_t> input_vec(110);
+    std::vector<long> input_vec(110);
     std::iota(input_vec.begin(), input_vec.end(), 0);
-    std::vector<id_t> expected_vec(110);
+    std::vector<long> expected_vec(110);
     auto start = expected_vec.begin();
     std::iota(start, start + 50, 0);
     start += 50;
@@ -57,23 +57,18 @@ ConversionMap parse_map(const std::string &text) {
 std::size_t test_map_input() {
     std::istringstream ss{};
     unit_test::PureTest test("test05::test_map_input", &parse_map);
-    test.run_on_args(
-        "seed-to-soil map:\n50 98 2\n52 50 48\n",
-        ConversionMap(
-            "seed-to-soil",
-            std::vector<MapEntry>{
-                MapEntry{.src_start = 50, .dest_start = 52, .length = 48},
-                MapEntry{.src_start = 98, .dest_start = 50, .length = 2},
-            }));
+    test.run_on_args("seed-to-soil map:\n50 98 2\n52 50 48\n",
+                     ConversionMap("seed-to-soil", std::vector<MapEntry>{
+                                                       MapEntry(52, 50, 48),
+                                                       MapEntry(50, 98, 2),
+                                                   }));
     test.run_on_args(
         "soil-to-fertilizer map:\n0 15 37\n37 52 2\n39 0 15\n",
-        ConversionMap(
-            "soil-to-fertilizer",
-            std::vector<MapEntry>{
-                MapEntry{.src_start = 0, .dest_start = 39, .length = 15},
-                MapEntry{.src_start = 15, .dest_start = 0, .length = 37},
-                MapEntry{.src_start = 52, .dest_start = 37, .length = 2},
-            }));
+        ConversionMap("soil-to-fertilizer", std::vector<MapEntry>{
+                                                MapEntry(39, 0, 15),
+                                                MapEntry(0, 15, 37),
+                                                MapEntry(37, 52, 2),
+                                            }));
     test.done();
     return test.num_failed();
 }
