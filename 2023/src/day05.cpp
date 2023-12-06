@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
         if constexpr (aoc::DEBUG) {
             std::cerr << "read map: " << map << "\n";
         }
-        results = map.apply(results);
+        map.apply_in_place(results);
     }
     auto part_1 = *std::ranges::min_element(results);
     std::cout << part_1 << "\n";

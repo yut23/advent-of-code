@@ -16,12 +16,10 @@
 
 namespace aoc::day05 {
 
-using id_t = long;
-
 struct MapEntry {
-    id_t src_start;
-    id_t dest_start;
-    id_t length;
+    long src_start;
+    long dest_start;
+    long length;
 
     auto operator<=>(const MapEntry &) const = default;
 };
@@ -64,42 +62,25 @@ class ConversionMap {
                 map.entries.push_back(std::move(entry));
             }
         }
-        // std::ranges::sort(map.entries);
+        std::ranges::sort(map.entries);
         return map;
     }
 
-    id_t apply(id_t source) const {
-        // auto entry_it =
-        //     std::ranges::find_if(entries, [source](const MapEntry &entry) {
-        //         return source >= entry.src_start &&
-        //                source < entry.src_start + entry.length;
-        //     });
-        // if (entry_it != entries.end()) {
-        //     return source - entry_it->src_start + entry_it->dest_start;
-        // }
-        for (const auto &entry : entries) {
-            if (source >= entry.src_start &&
-                source < entry.src_start + entry.length) {
-                return source - entry.src_start + entry.dest_start;
-            }
+    long apply(long source) const {
+        auto entry_it =
+            std::ranges::find_if(entries, [source](const MapEntry &entry) {
+                return source >= entry.src_start &&
+                       source < entry.src_start + entry.length;
+            });
+        if (entry_it != entries.end()) {
+            return source - entry_it->src_start + entry_it->dest_start;
         }
         return source;
     }
 
-    std::vector<id_t> apply(const std::vector<id_t> &inputs) const {
-        std::vector<id_t> outputs;
-        for (auto src : inputs) {
-            outputs.push_back(apply(src));
-        }
-        return outputs;
-    }
-
-    void apply_in_place(std::vector<id_t> &inputs) const {
-        // std::ranges::transform(inputs, inputs.begin(),
-        //                        [=](id_t src) { return apply(src); });
-        for (auto &src : inputs) {
-            src = apply(src);
-        }
+    void apply_in_place(std::vector<long> &inputs) const {
+        std::ranges::transform(inputs, inputs.begin(),
+                               [=](auto src) { return apply(src); });
     }
 
     bool operator==(const ConversionMap &) const = default;
@@ -115,15 +96,15 @@ std::ostream &operator<<(std::ostream &os, const ConversionMap &map) {
     return os;
 }
 
-std::vector<id_t> read_seeds(std::istream &is) {
+std::vector<long> read_seeds(std::istream &is) {
     std::string line;
     std::getline(is, line);
     std::istringstream ss{line};
     // skip "seeds:"
     ss >> aoc::skip(1);
 
-    std::vector<id_t> seeds;
-    id_t seed;
+    std::vector<long> seeds;
+    long seed;
     while (ss >> seed) {
         seeds.emplace_back(seed);
     }
