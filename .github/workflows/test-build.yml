@@ -30,7 +30,7 @@ jobs:
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "day*.cpp" "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "day" "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}

@@ -1,5 +1,7 @@
 import json
+import re
 import sys
+from collections import deque
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -20,30 +22,48 @@ def add_config(directory: str, target: str) -> None:
 
 
 def main() -> None:
-    target_glob = sys.argv[1]
-    changed_files = json.loads(sys.argv[2])
-    for file in changed_files:
-        path = Path(file)
-        if path.parts[:2] == (".github", "workflows"):
-            for makefile in Path().glob("*/Makefile"):
-                directory = makefile.parent.name
-                for path in (Path(directory) / "src").glob(target_glob):
-                    add_config(directory=directory, target=path.stem)
-            continue
-        directory = path.parts[0]
-        if path.name in {"Makefile", "lib.h", "lib.hpp"} or "unit_test" in path.parts:
-            for path in (Path(directory) / "src").glob(target_glob):
-                add_config(directory=directory, target=path.stem)
-        else:
-            assert (
-                path.stem.startswith("day") or path.stem.startswith("test")
-            ) and path.suffix in {".cpp", ".hpp"}
-            add_config(directory=directory, target=path.stem)
+    target_prefix = sys.argv[1]
+    assert target_prefix in {"day", "test"}
+    target_glob = target_prefix + "*.cpp"
 
+    changed_files: deque[Path] = deque()
+    print("got changed files:")
+    for f in json.loads(sys.argv[2]):
+        print(f"  {f}")
+        changed_files.append(Path(f))
+
+    while changed_files:
+        path = changed_files.popleft()
+
+        if path.parts[:2] == (".github", "workflows"):
+            # changed a workflow file, so include everything in all base
+            # directories
+            for makefile in Path().glob("*/Makefile"):
+                for path in (makefile.parent / "src").glob(target_glob):
+                    changed_files.append(path)
+            continue
+
+        base_directory = path.parts[0]
+        if path.name in {"Makefile", "lib.h", "lib.hpp"} or "unit_test" in path.parts:
+            # changed a Makefile or some library code, so include everything in
+            # that base directory
+            for path in (Path(base_directory) / "src").glob(target_glob):
+                changed_files.append(path)
+            continue
+
+        m = re.search(r"(day|test)(\d+.*)", path.stem)
+        assert m is not None and path.suffix in {".cpp", ".hpp"}
+        add_config(directory=base_directory, target=target_prefix + m[2])
+
+    matrix = {}
     if configs:
-        matrix = {"include": list(map(asdict, sorted(configs)))}
-    else:
-        matrix = {}
+        config_list = sorted(configs)
+        includes = []
+        print("\nconfigurations:")
+        for config in config_list:
+            includes.append(asdict(config))
+            print(f"  {config}")
+        matrix["include"] = includes
     with open(sys.argv[3], "a") as f:
         f.write("matrix-combinations=")
         json.dump(matrix, f, indent=None, separators=(",", ":"))
