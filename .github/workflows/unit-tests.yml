@@ -1,4 +1,4 @@
-name: Test building C++ targets
+name: Run unit tests
 
 on:
   push:
@@ -21,16 +21,17 @@ jobs:
           json: true
           files: |
             .github/workflows/gen_matrix.py
-            .github/workflows/test-build.yml
-            */src/day*.cpp
+            .github/workflows/unit-tests.yml
             */src/day*.hpp
+            */src/test*.cpp
             */src/lib.h*
+            */src/unit_test/*
             */Makefile
 
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "day*.cpp" "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "test*.cpp" "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}
@@ -56,7 +57,12 @@ jobs:
             sudo apt-get -qq -y install g++
           fi
 
-      - name: Build targets
+      - name: Build test
         run: |
           cd ${{ matrix.directory }}
-          make -j2 CXX=${{ matrix.compiler }} DISABLE_BEAR=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }}
+          make CXX=${{ matrix.compiler }} DISABLE_BEAR=TRUE build/debug/${{ matrix.target }}
+
+      - name: Run test
+        run: |
+          cd ${{ matrix.directory }}
+          make CXX=${{ matrix.compiler }} DISABLE_BEAR=TRUE ${{ matrix.target }}
