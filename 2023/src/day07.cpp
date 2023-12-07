@@ -20,6 +20,15 @@ int part_1(const std::vector<aoc::day07::Hand> &hands) {
     return winnings;
 }
 
+int part_2(std::vector<aoc::day07::Hand> hands) {
+    for (auto &hand : hands) {
+        hand.jacks_to_jokers();
+    }
+    // re-sort in ascending order
+    std::ranges::sort(hands);
+    return part_1(hands);
+}
+
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
@@ -29,5 +38,6 @@ int main(int argc, char **argv) {
     std::ranges::sort(hands);
 
     std::cout << part_1(hands) << "\n";
+    std::cout << part_2(hands) << "\n";
     return 0;
 }

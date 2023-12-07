@@ -11,14 +11,13 @@
 #include <compare>    // for strong_ordering
 #include <functional> // for greater
 #include <iostream>   // for istream, ostream
-#include <map>        // for map
-#include <sstream>    // for istringstream
 #include <utility>    // for move
 #include <vector>     // for vector
 
 namespace aoc::day07 {
 
 enum class Card : unsigned char {
+    JOKER = 1,
     TWO = 2,
     THREE = 3,
     FOUR = 4,
@@ -88,6 +87,9 @@ std::ostream &operator<<(std::ostream &os, const Card &card) {
     case Card::ACE:
         os << 'A';
         break;
+    case Card::JOKER:
+        os << '?';
+        break;
     }
     return os;
 }
@@ -129,16 +131,20 @@ std::ostream &operator<<(std::ostream &os, const HandType &hand_type) {
 }
 
 HandType identify_hand(const std::array<Card, 5> &cards) {
-    std::map<Card, unsigned int> raw_counts;
+    std::vector<int> counts(static_cast<unsigned char>(Card::ACE) + 1);
     for (const Card card : cards) {
-        ++raw_counts[card];
+        ++counts[static_cast<unsigned char>(card)];
     }
-    std::vector<unsigned int> counts;
-    for (const auto &[_, count] : raw_counts) {
-        counts.push_back(count);
-    }
+    // The hand type ranking is equivalent a lexicographic ordering of
+    // `counts`, so jokers should take the same value as the most common card.
+    int joker_count = 0;
+    // set the joker count to 0 in counts, so it doesn't get included in the
+    // ranking
+    std::swap(joker_count, counts[static_cast<unsigned char>(Card::JOKER)]);
     // sort card counts in descending order
     std::ranges::sort(counts, std::ranges::greater{});
+
+    counts[0] += joker_count;
     switch (counts[0]) {
     case 5:
         return HandType::FIVE_OF_A_KIND;
@@ -176,6 +182,13 @@ struct Hand {
     Hand(const Card &card1, const Card &card2, const Card &card3,
          const Card &card4, const Card &card5, int bid)
         : Hand({card1, card2, card3, card4, card5}, bid){};
+
+    void jacks_to_jokers() {
+        // replace jacks with jokers
+        std::ranges::replace(cards, Card::JACK, Card::JOKER);
+        // recalculate hand type
+        hand_type = identify_hand(cards);
+    }
 
     // N.B.: this is only implicitly defaulted if operator<=> is defaulted.
     bool operator==(const Hand &) const = default;
