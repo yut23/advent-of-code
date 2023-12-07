@@ -389,17 +389,19 @@ struct TestRunner {
     TestResult run_on_inputs(arg_lookup_t<Args, Input>... raw_inputs,
                              arg_lookup_t<R, Input> expected) {
         auto inputs = std::make_tuple(raw_inputs...);
-        std::remove_const_t<arg_lookup_t<R, Compare>> result_comp;
-        {
-            auto storages = detail::convert<args_tuple, Input, Storage>(inputs);
-            auto args =
-                detail::convert<args_tuple, Storage, PassedArgument>(storages);
+        std::remove_const_t<arg_lookup_t<R, Compare>> result_comp =
+            [this, &inputs]() {
+                auto storages =
+                    detail::convert<args_tuple, Input, Storage>(inputs);
+                auto args =
+                    detail::convert<args_tuple, Storage, PassedArgument>(
+                        storages);
 
-            start_capturing_cout();
-            auto result = std::apply(function_under_test, args);
-            stop_capturing_cout();
-            result_comp = detail::convert<R, Argument, Compare>(result);
-        }
+                start_capturing_cout();
+                auto result = std::apply(function_under_test, args);
+                stop_capturing_cout();
+                return detail::convert<R, Argument, Compare>(result);
+            }();
         return check_result(result_comp, expected, [&inputs]() {
             return detail::convert<args_tuple, Input, Compare>(inputs);
         });
