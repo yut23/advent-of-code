@@ -271,7 +271,8 @@ void Board::drop_rock() {
     for (auto rock_it = std::begin(rock_shape); rock_it != std::end(rock_shape);
          ++rock_it, ++line_it) {
         *line_it |= *rock_it;
-        drop_pos = std::max(drop_pos, std::bit_width(*rock_it));
+        drop_pos = std::max(
+            drop_pos, static_cast<unsigned char>(std::bit_width(*rock_it)));
     }
     for (unsigned int i = 0; i < drop_pos_arr.size() - 1; ++i) {
         drop_pos_arr[i].copy_from(drop_pos_arr[i + 1], rock_index);
