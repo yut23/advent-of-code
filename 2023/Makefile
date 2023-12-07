@@ -35,6 +35,11 @@ REL_EXECUTABLES := $(REL_OBJ:.o=)
 DEBUG_EXECUTABLES := $(DEBUG_OBJ:.o=)
 FAST_EXECUTABLES := $(FAST_OBJ:.o=)
 PROFILE_EXECUTABLES := $(PROFILE_OBJ:.o=)
+
+TESTS := $(filter $(DEBUG_BUILD_DIR)/test%,$(DEBUG_EXECUTABLES))
+TESTS := $(TESTS:$(DEBUG_BUILD_DIR)/test%=test%)
+TESTS := $(shell printf '%s\n' $(TESTS) | sort -n)
+
 all: compile_commands.json release debug fast
 release: $(REL_EXECUTABLES)
 debug: $(DEBUG_EXECUTABLES)
@@ -46,6 +51,7 @@ list:
 	@printf 'debug:   %s\n' $(DEBUG_EXECUTABLES)
 	@printf 'fast:    %s\n' $(FAST_EXECUTABLES)
 	@printf 'profile: %s\n' $(PROFILE_EXECUTABLES)
+	@printf 'tests:   %s\n' $(TESTS)
 
 compile_commands.json: Makefile
 	@echo "Makefile changed, rebuilding entire compilation database..."
@@ -82,7 +88,14 @@ $(FAST_EXECUTABLES): %: %.o
 $(PROFILE_EXECUTABLES): %: %.o
 	g++ $^ -o $@ $(FAST_LDFLAGS)
 
+# run unit tests
+test: $(TESTS)
+
+$(TESTS): %: $(DEBUG_BUILD_DIR)/% FORCE
+	@ASAN_OPTIONS=$${ASAN_OPTIONS:+$${ASAN_OPTIONS}:}handle_abort=1 $<
+
 clean:
 	rm -f $(REL_EXECUTABLES) $(DEBUG_EXECUTABLES) $(FAST_EXECUTABLES) $(PROFILE_EXECUTABLES) $(REL_OBJ) $(DEBUG_OBJ) $(FAST_OBJ) $(PROFILE_OBJ) $(DEP)
 
-.PHONY: all release debug fast profile list clean
+FORCE:
+.PHONY: all release debug fast profile test list clean FORCE
