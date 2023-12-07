@@ -195,7 +195,9 @@ std::istream &operator>>(std::istream &is, Hand &hand) {
     }
     int bid;
     is >> bid;
-    hand = Hand(std::move(cards), bid);
+    if (is) {
+        hand = Hand(std::move(cards), bid);
+    }
     return is;
 }
 
