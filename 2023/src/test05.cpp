@@ -7,9 +7,7 @@
 
 #include "day05.hpp"
 #include "unit_test/unit_test.hpp"
-#include <cassert>  // for assert
 #include <cstddef>  // for size_t
-#include <iostream> // for cerr, endl
 #include <iterator> // for distance
 #include <numeric>  // for iota
 #include <vector>   // for vector

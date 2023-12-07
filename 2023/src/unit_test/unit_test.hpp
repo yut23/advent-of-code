@@ -447,12 +447,12 @@ struct TestRunner {
         captured_cout.str("");
         // clear the state flags
         captured_cout.clear();
-        old_cout_buf = std::cout.rdbuf(captured_cout.rdbuf());
+        old_cout_buf = std::cerr.rdbuf(captured_cout.rdbuf());
     }
     void stop_capturing_cout() {
         assert(old_cout_buf != nullptr &&
                "error: tried to stop capturing cout without starting first");
-        std::cout.rdbuf(old_cout_buf);
+        std::cerr.rdbuf(old_cout_buf);
         old_cout_buf = nullptr;
     }
 
