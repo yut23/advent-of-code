@@ -7,11 +7,10 @@
 
 #include "lib.hpp"   // for skip
 #include <algorithm> // for find_if, transform, max, min
-#include <iomanip>   // for setw
-#include <iostream>  // for istream, ostream
+#include <iostream>  // for istream, ostream, ws
 #include <sstream>   // for istringstream
 #include <string>    // for string, getline
-#include <utility>   // for move
+#include <utility>   // for move, forward
 #include <vector>    // for vector
 
 namespace aoc::day05 {
