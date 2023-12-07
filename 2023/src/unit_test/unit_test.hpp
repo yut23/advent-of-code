@@ -559,6 +559,12 @@ template <class R, class... Args>
 PureTest(const std::string &, R (*)(Args...)) -> PureTest<R, Args...>;
 template <class R, class... Args>
 PureTest(const std::string &, R (*)(Args...), int) -> PureTest<R, Args...>;
+template <class R, class... Args>
+PureTest(const std::string &, std::function<R(Args...)>)
+    -> PureTest<R, Args...>;
+template <class R, class... Args>
+PureTest(const std::string &, std::function<R(Args...)>, int)
+    -> PureTest<R, Args...>;
 
 } // namespace unit_test
 
