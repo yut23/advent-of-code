@@ -54,9 +54,9 @@ std::size_t test_read_hands() {
 }
 
 std::size_t test_hand_ordering() {
-    std::function<std::strong_ordering(const Hand &, const Hand &)> func =
-        [](const Hand &h1, const Hand &h2) { return h1 <=> h2; };
-    unit_test::PureTest test("test07::test_hand_sorting", func);
+    unit_test::MethodTest<std::compare_three_way, std::strong_ordering,
+                          const Hand &, const Hand &>
+        test("test07::test_hand_sorting", &std::compare_three_way::operator());
     Hand hand1{Card::THREE, Card::TWO, Card::TEN, Card::THREE, Card::KING, 765};
     Hand hand2{Card::TEN, Card::FIVE, Card::FIVE, Card::JACK, Card::FIVE, 684};
     Hand hand3{Card::KING, Card::KING, Card::SIX, Card::SEVEN, Card::SEVEN, 28};

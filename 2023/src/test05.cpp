@@ -25,7 +25,7 @@ std::size_t test_mapping() {
     map.add_entry(MapEntry(50, 98, 2));
     map.add_entry(MapEntry(52, 50, 48));
     unit_test::MethodTest<ConversionMap, long, long> test(
-        "test05::test_mapping", map, &ConversionMap::apply);
+        "test05::test_mapping", &ConversionMap::apply, map);
 
     std::vector<long> input_vec(110);
     std::iota(input_vec.begin(), input_vec.end(), 0);

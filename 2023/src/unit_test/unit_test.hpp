@@ -500,9 +500,13 @@ struct MethodTest : public BaseTest {
     C obj{};
     runner_type runner;
 
-    MethodTest(const std::string &filename, C &obj, R (C::*func)(Args...) const,
+    MethodTest(const std::string &filename, R (C::*func)(Args...) const, C &obj,
                int float_ulps = 2)
         : BaseTest(filename, float_ulps), obj(obj),
+          runner(_wrap_test_function(this, func), float_ulps) {}
+    MethodTest(const std::string &filename, R (C::*func)(Args...) const,
+               C &&obj = {}, int float_ulps = 2)
+        : BaseTest(filename, float_ulps), obj(std::move(obj)),
           runner(_wrap_test_function(this, func), float_ulps) {}
 
     void operator()(arg_lookup_t<Args, Input>... raw_inputs,
@@ -522,10 +526,12 @@ struct MethodTest : public BaseTest {
 
 // explicit template argument deduction guides
 template <class C, class R, class... Args>
-MethodTest(const std::string &, C &&, R (C::*)(Args...))
+MethodTest(const std::string &, R (C::*)(Args...)) -> MethodTest<C, R, Args...>;
+template <class C, class R, class... Args>
+MethodTest(const std::string &, R (C::*)(Args...), C &&)
     -> MethodTest<C, R, Args...>;
 template <class C, class R, class... Args>
-MethodTest(const std::string &, C &&, R (C::*)(Args...), int)
+MethodTest(const std::string &, R (C::*)(Args...), C &&, int)
     -> MethodTest<C, R, Args...>;
 
 /// Test class for pure functions.
