@@ -53,7 +53,8 @@ def main() -> None:
 
         m = re.search(r"(day|test)(\d+.*)", path.stem)
         assert m is not None and path.suffix in {".cpp", ".hpp"}
-        add_config(directory=base_directory, target=target_prefix + m[2])
+        if Path(f"{base_directory}/src/{target_prefix}{m[2]}.cpp").exists():
+            add_config(directory=base_directory, target=target_prefix + m[2])
 
     matrix = {}
     if configs:
