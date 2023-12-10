@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -t|--time)
-      prefix_args=(command time)
+      prefix_args=(/usr/bin/time)
       shift
       ;;
     -m|--memory-limit)
