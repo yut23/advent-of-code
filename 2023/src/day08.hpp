@@ -7,7 +7,8 @@
 
 #include "lib.hpp"   // for skip
 #include <algorithm> // for sort
-#include <iostream>  // for cout
+#include <compare>   // for strong_ordering
+#include <iostream>  // for istream, ostream
 #include <map>       // for map
 #include <memory>    // for unique_ptr, make_unique
 #include <string>    // for string
@@ -58,7 +59,7 @@ struct FinishEntry {
     FinishEntry(long step, const std::string &node_id)
         : step(step), node_id(node_id) {}
 
-    auto operator<=>(const FinishEntry &) const = default;
+    std::strong_ordering operator<=>(const FinishEntry &) const = default;
 };
 
 struct CycleInfo {
@@ -74,6 +75,26 @@ struct CycleInfo {
               std::vector<FinishEntry> &&entries)
         : start_id(start_id), start(start), length(length),
           entries(std::move(entries)) {}
+
+    bool at_finish(long step) const {
+        if (step < start) {
+            // cppcheck-suppress useStlAlgorithm
+            for (const FinishEntry &entry : entries) {
+                if (step == entry.step) {
+                    return true;
+                }
+            }
+        } else {
+            // cppcheck-suppress useStlAlgorithm // this is ~15% faster
+            for (const FinishEntry &entry : entries) {
+                if (entry.step - start >= 0 &&
+                    (step - start) % length == entry.step - start) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 };
 
 std::ostream &operator<<(std::ostream &os, const CycleInfo &cycle) {

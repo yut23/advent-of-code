@@ -6,11 +6,12 @@
  *****************************************************************************/
 
 #include "day08.hpp"
-#include "lib.hpp"  // for parse_args, DEBUG
-#include <cassert>  // for assert
-#include <iostream> // for cout
-#include <numeric>  // for lcm
-#include <string>   // for string
+#include "lib.hpp"   // for parse_args, DEBUG
+#include <algorithm> // for max, any_of
+#include <cstddef>   // for size_t
+#include <iostream>  // for cout, cerr
+#include <numeric>   // for lcm
+#include <string>    // for string
 
 int part_1(const std::string &directions, const aoc::day08::Network &network) {
     int steps = 0;
@@ -27,18 +28,68 @@ int part_1(const std::string &directions, const aoc::day08::Network &network) {
     return steps;
 }
 
+/// fast version that works for the real input, using LCM
+long part_2_fast(const std::vector<aoc::day08::CycleInfo> &cycles) {
+    long multiple = 1;
+    for (const auto &cycle : cycles) {
+        multiple = std::lcm(multiple, cycle.length);
+    }
+    return multiple;
+}
+
+/// slower version that works for any input, using accelerated time-stepping
+long part_2_slow(const std::vector<aoc::day08::CycleInfo> &cycles) {
+    using namespace aoc::day08;
+    // follow the cycle with the longest average time between encountering
+    // finish nodes
+    const CycleInfo &base_cycle =
+        std::ranges::max(cycles, {}, [](const CycleInfo &cycle) {
+            return cycle.length / cycle.entries.size();
+        });
+    std::vector<long> diffs;
+    if (base_cycle.entries.size() > 1) {
+        for (std::size_t i = 0; i < base_cycle.entries.size(); ++i) {
+            diffs.push_back(
+                base_cycle.entries[(i + 1) % base_cycle.entries.size()].step -
+                base_cycle.entries[i].step);
+        }
+    } else {
+        diffs.push_back(base_cycle.length);
+    }
+    long step = base_cycle.start;
+    std::size_t i = 0;
+    long counter = 0;
+    // while any of the cycles aren't at a finish node:
+    while (std::ranges::any_of(cycles, [&step](const CycleInfo &cycle) {
+        return !cycle.at_finish(step);
+    })) {
+        step += diffs[i];
+        i = (i + 1) % diffs.size();
+        if constexpr (aoc::DEBUG) {
+            if (counter % 1'000'000 == 0) {
+                std::cerr << ".";
+                std::cerr.flush();
+            }
+            ++counter;
+        }
+    }
+    return step;
+}
+
 long part_2(const std::string &directions, const aoc::day08::Network &network) {
     auto cycles = aoc::day08::find_cycles(directions, network);
-    long multiple = 1;
-    // TODO: this works for the real input, but not for the examples.
+    bool fast_valid = true;
     for (const auto &cycle : cycles) {
         if constexpr (aoc::DEBUG) {
             std::cerr << cycle << "\n";
         }
-        assert(cycle.start == cycle.length);
-        multiple = std::lcm(multiple, cycle.length);
+        fast_valid &= cycle.start == cycle.length && cycle.entries.size() == 1;
     }
-    return multiple;
+    if (fast_valid) {
+        return part_2_fast(cycles);
+    } else {
+        return part_2_slow(cycles);
+    }
 }
 
 int main(int argc, char **argv) {
