@@ -56,7 +56,7 @@ long part_2_slow(const std::vector<aoc::day08::CycleInfo> &cycles) {
     } else {
         diffs.push_back(base_cycle.length);
     }
-    long step = base_cycle.start;
+    long step = 0;
     std::size_t i = 0;
     long counter = 0;
     // while any of the cycles aren't at a finish node:
