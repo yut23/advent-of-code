@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 
     // read file line-by-line
     std::string line;
-    int part_1 = 0;
+    int part_1 = 0, part_2 = 0;
     while (std::getline(infile, line)) {
         using namespace aoc::day09;
         std::stack<std::vector<int>> diffs;
@@ -28,14 +28,18 @@ int main(int argc, char **argv) {
             diffs.push(diff(diffs.top()));
         }
         diffs.pop();
-        int next = 0;
+        int next = 0, prev = 0;
         while (!diffs.empty()) {
-            next += diffs.top().back();
+            next = diffs.top().back() + next;
+            prev = diffs.top().front() - prev;
             diffs.pop();
         }
         part_1 += next;
+        part_2 += prev;
     }
 
     std::cout << part_1 << "\n";
+    std::cout << part_2 << "\n";
+
     return 0;
 }
