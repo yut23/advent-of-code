@@ -138,9 +138,7 @@ struct PipeIterator {
         if constexpr (aoc::DEBUG) {
             std::cerr << pos << "\n";
         }
-        std::optional<Direction> dir = get_out_dir(grid->at(pos), next_dir);
-        assert(dir.has_value());
-        next_dir = *dir;
+        next_dir = *get_out_dir(grid->at(pos), next_dir);
         return *this;
     }
 
@@ -159,7 +157,7 @@ struct PipeIterator {
 
 PipeIterator PipeGrid::begin() const {
     for (Direction dir :
-         {Direction::up, Direction::down, Direction::left, Direction::right}) {
+         {Direction::right, Direction::up, Direction::left, Direction::down}) {
         Pipe neighbor = at(start_pos + Delta(dir, true));
         std::optional<Direction> out_dir = get_out_dir(neighbor, dir);
         if (out_dir) {
