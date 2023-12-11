@@ -33,6 +33,21 @@ namespace aoc {
 #endif
 
 enum class Direction : char { up = 'U', down = 'D', left = 'L', right = 'R' };
+
+Direction opposite(Direction dir) {
+    switch (dir) {
+    case Direction::up:
+        return Direction::down;
+    case Direction::down:
+        return Direction::up;
+    case Direction::left:
+        return Direction::right;
+    case Direction::right:
+        return Direction::left;
+    }
+    assert(false);
+}
+
 std::istream &operator>>(std::istream &is, Direction &dir) {
     char ch = 0;
     if (is >> ch) {
