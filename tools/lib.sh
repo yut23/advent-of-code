@@ -16,7 +16,7 @@ fi
 # usage: parse_day_args [day [year]] | read -r day year
 parse_day_args() {
   local day year
-  read -r day month year < <(date +'%-d %m %Y')
+  read -r day month year < <(TZ='America/New_York' date +'%-d %m %Y')
   if [[ $month -lt 12 ]] || [[ $day -gt 25 ]]; then
     day=1
   fi

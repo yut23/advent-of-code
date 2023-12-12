@@ -12,7 +12,7 @@ source "$AOC_ROOT/tools/lib.sh"
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
 input_name=input.txt
-day=$(date +%-d)
+day=$(TZ='America/New_York' date +%-d)
 bin_dir=build/release
 memory_limit=4G
 prefix_args=()
