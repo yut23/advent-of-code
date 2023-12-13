@@ -21,18 +21,26 @@ int main(int argc, char **argv) {
     auto grids = aoc::day13::read_grids(infile);
 
     int part_1 = 0;
+    int part_2 = 0;
     for (const auto &grid : grids) {
-        part_1 += 100 * aoc::day13::find_reflection(grid);
-        part_1 += aoc::day13::find_reflection(aoc::day13::transpose(grid));
+        using namespace aoc::day13;
+        part_1 += 100 * find_reflection(grid);
+        part_2 += 100 * find_reflection(grid, 1);
+
+        auto transposed_grid = transpose(grid);
+        part_1 += find_reflection(transposed_grid);
+        part_2 += find_reflection(transposed_grid, 1);
+
         if constexpr (aoc::DEBUG) {
             print_grid(std::cerr, grid);
             std::cerr << "\n";
-            print_grid(std::cerr, aoc::day13::transpose(grid));
+            print_grid(std::cerr, transposed_grid);
             std::cerr << "\n\n";
         }
     }
 
     std::cout << part_1 << "\n";
+    std::cout << part_2 << "\n";
 
     return 0;
 }

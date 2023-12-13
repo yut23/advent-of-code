@@ -29,19 +29,34 @@ Grid transpose(const Grid &grid) {
     return new_grid;
 }
 
+/// returns 0, 1, or 2 (for more than 1 mismatch)
+int count_mismatches(const std::string &s1, const std::string &s2) {
+    const auto result =
+        std::ranges::mismatch(s1.begin(), s1.end(), s2.begin(), s2.end());
+    if (result.in1 == s1.end()) {
+        return 0;
+    }
+    if (std::mismatch(result.in1 + 1, s1.end(), result.in2 + 1, s2.end())
+            .first == s1.end()) {
+        return 1;
+    }
+    return 2;
+}
+
 /// returns 0 if no reflection is found
-std::size_t find_reflection(const Grid &grid) {
+std::size_t find_reflection(const Grid &grid, const int target_mismatches = 0) {
     // just check every row to see if it's a line of reflection
-    // if this is a bottleneck, I'll improve it later
     for (std::size_t i = 1; i < grid.size(); ++i) {
-        bool is_reflection = true;
+        int mismatches = 0;
         for (int j = 0; i - j > 0 && i + j < grid.size(); ++j) {
             if (grid[i - j - 1] != grid[i + j]) {
-                is_reflection = false;
-                break;
+                mismatches += count_mismatches(grid[i - j - 1], grid[i + j]);
+                if (mismatches > target_mismatches) {
+                    break;
+                }
             }
         }
-        if (is_reflection) {
+        if (mismatches == target_mismatches) {
             return i;
         }
     }
