@@ -5,6 +5,9 @@
  * Created:     2023-12-11
  *****************************************************************************/
 
+#ifndef DAY11_HPP_BHXER9SH
+#define DAY11_HPP_BHXER9SH
+
 #include "lib.hpp"   // for Pos
 #include <algorithm> // for transform
 #include <iostream>  // for istream
@@ -72,3 +75,5 @@ std::vector<Pos> read_image(std::istream &is) {
 }
 
 } // namespace aoc::day11
+
+#endif /* end of include guard: DAY11_HPP_BHXER9SH */

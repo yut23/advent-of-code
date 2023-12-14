@@ -5,6 +5,9 @@
  * Created:     2023-12-08
  *****************************************************************************/
 
+#ifndef DAY08_HPP_XKQTIHLN
+#define DAY08_HPP_XKQTIHLN
+
 #include "lib.hpp"   // for skip
 #include <algorithm> // for sort
 #include <compare>   // for strong_ordering
@@ -152,3 +155,5 @@ std::vector<CycleInfo> find_cycles(const std::string &directions,
 }
 
 } // namespace aoc::day08
+
+#endif /* end of include guard: DAY08_HPP_XKQTIHLN */

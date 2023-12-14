@@ -5,6 +5,9 @@
  * Created:     2023-12-09
  *****************************************************************************/
 
+#ifndef DAY09_HPP_UZDLAO3M
+#define DAY09_HPP_UZDLAO3M
+
 #include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <sstream> // for istringstream
@@ -33,3 +36,5 @@ std::vector<int> diff(const std::vector<int> &vec) {
 }
 
 } // namespace aoc::day09
+
+#endif /* end of include guard: DAY09_HPP_UZDLAO3M */

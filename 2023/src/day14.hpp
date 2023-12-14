@@ -5,6 +5,9 @@
  * Created:     2023-12-14
  *****************************************************************************/
 
+#ifndef DAY14_HPP_A7H2MCKZ
+#define DAY14_HPP_A7H2MCKZ
+
 #include "lib.hpp"  // for Pos, Delta, Direction
 #include <cstddef>  // for size_t
 #include <iostream> // for istream
@@ -124,3 +127,5 @@ Platform read_platform(std::istream &is) {
 }
 
 } // namespace aoc::day14
+
+#endif /* end of include guard: DAY14_HPP_A7H2MCKZ */

@@ -5,6 +5,9 @@
  * Created:     2023-12-10
  *****************************************************************************/
 
+#ifndef DAY10_HPP_CJA1L45J
+#define DAY10_HPP_CJA1L45J
+
 #include "lib.hpp"   // for Direction, Pos, Delta, DEBUG
 #include <algorithm> // for transform
 #include <cassert>   // for assert
@@ -181,3 +184,5 @@ PipeGrid read_pipes(std::istream &is) {
 }
 
 } // namespace aoc::day10
+
+#endif /* end of include guard: DAY10_HPP_CJA1L45J */

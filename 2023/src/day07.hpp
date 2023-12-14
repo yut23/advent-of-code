@@ -5,6 +5,9 @@
  * Created:     2023-12-07
  *****************************************************************************/
 
+#ifndef DAY07_HPP_QKDJV1MU
+#define DAY07_HPP_QKDJV1MU
+
 #include <algorithm>  // for sort
 #include <array>      // for array
 #include <cassert>    // for assert
@@ -232,3 +235,5 @@ std::vector<Hand> read_hands(std::istream &is) {
 }
 
 } // namespace aoc::day07
+
+#endif /* end of include guard: DAY07_HPP_QKDJV1MU */

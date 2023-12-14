@@ -5,6 +5,9 @@
  * Created:     2023-12-13
  *****************************************************************************/
 
+#ifndef DAY13_HPP_W3VGLUGR
+#define DAY13_HPP_W3VGLUGR
+
 #include <algorithm> // for mismatch
 #include <cstddef>   // for size_t
 #include <iostream>  // for istream
@@ -79,3 +82,5 @@ std::vector<Grid> read_grids(std::istream &is) {
 }
 
 } // namespace aoc::day13
+
+#endif /* end of include guard: DAY13_HPP_W3VGLUGR */

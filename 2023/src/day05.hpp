@@ -5,6 +5,9 @@
  * Created:     2023-12-05
  *****************************************************************************/
 
+#ifndef DAY05_HPP_BJU0DY58
+#define DAY05_HPP_BJU0DY58
+
 #include "lib.hpp"   // for skip
 #include <algorithm> // for find_if, transform, max, min
 #include <iostream>  // for istream, ostream, ws
@@ -141,3 +144,5 @@ std::vector<long> read_seeds(std::istream &is) {
 }
 
 } // namespace aoc::day05
+
+#endif /* end of include guard: DAY05_HPP_BJU0DY58 */
