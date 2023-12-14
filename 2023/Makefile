@@ -7,13 +7,21 @@ ifeq ($(DISABLE_BEAR),TRUE)
 	BEAR_INVOCATION =
 endif
 
-LOCAL_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer #$(shell pkg-config --cflags $(libs_$(notdir $*)))
+LOCAL_CXXFLAGS = -Wall -Wextra -O3 -std=c++20
 DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -g -Og -DDEBUG_MODE
-LDFLAGS = -Wl,--as-needed -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer #$(shell pkg-config --libs $(libs_$(notdir $*)))
+LDFLAGS = -Wl,--as-needed
 FAST_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fno-omit-frame-pointer -DFAST_MODE
 PROFILE_CXXFLAGS = $(FAST_CXXFLAGS) -g
 FAST_LDFLAGS = -Wl,--as-needed -fno-omit-frame-pointer
 BEAR_ARGS = --config ../tools/cpp/bear_config.json
+
+ifneq ($(DISABLE_SANITIZERS),TRUE)
+	LOCAL_CXXFLAGS += -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer
+	LDFLAGS += -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer
+else
+	LOCAL_CXXFLAGS += -Werror
+	FAST_CXXFLAGS += -Werror
+endif
 
 REL_BUILD_DIR = build/release
 DEBUG_BUILD_DIR = build/debug
