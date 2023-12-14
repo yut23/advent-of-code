@@ -5,25 +5,19 @@
  * Created:     2023-12-14
  *****************************************************************************/
 
-#include "lib.hpp"  // for Pos, Delta
+#include "lib.hpp"  // for Pos, Delta, Direction
 #include <cstddef>  // for size_t
 #include <iostream> // for istream
-#include <map>      // for map
+#include <set>      // for set
 #include <string>   // for string, getline
 #include <vector>   // for vector
 
 namespace aoc::day14 {
 
-struct Rock {
-    Pos pos;
-    bool round;
-
-    Rock(const Pos &pos, bool round) : pos(pos), round(round) {}
-};
-
 struct Platform {
-    std::vector<Rock> rocks;
-    std::map<Pos, std::size_t> rock_lookup;
+    std::vector<Pos> round_rocks;
+    std::set<Pos> round_rock_lookup;
+    std::set<Pos> cube_rock_lookup;
     int width;
     int height;
 
@@ -33,17 +27,18 @@ struct Platform {
     }
 
     bool move_rock(std::size_t index, const Delta &delta) {
-        Rock &rock = rocks[index];
-        Pos new_pos = rock.pos + delta;
+        Pos &pos = round_rocks[index];
+        Pos new_pos = pos + delta;
         if (!is_in_bounds(new_pos)) {
             return false;
         }
-        if (rock_lookup.contains(new_pos)) {
+        if (cube_rock_lookup.contains(new_pos) ||
+            round_rock_lookup.contains(new_pos)) {
             return false;
         }
-        rock_lookup.erase(rock.pos);
-        rock.pos = new_pos;
-        rock_lookup[rock.pos] = index;
+        round_rock_lookup.erase(pos);
+        pos = new_pos;
+        round_rock_lookup.insert(pos);
         return true;
     }
 
@@ -54,8 +49,12 @@ struct Platform {
 };
 
 void Platform::add_rock(const Pos &pos, bool round) {
-    rock_lookup.try_emplace(pos, rocks.size());
-    rocks.emplace_back(pos, round);
+    if (round) {
+        round_rock_lookup.insert(pos);
+        round_rocks.push_back(pos);
+    } else {
+        cube_rock_lookup.insert(pos);
+    }
 }
 
 void Platform::tilt(Direction dir) {
@@ -64,20 +63,16 @@ void Platform::tilt(Direction dir) {
     bool moved;
     do {
         moved = false;
-        for (std::size_t i = 0; i < rocks.size(); ++i) {
-            if (rocks[i].round) {
-                moved |= move_rock(i, delta);
-            }
+        for (std::size_t i = 0; i < round_rocks.size(); ++i) {
+            moved |= move_rock(i, delta);
         }
     } while (moved);
 }
 
 int Platform::calculate_load() const {
     int load = 0;
-    for (const Rock &rock : rocks) {
-        if (rock.round) {
-            load += height - rock.pos.y;
-        }
+    for (const Pos &pos : round_rocks) {
+        load += height - pos.y;
     }
     return load;
 }
@@ -86,12 +81,13 @@ std::ostream &operator<<(std::ostream &os, const Platform &platform) {
     Pos pos;
     for (pos.y = 0; pos.y < platform.height; ++pos.y) {
         for (pos.x = 0; pos.x < platform.width; ++pos.x) {
-            auto it = platform.rock_lookup.find(pos);
-            if (it == platform.rock_lookup.end()) {
-                os << '.';
-            } else {
-                os << (platform.rocks[it->second].round ? 'O' : '#');
+            char ch = '.';
+            if (platform.round_rock_lookup.contains(pos)) {
+                ch = 'O';
+            } else if (platform.cube_rock_lookup.contains(pos)) {
+                ch = '#';
             }
+            os << ch;
         }
         os << '\n';
     }
