@@ -25,28 +25,38 @@ struct Platform {
     bool is_in_bounds(const Pos &pos) {
         return pos.x >= 0 && pos.y >= 0 && pos.x < width && pos.y < height;
     }
-
-    bool move_rock(std::size_t index, const Delta &delta) {
-        Pos &pos = round_rocks[index];
-        Pos new_pos = pos + delta;
-        if (!is_in_bounds(new_pos)) {
-            return false;
-        }
-        if (cube_rock_lookup.contains(new_pos) ||
-            round_rock_lookup.contains(new_pos)) {
-            return false;
-        }
-        round_rock_lookup.erase(pos);
-        pos = new_pos;
-        round_rock_lookup.insert(pos);
-        return true;
-    }
+    bool move_rock(std::size_t index, const Delta &delta);
 
   public:
     void add_rock(const Pos &pos, bool round);
     void tilt(Direction dir);
     int calculate_load() const;
 };
+
+bool Platform::move_rock(std::size_t index, const Delta &delta) {
+    Pos &pos = round_rocks[index];
+    Pos new_pos = pos;
+    Pos last_good_pos = pos;
+    while (true) {
+        new_pos += delta;
+        if (!is_in_bounds(new_pos) || cube_rock_lookup.contains(new_pos)) {
+            break;
+        }
+        if (round_rock_lookup.contains(new_pos)) {
+            // try skipping over round rocks
+            continue;
+        } else {
+            last_good_pos = new_pos;
+        }
+    }
+    if (last_good_pos != pos) {
+        round_rock_lookup.erase(pos);
+        pos = last_good_pos;
+        round_rock_lookup.insert(pos);
+        return true;
+    }
+    return false;
+}
 
 void Platform::add_rock(const Pos &pos, bool round) {
     if (round) {
@@ -60,13 +70,9 @@ void Platform::add_rock(const Pos &pos, bool round) {
 void Platform::tilt(Direction dir) {
     Delta delta{dir, true};
     // most naive method: bubble sort
-    bool moved;
-    do {
-        moved = false;
-        for (std::size_t i = 0; i < round_rocks.size(); ++i) {
-            moved |= move_rock(i, delta);
-        }
-    } while (moved);
+    for (std::size_t i = 0; i < round_rocks.size(); ++i) {
+        move_rock(i, delta);
+    }
 }
 
 int Platform::calculate_load() const {
