@@ -17,10 +17,16 @@ if ! [[ -e input/day$day/example1.txt ]]; then
   to_edit+=("input/day$day/example1.txt")
 fi
 source_file="src/day$day.cpp"
-if ! [[ -e $source_file ]]; then
-  sed 's/{{DAY}}/'"$day"'/g; s/{{DATE}}/'"$(TZ='America/New_York' date +%F)"'/g' src/template.cpp > "$source_file"
+header_file="src/day$day.hpp"
+if ! [[ -e $source_file ]] && ! [[ -e $header_file ]]; then
+  guard_nonce=$(python -c 'import random, string; print("".join(random.sample(string.ascii_letters+string.digits, 8)).upper())')
+  replacements='s/{{DAY}}/'"$day"'/g;
+    s/{{DATE}}/'"$(TZ='America/New_York' date +%F)"'/g;
+    s/{{GUARD_NONCE}}/'"$guard_nonce"'/g;'
+  sed "$replacements" templates/day.cpp > "$source_file"
+  sed "$replacements" templates/day.hpp > "$header_file"
 fi
-to_edit+=("$source_file" src/lib.h*)
+to_edit+=("$source_file" "$header_file")
 
 # update the entire compilation database if needed
 make_quiet compile_commands.json -j"$(nproc)" || true

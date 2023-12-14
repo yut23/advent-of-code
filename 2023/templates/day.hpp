@@ -1,26 +1,28 @@
 /******************************************************************************
- * File:        day{{DAY}}.cpp
+ * File:        day{{DAY}}.hpp
  *
  * Author:      Eric T. Johnson (yut23)
  * Created:     {{DATE}}
  *****************************************************************************/
 
+#ifndef DAY_HPP_{{GUARD_NONCE}}
+#define DAY_HPP_{{GUARD_NONCE}}
+
 #include "lib.hpp"
-#include <iostream> // for cout
+#include <iostream> // for istream
 #include <string>   // for string, getline
 
 namespace aoc::day{{DAY}} {
 
-} // namespace aoc::day{{DAY}}
-
-int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
-
+auto read_input(std::istream &is) {
     // read file line-by-line
     std::string line;
     while (std::getline(infile, line)) {
-        using namespace aoc::day{{DAY}};
         // do stuff
     }
-    return 0;
+    return;
 }
+
+} // namespace aoc::day{{DAY}}
+
+#endif /* end of include guard: DAY_HPP_{{GUARD_NONCE}} */

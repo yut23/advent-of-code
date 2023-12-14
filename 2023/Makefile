@@ -29,7 +29,7 @@ FAST_BUILD_DIR = build/fast
 PROFILE_BUILD_DIR = build/profile
 
 # List of all .cpp source files.
-CPP = $(filter-out src/template.cpp,$(wildcard src/*.cpp))
+CPP = $(wildcard src/*.cpp)
 
 # All .o files go to build dirs
 REL_OBJ = $(CPP:src/%.cpp=$(REL_BUILD_DIR)/%.o)
