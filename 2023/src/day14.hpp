@@ -5,19 +5,19 @@
  * Created:     2023-12-14
  *****************************************************************************/
 
-#include "lib.hpp"  // for Pos, Delta, Direction
-#include <cstddef>  // for size_t
-#include <iostream> // for istream
-#include <set>      // for set
-#include <string>   // for string, getline
-#include <vector>   // for vector
+#include "lib.hpp"       // for Pos, Delta, Direction
+#include <cstddef>       // for size_t
+#include <iostream>      // for istream
+#include <string>        // for string, getline
+#include <unordered_set> // for unordered_set
+#include <vector>        // for vector
 
 namespace aoc::day14 {
 
 struct Platform {
     std::vector<Pos> round_rocks;
-    std::set<Pos> round_rock_lookup;
-    std::set<Pos> cube_rock_lookup;
+    std::unordered_set<Pos> round_rock_lookup;
+    std::unordered_set<Pos> cube_rock_lookup;
     int width;
     int height;
 

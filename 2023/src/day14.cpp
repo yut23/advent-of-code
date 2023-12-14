@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
 
     std::map<std::set<aoc::Pos>, long> states;
     auto platform = aoc::day14::read_platform(infile);
-    states[platform.round_rock_lookup] = 0;
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "before tilting:\n";
@@ -36,7 +35,9 @@ int main(int argc, char **argv) {
     for (long step = 0; step < max_step; ++step) {
         platform.tilt(directions[step % 4]);
         if (cycle_length == 0) {
-            auto it = states.find(platform.round_rock_lookup);
+            std::set<aoc::Pos> positions{platform.round_rock_lookup.begin(),
+                                         platform.round_rock_lookup.end()};
+            auto it = states.find(positions);
             if (it != states.end()) {
                 cycle_length = step - it->second;
                 // skip to the final cycle iteration
@@ -44,7 +45,7 @@ int main(int argc, char **argv) {
                     step += cycle_length;
                 }
             } else {
-                states[platform.round_rock_lookup] = step;
+                states.try_emplace(std::move(positions), step);
             }
         }
         if (step == 0) {

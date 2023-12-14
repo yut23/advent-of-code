@@ -14,6 +14,7 @@
 #include <compare>     // for strong_ordering
 #include <cstdlib>     // for abs, exit
 #include <fstream>     // for ifstream  // IWYU pragma: keep
+#include <functional>  // for hash
 #include <iostream>    // for cout
 #include <string>      // for string
 #include <type_traits> // for is_same_v, is_signed_v, conditional_t
@@ -232,5 +233,14 @@ std::ifstream parse_args(int argc, char **argv) {
 }
 
 } // namespace aoc
+
+template <>
+struct std::hash<aoc::Pos> {
+    std::size_t operator()(const aoc::Pos &pos) const noexcept {
+        std::size_t h1 = std::hash<int>{}(pos.x);
+        std::size_t h2 = std::hash<int>{}(pos.y);
+        return h1 ^ (h2 << 1);
+    }
+};
 
 #endif /* end of include guard: LIB_HPP_0IZKV7KG */
