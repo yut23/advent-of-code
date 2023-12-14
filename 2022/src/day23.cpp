@@ -236,6 +236,8 @@ bool Grid::is_move_valid(int x, int y, MoveDirection dir, Cell *&dest) {
         }
         return false;
     }
+    // hint for gcc
+    assert(false);
 }
 
 bool Grid::propose_move(int x, int y) {

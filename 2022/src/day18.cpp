@@ -116,11 +116,12 @@ class Grid3D {
             return 0;
         }
         int count = 0;
-        for_each_neighbor(x, y, z, [=, &count](int nx, int ny, int nz) {
-            if (is_air(nx, ny, nz, exterior)) {
-                ++count;
-            }
-        });
+        for_each_neighbor(x, y, z,
+                          [this, exterior, &count](int nx, int ny, int nz) {
+                              if (is_air(nx, ny, nz, exterior)) {
+                                  ++count;
+                              }
+                          });
         return count;
     }
 };

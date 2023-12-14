@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
                 if (count > max_counts[color]) {
                     max_counts[color] = count;
                 }
-                if (*sep == ';') {
+                if (sep && *sep == ';') {
                     break;
                 }
             }

@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     std::set<Pos> second_knot_positions{rope[1]};
     std::set<Pos> tail_positions{rope.back()};
 
-    Direction dir;
+    Direction dir{};
     int count;
     while (infile >> dir >> count) {
         Delta delta{dir};

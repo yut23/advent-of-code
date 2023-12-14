@@ -491,6 +491,10 @@ read_part_2(LinkedGrid<NodeData> &grid, std::istream &infile, int face_width) {
                     break;
                 case Facing::left:
                     rel_pos = (source_face_pos.y + 1) * face_width - pos.y - 1;
+                    break;
+                default:
+                    // hint for gcc
+                    assert(false);
                 }
                 assert(rel_pos >= 0 && rel_pos < face_width);
 

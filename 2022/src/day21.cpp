@@ -131,6 +131,9 @@ void BinaryOp::equate(long value) {
             // lhs = value * rhs
             result = value * rhs_value;
             break;
+        default:
+            // hint for gcc
+            assert(false);
         }
         lhs->equate(result);
     } else if (lhs->has_value()) {
@@ -159,6 +162,9 @@ void BinaryOp::equate(long value) {
             // rhs = lhs / value
             result = lhs_value / value;
             break;
+        default:
+            // hint for gcc
+            assert(false);
         }
         rhs->equate(result);
     } else {
@@ -254,7 +260,7 @@ Monkey *read_monkey(std::istream &is) {
     try {
         monkey->number = std::make_shared<Integer>(std::stol(job));
         monkey->done = true;
-    } catch (std::invalid_argument) {
+    } catch (std::invalid_argument &) {
         std::istringstream ss{job};
         ss >> monkey->lhs_name >> monkey->op >> monkey->rhs_name;
     }

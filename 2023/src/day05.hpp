@@ -109,7 +109,7 @@ struct ConversionMap {
 
     void apply_in_place(std::vector<long> &inputs) const {
         std::ranges::transform(inputs, inputs.begin(),
-                               [=](auto src) { return apply(src); });
+                               [this](long src) { return apply(src); });
     }
 
     bool operator==(const ConversionMap &) const = default;
