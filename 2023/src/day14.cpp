@@ -6,18 +6,18 @@
  *****************************************************************************/
 
 #include "day14.hpp"
-#include "lib.hpp"  // for parse_args, Pos, Direction, DEBUG
-#include <array>    // for array
-#include <iostream> // for cout, cerr
-#include <map>      // for map
-#include <set>      // for set
-#include <utility>  // for move
+#include "lib.hpp"   // for parse_args, Pos, Direction, DEBUG
+#include <algorithm> // for sort
+#include <array>     // for array
+#include <iostream>  // for cout, cerr
+#include <map>       // for map
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    std::map<std::set<aoc::Pos>, long> states;
+    std::map<std::vector<aoc::Pos>, long> states;
     auto platform = aoc::day14::read_platform(infile);
+    std::ranges::sort(platform.round_rocks);
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "before tilting:\n";
@@ -36,9 +36,8 @@ int main(int argc, char **argv) {
     for (long step = 0; step < max_step; ++step) {
         platform.tilt(directions[step % 4]);
         if (cycle_length == 0) {
-            std::set<aoc::Pos> positions{platform.round_rocks.begin(),
-                                         platform.round_rocks.end()};
-            auto it = states.find(positions);
+            std::ranges::sort(platform.round_rocks);
+            auto it = states.find(platform.round_rocks);
             if (it != states.end()) {
                 cycle_length = step - it->second;
                 // skip to the final cycle iteration
@@ -46,7 +45,7 @@ int main(int argc, char **argv) {
                     step += cycle_length;
                 }
             } else {
-                states.try_emplace(std::move(positions), step);
+                states.try_emplace(platform.round_rocks, step);
             }
         }
         if (step == 0) {

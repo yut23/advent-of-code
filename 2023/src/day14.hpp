@@ -117,8 +117,7 @@ Platform read_platform(std::istream &is) {
     Pos pos;
     for (pos.y = 0; std::getline(is, line); ++pos.y) {
         for (pos.x = 0; pos.x < static_cast<int>(line.size()); ++pos.x) {
-            Rock rock{line[pos.x]};
-            platform.add_rock(pos, rock);
+            platform.add_rock(pos, Rock{line[pos.x]});
         }
     }
     return platform;
