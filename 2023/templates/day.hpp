@@ -17,10 +17,10 @@ namespace aoc::day{{DAY}} {
 auto read_input(std::istream &is) {
     // read file line-by-line
     std::string line;
-    while (std::getline(infile, line)) {
+    while (std::getline(is, line)) {
         // do stuff
     }
-    return;
+    return line;
 }
 
 } // namespace aoc::day{{DAY}}
