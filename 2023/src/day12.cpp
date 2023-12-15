@@ -14,14 +14,14 @@ int main(int argc, char **argv) {
 
     auto records = aoc::day12::read_records(infile);
 
-    int part_1 = 0;
+    long part_1 = 0;
     for (const auto &rec : records) {
         part_1 += rec.count_arrangements();
     }
 
     std::cout << part_1 << "\n";
 
-    int part_2 = 0;
+    long part_2 = 0;
     for (const auto &rec : records) {
         part_2 += rec.repeat(5).count_arrangements();
     }

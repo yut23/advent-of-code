@@ -50,18 +50,18 @@ struct ConditionRecord {
     std::vector<std::size_t> groups;
 
   public:
-    int count_arrangements(std::size_t spring_idx = 0,
-                           std::size_t group_idx = 0, int depth = 0) const;
+    long count_arrangements(std::size_t spring_idx = 0,
+                            std::size_t group_idx = 0, int depth = 0) const;
 
     ConditionRecord repeat(int count) const;
 
   private:
-    mutable std::map<std::pair<std::size_t, std::size_t>, int> memo{};
+    mutable std::map<std::pair<std::size_t, std::size_t>, long> memo{};
 };
 
-int ConditionRecord::count_arrangements(std::size_t spring_idx,
-                                        std::size_t group_idx,
-                                        int depth) const {
+long ConditionRecord::count_arrangements(std::size_t spring_idx,
+                                         std::size_t group_idx,
+                                         int depth) const {
     if constexpr (aoc::DEBUG) {
         std::cerr << std::string(depth * 2, ' ')
                   << "entering count_arrangements(" << spring_idx << ", "
@@ -71,7 +71,7 @@ int ConditionRecord::count_arrangements(std::size_t spring_idx,
     if (group_idx == groups.size()) {
         auto it =
             std::find(springs.begin() + spring_idx, springs.end(), Spring::bad);
-        int count = it == springs.end() ? 1 : 0;
+        long count = it == springs.end() ? 1 : 0;
         if constexpr (aoc::DEBUG) {
             if (count == 0) {
                 std::cerr << "found unmatched bad spring at index "
@@ -104,7 +104,7 @@ int ConditionRecord::count_arrangements(std::size_t spring_idx,
         return it->second;
     }
 
-    int count = 0;
+    long count = 0;
 
     // try placing the next group at spring_idx
     if (spring_idx + groups[group_idx] <= springs.size()) {
