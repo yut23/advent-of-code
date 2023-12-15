@@ -16,16 +16,17 @@ int main(int argc, char **argv) {
 
     int part_1 = 0;
     for (const auto &rec : records) {
-        if constexpr (aoc::DEBUG) {
-            std::cerr << "            " << rec << "\n";
-        }
-        part_1 += count_arrangements(rec);
-        if constexpr (aoc::DEBUG) {
-            std::cerr << "\n";
-        }
+        part_1 += rec.count_arrangements();
     }
 
     std::cout << part_1 << "\n";
+
+    int part_2 = 0;
+    for (const auto &rec : records) {
+        part_2 += rec.repeat(5).count_arrangements();
+    }
+
+    std::cout << part_2 << "\n";
 
     return 0;
 }

@@ -8,22 +8,20 @@
 #ifndef DAY12_HPP_5NZ0FAOX
 #define DAY12_HPP_5NZ0FAOX
 
-#include "lib.hpp"
-#include <algorithm> // for copy, transform
-#include <cassert>   // for assert
+#include "lib.hpp"   // for skip, DEBUG
+#include <algorithm> // for copy, find, transform
 #include <cstddef>   // for size_t
-#include <iomanip>   // for setw
 #include <iostream>  // for cerr, ostream, istream
 #include <iterator>  // for back_inserter, distance
 #include <map>       // for map
 #include <sstream>   // for istringstream
 #include <string>    // for string, getline
-#include <utility>   // for move, pair
+#include <utility>   // for move, pair, make_pair
 #include <vector>    // for vector
 
-namespace aoc::day12 {
-
 // Nonograms!
+
+namespace aoc::day12 {
 
 enum class Spring : char {
     good = '.',
@@ -51,63 +49,127 @@ struct ConditionRecord {
     std::vector<Spring> springs;
     std::vector<std::size_t> groups;
 
-    bool
-    are_positions_valid(const std::vector<std::size_t> &group_positions) const;
+  public:
+    int count_arrangements(std::size_t spring_idx = 0,
+                           std::size_t group_idx = 0, int depth = 0) const;
+
+    ConditionRecord repeat(int count) const;
+
+  private:
+    mutable std::map<std::pair<std::size_t, std::size_t>, int> memo{};
 };
 
-bool ConditionRecord::are_positions_valid(
-    const std::vector<std::size_t> &group_positions) const {
-    assert(group_positions.size() > 0);
-    assert(group_positions.size() <= groups.size());
-    std::vector<Spring> candidate(springs.size(), Spring::good);
-    auto it = candidate.begin();
-    auto pos_it = group_positions.begin();
-    auto len_it = groups.begin();
-    for (; pos_it != group_positions.end() && len_it != groups.end();
-         ++pos_it, ++len_it) {
-        it = candidate.begin() + *pos_it;
-        if (it != candidate.begin() && *(it - 1) != Spring::good) {
-            if constexpr (aoc::DEBUG) {
-                std::cerr << "         ";
-                for (const Spring &s : candidate) {
-                    std::cerr << static_cast<char>(s);
-                }
-                std::cerr << " (";
-                for (const auto &pos : group_positions) {
-                    std::cerr << pos << " ";
-                }
-                std::cerr << "): missing gap before "
-                          << std::distance(candidate.begin(), it) << "\n";
-            }
-            return false;
-        }
-        for (std::size_t i = 0; it != candidate.end() && i < *len_it;
-             ++it, ++i) {
-            *it = Spring::bad;
-        }
-    }
-    if (it != candidate.end()) {
-        *it = Spring::good;
-        ++it;
-    }
-    if (group_positions.size() < groups.size()) {
-        for (; it != candidate.end(); ++it) {
-            *it = Spring::unknown;
-        }
-    }
-    bool valid = check_compatible(candidate, springs);
+int ConditionRecord::count_arrangements(std::size_t spring_idx,
+                                        std::size_t group_idx,
+                                        int depth) const {
     if constexpr (aoc::DEBUG) {
-        std::cerr << "checking ";
-        for (const Spring &s : candidate) {
-            std::cerr << static_cast<char>(s);
-        }
-        std::cerr << " (";
-        for (const auto &pos : group_positions) {
-            std::cerr << pos << " ";
-        }
-        std::cerr << "): " << (valid ? "valid" : "invalid") << "\n";
+        std::cerr << std::string(depth * 2, ' ')
+                  << "entering count_arrangements(" << spring_idx << ", "
+                  << group_idx << ")\n";
     }
-    return valid;
+    std::string pad((depth + 1) * 2, ' ');
+    if (group_idx == groups.size()) {
+        auto it =
+            std::find(springs.begin() + spring_idx, springs.end(), Spring::bad);
+        int count = it == springs.end() ? 1 : 0;
+        if constexpr (aoc::DEBUG) {
+            if (count == 0) {
+                std::cerr << "found unmatched bad spring at index "
+                          << std::distance(springs.begin(), it) << "\n";
+            } else {
+                std::cerr << pad << "got final count = 1\n";
+            }
+        }
+        return count;
+    }
+
+    while (spring_idx < springs.size() && springs[spring_idx] == Spring::good) {
+        ++spring_idx;
+    }
+
+    if (spring_idx >= springs.size()) {
+        if constexpr (aoc::DEBUG) {
+            std::cerr << pad << "reached end of springs with "
+                      << (groups.size() - group_idx) << " groups remaining\n";
+        }
+        return 0;
+    }
+
+    auto key = std::make_pair(spring_idx, group_idx);
+    auto it = memo.find(key);
+    if (it != memo.end()) {
+        if constexpr (aoc::DEBUG) {
+            std::cerr << pad << "looked up count = " << it->second << "\n";
+        }
+        return it->second;
+    }
+
+    int count = 0;
+
+    // try placing the next group at spring_idx
+    if (spring_idx + groups[group_idx] <= springs.size()) {
+        bool valid = true;
+        std::size_t i = spring_idx;
+        if constexpr (aoc::DEBUG) {
+            std::cerr << pad << "trying group {" << groups[group_idx]
+                      << "} at index " << i << "...\n";
+        }
+        for (; i < spring_idx + groups[group_idx]; ++i) {
+            // check that the entire group can be bad springs
+            if (springs[i] == Spring::good) {
+                valid = false;
+                if constexpr (aoc::DEBUG) {
+                    std::cerr << pad << "  failed: found good spring at index "
+                              << i << "\n";
+                }
+                break;
+            }
+        }
+        i = spring_idx + groups[group_idx];
+        // check that the end of the group can be a good spring
+        // cppcheck-suppress knownConditionTrueFalse; false positive
+        if (valid && i < springs.size() && springs[i] == Spring::bad) {
+            if constexpr (aoc::DEBUG) {
+                std::cerr << pad
+                          << "  failed: found bad spring after group at index "
+                          << i << "\n";
+            }
+            valid = false;
+        }
+        if (valid) {
+            // recurse at the new spring index and the next group
+            count = count_arrangements(i + 1, group_idx + 1, depth + 1);
+        }
+    }
+
+    if (springs[spring_idx] == Spring::unknown) {
+        // try with spring_idx as a good spring
+        if constexpr (aoc::DEBUG) {
+            std::cerr << pad << "trying at next index...\n";
+        }
+        count += count_arrangements(spring_idx + 1, group_idx, depth + 1);
+    }
+
+    if constexpr (aoc::DEBUG) {
+        std::cerr << pad << "got count = " << count << "\n";
+    }
+    memo.try_emplace(std::move(key), count);
+
+    return count;
+}
+
+ConditionRecord ConditionRecord::repeat(int count) const {
+    ConditionRecord new_rec;
+    new_rec.springs = springs;
+    new_rec.groups = groups;
+    for (int i = 1; i < count; ++i) {
+        new_rec.springs.push_back(Spring::unknown);
+        std::copy(springs.begin(), springs.end(),
+                  std::back_inserter(new_rec.springs));
+        std::copy(groups.begin(), groups.end(),
+                  std::back_inserter(new_rec.groups));
+    }
+    return new_rec;
 }
 
 std::vector<ConditionRecord> read_records(std::istream &is) {
@@ -144,58 +206,6 @@ std::ostream &operator<<(std::ostream &os, const ConditionRecord &rec) {
         os << *it;
     }
     return os;
-}
-
-/// group_positions is a vector of length n <= rec.groups.size(), specifying
-/// the starting positions of the first n groups.
-int count_arrangements_rec(const ConditionRecord &rec,
-                           std::vector<std::size_t> &group_positions) {
-    const std::size_t group_idx = group_positions.size();
-    if (group_idx == rec.groups.size()) {
-        if constexpr (aoc::DEBUG) {
-            std::cerr << std::setw(2) << "*"
-                      << " ";
-        }
-        return rec.are_positions_valid(group_positions) ? 1 : 0;
-    }
-    int start_pos = 0;
-    if (group_idx > 0) {
-        start_pos = group_positions.back() + rec.groups.at(group_idx - 1) + 0;
-    }
-    int count = 0;
-    const std::size_t length = rec.groups.at(group_idx);
-    for (std::size_t pos = start_pos; pos <= rec.springs.size() - length;
-         ++pos) {
-        if (pos > 0 && rec.springs.at(pos - 1) == Spring::bad) {
-            continue;
-        }
-        bool can_fit = true;
-        for (std::size_t i = pos; i < pos + length; ++i) {
-            if (rec.springs.at(i) == Spring::good) {
-                can_fit = false;
-                break;
-            }
-        }
-        if (!can_fit) {
-            continue;
-        }
-        group_positions.push_back(pos);
-        if constexpr (aoc::DEBUG) {
-            std::cerr << std::setw(2) << group_idx << " ";
-        }
-        if (rec.are_positions_valid(group_positions)) {
-            count += count_arrangements_rec(rec, group_positions);
-        }
-        group_positions.pop_back();
-    }
-
-    return count;
-}
-
-int count_arrangements(const ConditionRecord &rec) {
-    std::vector<std::size_t> positions;
-    positions.reserve(rec.groups.size());
-    return count_arrangements_rec(rec, positions);
 }
 
 } // namespace aoc::day12
