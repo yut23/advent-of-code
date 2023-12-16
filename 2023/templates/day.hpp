@@ -5,10 +5,9 @@
  * Created:     {{DATE}}
  *****************************************************************************/
 
-#ifndef DAY_HPP_{{GUARD_NONCE}}
-#define DAY_HPP_{{GUARD_NONCE}}
+#ifndef DAY{{DAY}}_HPP_{{GUARD_NONCE}}
+#define DAY{{DAY}}_HPP_{{GUARD_NONCE}}
 
-#include "lib.hpp"
 #include <iostream> // for istream
 #include <string>   // for string, getline
 
@@ -25,4 +24,4 @@ auto read_input(std::istream &is) {
 
 } // namespace aoc::day{{DAY}}
 
-#endif /* end of include guard: DAY_HPP_{{GUARD_NONCE}} */
+#endif /* end of include guard: DAY{{DAY}}_HPP_{{GUARD_NONCE}} */

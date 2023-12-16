@@ -5,8 +5,8 @@
  * Created:     2023-12-15
  *****************************************************************************/
 
-#ifndef DAY_HPP_SD0ITZCR
-#define DAY_HPP_SD0ITZCR
+#ifndef DAY15_HPP_SD0ITZCR
+#define DAY15_HPP_SD0ITZCR
 
 #include <algorithm> // for find_if
 #include <array>     // for array
@@ -96,4 +96,4 @@ int Hashmap::focusing_power() const {
 
 } // namespace aoc::day15
 
-#endif /* end of include guard: DAY_HPP_SD0ITZCR */
+#endif /* end of include guard: DAY15_HPP_SD0ITZCR */
