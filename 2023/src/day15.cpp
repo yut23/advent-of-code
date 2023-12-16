@@ -23,12 +23,21 @@ int part_1(const std::vector<std::string> &steps) {
     return value;
 }
 
+int part_2(const std::vector<std::string> &steps) {
+    aoc::day15::Hashmap hashmap;
+    for (const auto &step : steps) {
+        hashmap.operate(step);
+    }
+    return hashmap.focusing_power();
+}
+
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
     auto steps = aoc::day15::read_steps(infile);
 
     std::cout << part_1(steps) << "\n";
+    std::cout << part_2(steps) << "\n";
 
     return 0;
 }
