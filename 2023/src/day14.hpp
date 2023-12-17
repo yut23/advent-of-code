@@ -8,7 +8,7 @@
 #ifndef DAY14_HPP_A7H2MCKZ
 #define DAY14_HPP_A7H2MCKZ
 
-#include "lib.hpp"  // for Pos, Delta, Direction
+#include "lib.hpp"  // for Pos, Delta, AbsDirection
 #include <cstddef>  // for size_t
 #include <iostream> // for istream
 #include <string>   // for string, getline
@@ -37,7 +37,7 @@ struct Platform {
 
   public:
     void add_rock(const Pos &pos, Rock rock);
-    void tilt(Direction dir);
+    void tilt(AbsDirection dir);
     int calculate_load() const;
     Rock operator[](const Pos &pos) const { return grid[pos.y][pos.x]; }
 };
@@ -87,7 +87,7 @@ void Platform::add_rock(const Pos &pos, Rock rock) {
     (*this)[pos] = rock;
 }
 
-void Platform::tilt(Direction dir) {
+void Platform::tilt(AbsDirection dir) {
     Delta delta{dir, true};
     // most naive method: bubble sort
     for (std::size_t i = 0; i < round_rocks.size(); ++i) {

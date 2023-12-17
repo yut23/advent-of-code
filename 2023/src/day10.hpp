@@ -8,7 +8,7 @@
 #ifndef DAY10_HPP_CJA1L45J
 #define DAY10_HPP_CJA1L45J
 
-#include "lib.hpp"   // for Direction, Pos, Delta, DEBUG
+#include "lib.hpp"   // for AbsDirection, Pos, Delta, DEBUG
 #include <algorithm> // for transform
 #include <cassert>   // for assert
 #include <cstddef>   // for size_t
@@ -32,48 +32,48 @@ enum class Pipe : char {
     start = 'S',
 };
 
-std::optional<Direction> get_out_dir(Pipe pipe, Direction in_dir) {
+std::optional<AbsDirection> get_out_dir(Pipe pipe, AbsDirection in_dir) {
     switch (pipe) {
     case Pipe::straight_vert:
-        if (in_dir == Direction::up || in_dir == Direction::down) {
+        if (in_dir == AbsDirection::north || in_dir == AbsDirection::south) {
             return in_dir;
         }
         break;
     case Pipe::straight_horz:
-        if (in_dir == Direction::left || in_dir == Direction::right) {
+        if (in_dir == AbsDirection::west || in_dir == AbsDirection::east) {
             return in_dir;
         }
         break;
     case Pipe::bend_ne:
-        if (in_dir == Direction::down) {
-            return Direction::right;
+        if (in_dir == AbsDirection::south) {
+            return AbsDirection::east;
         }
-        if (in_dir == Direction::left) {
-            return Direction::up;
+        if (in_dir == AbsDirection::west) {
+            return AbsDirection::north;
         }
         break;
     case Pipe::bend_nw:
-        if (in_dir == Direction::down) {
-            return Direction::left;
+        if (in_dir == AbsDirection::south) {
+            return AbsDirection::west;
         }
-        if (in_dir == Direction::right) {
-            return Direction::up;
+        if (in_dir == AbsDirection::east) {
+            return AbsDirection::north;
         }
         break;
     case Pipe::bend_sw:
-        if (in_dir == Direction::up) {
-            return Direction::left;
+        if (in_dir == AbsDirection::north) {
+            return AbsDirection::west;
         }
-        if (in_dir == Direction::right) {
-            return Direction::down;
+        if (in_dir == AbsDirection::east) {
+            return AbsDirection::south;
         }
         break;
     case Pipe::bend_se:
-        if (in_dir == Direction::up) {
-            return Direction::right;
+        if (in_dir == AbsDirection::north) {
+            return AbsDirection::east;
         }
-        if (in_dir == Direction::left) {
-            return Direction::down;
+        if (in_dir == AbsDirection::west) {
+            return AbsDirection::south;
         }
         break;
     case Pipe::start:
@@ -123,10 +123,10 @@ struct PipeGrid {
 struct PipeIterator {
     const PipeGrid *grid;
     Pos pos;
-    Direction next_dir;
+    AbsDirection next_dir;
 
     PipeIterator(const PipeGrid &grid, const Pos &pos,
-                 const Direction &next_dir)
+                 const AbsDirection &next_dir)
         : grid(&grid), pos(pos), next_dir(next_dir) {}
 
   public:
@@ -159,10 +159,10 @@ struct PipeIterator {
 };
 
 PipeIterator PipeGrid::begin() const {
-    for (Direction dir :
-         {Direction::right, Direction::up, Direction::left, Direction::down}) {
+    for (AbsDirection dir : {AbsDirection::east, AbsDirection::north,
+                             AbsDirection::west, AbsDirection::south}) {
         Pipe neighbor = at(start_pos + Delta(dir, true));
-        std::optional<Direction> out_dir = get_out_dir(neighbor, dir);
+        std::optional<AbsDirection> out_dir = get_out_dir(neighbor, dir);
         if (out_dir) {
             return PipeIterator(*this, start_pos, dir);
         }

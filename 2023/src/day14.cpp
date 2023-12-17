@@ -6,7 +6,7 @@
  *****************************************************************************/
 
 #include "day14.hpp"
-#include "lib.hpp"   // for parse_args, Pos, Direction, DEBUG
+#include "lib.hpp"   // for parse_args, Pos, AbsDirection, DEBUG
 #include <algorithm> // for sort
 #include <array>     // for array
 #include <iostream>  // for cout, cerr
@@ -25,11 +25,11 @@ int main(int argc, char **argv) {
     }
 
     constexpr long max_step = 4'000'000'000;
-    constexpr std::array<aoc::Direction, 4> directions{
-        aoc::Direction::up,
-        aoc::Direction::left,
-        aoc::Direction::down,
-        aoc::Direction::right,
+    constexpr std::array<aoc::AbsDirection, 4> directions{
+        aoc::AbsDirection::north,
+        aoc::AbsDirection::west,
+        aoc::AbsDirection::south,
+        aoc::AbsDirection::east,
     };
 
     long cycle_length = 0;

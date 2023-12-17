@@ -57,7 +57,7 @@ struct Grid {
             label = labels[index].get();
         }
         label->text.push_back(c);
-        label->right += Delta(Direction::right);
+        label->right += Delta(AbsDirection::east);
         label_positions[label->right] = index;
     }
 
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
     int part_1 = 0, part_2 = 0;
     for (auto &[pos, sym] : grid.symbols) {
         int ratio = 1;
-        for (auto &label : sym.labels) {
+        for (const auto &label : sym.labels) {
             int value = std::stoi(label->text);
             part_1 += value;
             ratio *= value;

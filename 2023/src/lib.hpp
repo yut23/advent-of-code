@@ -9,15 +9,15 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include <algorithm>   // for max
-#include <cassert>     // for assert
-#include <compare>     // for strong_ordering
-#include <cstdlib>     // for abs, exit
-#include <fstream>     // for ifstream  // IWYU pragma: keep
-#include <functional>  // for hash
-#include <iostream>    // for cout
-#include <string>      // for string
-#include <type_traits> // for is_same_v, is_signed_v, conditional_t
+#include <algorithm>  // for max
+#include <cassert>    // for assert
+#include <compare>    // for strong_ordering
+#include <cstdlib>    // for abs, size_t, exit
+#include <fstream>    // for ifstream  // IWYU pragma: keep
+#include <functional> // for hash
+#include <iostream>   // for cout
+#include <string>     // for string
+#include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t
 
 namespace aoc {
 
@@ -33,32 +33,71 @@ namespace aoc {
 [[maybe_unused]] constexpr bool FAST = false;
 #endif
 
-enum class Direction : char { up = 'U', down = 'D', left = 'L', right = 'R' };
+enum class AbsDirection : unsigned char {
+    north = 0,
+    east = 1,
+    south = 2,
+    west = 3,
+};
 
-Direction opposite(Direction dir) {
+std::ostream &operator<<(std::ostream &os, const AbsDirection &dir) {
     switch (dir) {
-    case Direction::up:
-        return Direction::down;
-    case Direction::down:
-        return Direction::up;
-    case Direction::left:
-        return Direction::right;
-    case Direction::right:
-        return Direction::left;
+    case AbsDirection::north:
+        os << 'N';
+        break;
+    case AbsDirection::east:
+        os << 'E';
+        break;
+    case AbsDirection::south:
+        os << 'S';
+        break;
+    case AbsDirection::west:
+        os << 'W';
+        break;
     }
-    assert(false);
+    return os;
 }
 
-std::istream &operator>>(std::istream &is, Direction &dir) {
-    char ch = 0;
-    if (is >> ch) {
-        dir = static_cast<Direction>(ch);
+enum class RelDirection : unsigned char {
+    forward = 0,
+    right = 1,
+    backward = 2,
+    left = 3,
+};
+
+std::ostream &operator<<(std::ostream &os, const RelDirection &dir) {
+    switch (dir) {
+    case RelDirection::forward:
+        os << "forward";
+        break;
+    case RelDirection::right:
+        os << "right";
+        break;
+    case RelDirection::backward:
+        os << "backward";
+        break;
+    case RelDirection::left:
+        os << "left";
+        break;
     }
-    return is;
-}
-std::ostream &operator<<(std::ostream &os, const Direction &dir) {
-    os << static_cast<char>(dir);
     return os;
+}
+
+AbsDirection turn(AbsDirection dir, RelDirection turn_dir) {
+    return static_cast<AbsDirection>(
+        static_cast<std::underlying_type_t<AbsDirection>>(dir) +
+        static_cast<std::underlying_type_t<RelDirection>>(turn_dir));
+}
+
+AbsDirection opposite(AbsDirection dir) {
+    return turn(dir, RelDirection::backward);
+}
+
+RelDirection relative_to(AbsDirection old_dir, AbsDirection new_dir) {
+    return static_cast<RelDirection>(
+        (static_cast<std::underlying_type_t<AbsDirection>>(new_dir) -
+         static_cast<std::underlying_type_t<AbsDirection>>(old_dir) + 4) %
+        4);
 }
 
 struct Delta {
@@ -66,19 +105,19 @@ struct Delta {
     int dy;
 
     constexpr Delta(int dx, int dy) : dx(dx), dy(dy) {}
-    explicit constexpr Delta(Direction dir, bool invert_vertical = false)
+    explicit constexpr Delta(AbsDirection dir, bool invert_vertical = false)
         : dx(0), dy(0) {
         switch (dir) {
-        case Direction::up:
+        case AbsDirection::north:
             dy = 1;
             break;
-        case Direction::down:
+        case AbsDirection::south:
             dy = -1;
             break;
-        case Direction::right:
+        case AbsDirection::east:
             dx = 1;
             break;
-        case Direction::left:
+        case AbsDirection::west:
             dx = -1;
             break;
         }
