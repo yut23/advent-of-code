@@ -1,11 +1,34 @@
 from __future__ import annotations
 
+import functools
 import json
 import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+
+
+@functools.cache
+def get_includes(path: Path) -> frozenset[Path]:
+    assert path.suffix in {".cpp", ".hpp", ".h"}
+    include_pat = re.compile(r'#include\s+"(.*?)"')
+    includes: set[Path] = set()
+    with open(path, "r") as f:
+        for line in f:
+            if (m := include_pat.search(line)) is not None:
+                includes.add(path.parent / m[1])
+    return frozenset(includes)
+
+
+@functools.cache
+def get_transitive_includes(path: Path) -> frozenset[Path]:
+    # simple DFS on get_includes(), using functools.cache for memoization
+    all_includes: set[Path] = set()
+    for p in get_includes(path):
+        all_includes.add(p)
+        all_includes.update(get_transitive_includes(p))
+    return frozenset(all_includes)
 
 
 @dataclass(order=True, frozen=True, kw_only=True)
@@ -27,18 +50,14 @@ class Target:
         assert m is not None, source_file
         return cls(base_dir=base_dir, day=int(m["day"]), prefix=m["prefix"])
 
-    def get_deps(self) -> set[Path]:
+    def get_deps(self) -> frozenset[Path]:
         deps = set()
         src = self.base_dir / "src"
         deps.add(src / f"{self}.cpp")
-        deps.add(src / f"day{self.suffix}.hpp")
-        deps.add(src / "lib.hpp")
-        deps.add(src / "lib.h")
-        if self.prefix == "test" and (src / "unit_test").exists():
-            for p in (src / "unit_test").iterdir():
-                deps.add(p)
+        for included_file in get_transitive_includes(src / f"{self}.cpp"):
+            deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
-        return deps
+        return frozenset(deps)
 
 
 @dataclass(order=True, frozen=True, kw_only=True)
