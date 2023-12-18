@@ -9,15 +9,16 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include <algorithm>  // for max
-#include <cassert>    // for assert
-#include <compare>    // for strong_ordering
-#include <cstdlib>    // for abs, size_t, exit
-#include <fstream>    // for ifstream  // IWYU pragma: keep
-#include <functional> // for hash
-#include <iostream>   // for cout
-#include <string>     // for string
-#include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t
+#include <algorithm>   // for max
+#include <cassert>     // for assert
+#include <compare>     // for strong_ordering
+#include <cstdlib>     // for abs, size_t, exit
+#include <fstream>     // for ifstream  // IWYU pragma: keep
+#include <functional>  // for hash
+#include <iostream>    // for cout
+#include <string>      // for string
+#include <type_traits> // for underlying_type_t, is_same_v, is_signed_v,
+                       //     conditional_t, is_const_v
 
 namespace aoc {
 
@@ -234,12 +235,14 @@ SkipInputHelper<T> skip(int count = 1) {
     return SkipInputHelper<T>{count};
 }
 
-// I/O manipulator that reads an 8-bit number into a char instead of a single
-// ASCII character.
+// I/O manipulator that extracts an 8-bit number into a char instead of a single
+// ASCII character, and inserts a char as an 8-bit number.
 template <typename T>
 class as_number {
     T &dest;
     friend std::istream &operator>>(std::istream &is, as_number h) {
+        static_assert(!std::is_const_v<T>,
+                      "Cannot extract into a const reference");
         constexpr bool is_char =
             std::is_same_v<T, char> || std::is_same_v<T, unsigned char>;
         if constexpr (is_char) {
@@ -253,6 +256,20 @@ class as_number {
             is >> h.dest;
         }
         return is;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const as_number &h) {
+        constexpr bool is_char =
+            std::is_same_v<std::remove_const_t<T>, char> ||
+            std::is_same_v<std::remove_const_t<T>, unsigned char>;
+        if constexpr (is_char) {
+            using int_type =
+                std::conditional_t<std::is_signed_v<T>, short, unsigned short>;
+            os << static_cast<int_type>(h.dest);
+        } else {
+            os << h.dest;
+        }
+        return os;
     }
 
   public:
