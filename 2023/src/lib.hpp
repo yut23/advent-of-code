@@ -85,8 +85,9 @@ std::ostream &operator<<(std::ostream &os, const RelDirection &dir) {
 
 AbsDirection turn(AbsDirection dir, RelDirection turn_dir) {
     return static_cast<AbsDirection>(
-        static_cast<std::underlying_type_t<AbsDirection>>(dir) +
-        static_cast<std::underlying_type_t<RelDirection>>(turn_dir));
+        (static_cast<std::underlying_type_t<AbsDirection>>(dir) +
+         static_cast<std::underlying_type_t<RelDirection>>(turn_dir)) %
+        4);
 }
 
 AbsDirection opposite(AbsDirection dir) {
