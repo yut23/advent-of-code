@@ -28,6 +28,7 @@
 /// graph traversal algorithms
 namespace aoc::graph {
 
+namespace detail {
 // Declaration of the concept "Hashable", which is satisfied by any type 'T'
 // such that for values 'a' of type 'T', the expression std::hash<T>{}(a)
 // compiles and its result is convertible to std::size_t
@@ -38,7 +39,6 @@ concept Hashable = requires(T a) {
                            } -> std::convertible_to<std::size_t>;
                    };
 
-namespace detail {
 template <class Key>
 using maybe_unordered_set =
     std::conditional_t<Hashable<Key>, std::unordered_set<Key>, std::set<Key>>;
