@@ -19,14 +19,6 @@ jobs:
         uses: tj-actions/changed-files@v40
         with:
           json: true
-          files: |
-            .github/workflows/gen_matrix.py
-            .github/workflows/unit-tests.yml
-            */src/day*.hpp
-            */src/test*.cpp
-            */src/lib.h*
-            */src/unit_test/*
-            */Makefile
 
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
