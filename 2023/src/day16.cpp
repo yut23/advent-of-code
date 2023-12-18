@@ -18,13 +18,46 @@ int main(int argc, char **argv) {
         std::cerr << grid << "\n";
     }
 
-    grid.send_beam();
-    if constexpr (aoc::DEBUG) {
-        grid.print_energized(std::cerr);
-        std::cerr << "\n";
+    // TODO: optimize this
+    // some sort of DP should work, but loops will need special handling
+
+    int max_energized = 0;
+    aoc::Pos pos(0, 0);
+    for (pos.y = 0; pos.y < grid.height(); ++pos.y) {
+        for (pos.x = 0; pos.x < grid.width(); pos.x += grid.width() - 1) {
+            aoc::AbsDirection dir =
+                pos.x == 0 ? aoc::AbsDirection::east : aoc::AbsDirection::west;
+            grid.send_beam(pos, dir);
+            int count = grid.count_energized();
+            if (pos.x == 0 && pos.y == 0) {
+                // part 1
+                if constexpr (aoc::DEBUG) {
+                    grid.print_energized(std::cerr);
+                    std::cerr << "\n";
+                }
+                std::cout << count << "\n";
+            }
+            if (max_energized < count) {
+                max_energized = count;
+            }
+            grid.clear_energized();
+        }
     }
-    int part_1 = grid.count_energized();
-    std::cout << part_1 << "\n";
+
+    for (pos.x = 0; pos.x < grid.width(); ++pos.x) {
+        for (pos.y = 0; pos.y < grid.height(); pos.y += grid.height() - 1) {
+            aoc::AbsDirection dir = pos.y == 0 ? aoc::AbsDirection::south
+                                               : aoc::AbsDirection::north;
+            grid.send_beam(pos, dir);
+            int count = grid.count_energized();
+            if (max_energized < count) {
+                max_energized = count;
+            }
+            grid.clear_energized();
+        }
+    }
+
+    std::cout << max_energized << "\n";
 
     return 0;
 }

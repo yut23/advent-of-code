@@ -98,9 +98,12 @@ class Grid {
     void send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen);
 
   public:
-    void send_beam();
+    void send_beam(Pos pos, AbsDirection dir);
     void clear_energized();
     int count_energized() const;
+
+    int width() const { return tiles[0].size(); }
+    int height() const { return tiles.size(); }
 
     static Grid read(std::istream &);
 
@@ -108,13 +111,13 @@ class Grid {
     friend std::ostream &operator<<(std::ostream &, const Grid &);
 };
 
-void Grid::send_beam() {
+void Grid::send_beam(Pos pos, AbsDirection dir) {
     visit_cache_t seen;
-    send_beam_helper(Pos(0, 0), AbsDirection::east, seen);
+    send_beam_helper(pos, dir, seen);
 }
 
 void Grid::send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen) {
-    while (true) {
+    while (in_bounds(pos)) {
         auto key = std::make_pair(pos, dir);
         if (seen.contains(key)) {
             return;
@@ -130,9 +133,6 @@ void Grid::send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen) {
         }
         dir = new_dirs[0];
         pos += Delta(dir, true);
-        if (!in_bounds(pos)) {
-            break;
-        }
     }
 }
 
