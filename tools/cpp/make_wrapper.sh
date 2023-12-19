@@ -27,10 +27,15 @@ if [[ Makefile -nt compile_commands.json ]]; then
   fi
 fi
 
+if printf '3.1.0\n%s\n' "$(bear --version | cut -d' ' -f2)" | sort -V -C; then
+  BEAR_PREFIX='bear '
+else
+  BEAR_PREFIX=
+fi
 set +e
 # this is a variable expansion for make, not bash
 # shellcheck disable=SC2016
-INTERCEPT_WRAPPER='intercept --output $(@:.o=_events.json) --' make "$@"
+INTERCEPT_WRAPPER="$BEAR_PREFIX"'intercept --output $(@:.o=_events.json) --' make "$@"
 ret=$?
 set -e
 
@@ -40,7 +45,7 @@ shopt -u nullglob globstar
 if [[ ${#events[@]} -gt 0 ]]; then
   cat "${events[@]}" > events.json
   rm "${events[@]}"
-  citnames --append --config ../tools/cpp/bear_config.json
+  $BEAR_PREFIX citnames --append --config ../tools/cpp/bear_config.json
   rm events.json
 fi
 
