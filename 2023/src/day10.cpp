@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
     int part_1 = perimeter / 2;
     // Pick's theorem: A = i + b/2 - 1
     //                 i = A - b/2 + 1
+    // where A is the exact area (accounting for partial grid squares), i is
+    // the number of grid points on the interior of the curve, and b is the
+    // number of grid points on the boundary of the curve.
     int part_2 = area - part_1 + 1;
 
     std::cout << part_1 << "\n";

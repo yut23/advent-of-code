@@ -41,6 +41,34 @@ enum class AbsDirection : unsigned char {
     west = 3,
 };
 
+std::istream &operator>>(std::istream &is, AbsDirection &dir) {
+    char ch;
+    if (is >> ch) {
+        switch (ch) {
+        case 'N':
+        case 'U':
+            dir = AbsDirection::north;
+            break;
+        case 'E':
+        case 'R':
+            dir = AbsDirection::east;
+            break;
+        case 'S':
+        case 'D':
+            dir = AbsDirection::south;
+            break;
+        case 'W':
+        case 'L':
+            dir = AbsDirection::west;
+            break;
+        default:
+            is.setstate(std::ios_base::failbit);
+            break;
+        }
+    }
+    return is;
+}
+
 std::ostream &operator<<(std::ostream &os, const AbsDirection &dir) {
     switch (dir) {
     case AbsDirection::north:
@@ -149,6 +177,18 @@ struct Delta {
         dy -= rhs.dy;
         return *this;
     }
+
+    // can be scaled by an integer
+    Delta &operator*=(int rhs) {
+        dx *= rhs;
+        dy *= rhs;
+        return *this;
+    }
+    Delta &operator/=(int rhs) {
+        dx /= rhs;
+        dy /= rhs;
+        return *this;
+    }
 };
 // this takes lhs by copy, so it doesn't modify the original lhs
 inline Delta operator+(Delta lhs, const Delta &rhs) {
@@ -157,6 +197,14 @@ inline Delta operator+(Delta lhs, const Delta &rhs) {
 }
 inline Delta operator-(Delta lhs, const Delta &rhs) {
     lhs -= rhs;
+    return lhs;
+}
+inline Delta operator*(Delta lhs, int rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+inline Delta operator/(Delta lhs, int rhs) {
+    lhs /= rhs;
     return lhs;
 }
 
