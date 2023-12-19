@@ -9,33 +9,36 @@
 #include "lib.hpp"  // for parse_args, Pos, Delta
 #include <cstdlib>  // for abs
 #include <iostream> // for cout
+#include <vector>   // for vector
 
-int part_1(const std::vector<aoc::day18::DigInstruction> &instructions) {
+long calc_volume(const std::vector<aoc::day18::DigInstruction> &instructions) {
     using namespace aoc;
     // same as day 10, shoelace formula and Pick's theorem
-    int perimeter = 0;
-    int twice_area = 0;
+    long perimeter = 0;
+    long twice_area = 0;
     Pos curr_pos(0, 0);
     for (const auto &instr : instructions) {
         Pos prev_pos = curr_pos;
         curr_pos += Delta(instr.dir) * instr.length;
         perimeter += instr.length;
-        twice_area += (prev_pos.y + curr_pos.y) * (prev_pos.x - curr_pos.x);
+        twice_area += (static_cast<long>(prev_pos.y) + curr_pos.y) *
+                      (prev_pos.x - curr_pos.x);
     }
-    int area = std::abs(twice_area) / 2;
+    long area = std::abs(twice_area) / 2;
 
     // Pick's theorem: A = i + b/2 - 1
-    int interior = area - perimeter / 2 + 1;
+    long interior = area - perimeter / 2 + 1;
     return perimeter + interior;
 }
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    std::vector<aoc::day18::DigInstruction> instructions =
+    const auto [instructions1, instructions2] =
         aoc::day18::read_instructions(infile);
 
-    std::cout << part_1(instructions) << "\n";
+    std::cout << calc_volume(instructions1) << "\n";
+    std::cout << calc_volume(instructions2) << "\n";
 
     return 0;
 }
