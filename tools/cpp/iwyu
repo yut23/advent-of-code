@@ -5,4 +5,34 @@ AOC_ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../lib.sh
 source "$AOC_ROOT/tools/lib.sh"
 
-iwyu-tool -p . "$@" -- --no-warnings -Xiwyu --quoted_includes_first -Xiwyu --max_line_length=300 -Xiwyu --mapping_file="$TOOLS_DIR/cpp/iwyu_mappings.imp" -resource-dir "$(clang -print-resource-dir)"
+sources=()
+check_also=()
+tool_args=()
+iwyu_args=()
+arg_dest=tool_args
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    *.cpp)
+      sources+=("$1")
+      shift
+      ;;
+    *.h|*.hpp)
+      iwyu_args+=(-Xiwyu --check_also="$1")
+      shift
+      ;;
+    --)
+      arg_dest=iwyu_args
+      shift
+      ;;
+    *)
+      if [[ $arg_dest == tool_args ]]; then
+        tool_args+=("$1")
+      elif [[ $arg_dest == iwyu_args ]]; then
+        iwyu_args+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+iwyu-tool -p . "${tool_args[@]}" "${sources[@]}" -- --no-warnings -Xiwyu --quoted_includes_first -Xiwyu --max_line_length=300 -Xiwyu --mapping_file="$TOOLS_DIR/cpp/iwyu_mappings.imp" -resource-dir "$(clang -print-resource-dir)" "${iwyu_args[@]}"
