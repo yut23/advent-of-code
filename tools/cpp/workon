@@ -29,14 +29,16 @@ fi
 to_edit+=("$source_file" "$header_file")
 
 # update the entire compilation database if needed
-make_quiet compile_commands.json -j"$(nproc)" || true
+if [[ -e make_wrapper.sh ]] && [[ Makefile -nt compile_commands.json ]]; then
+  ./make_wrapper.sh || true
+fi
 # build this day's binaries so the compilation database gets updated
 make_targets=()
 shopt -s lastpipe
 make -q "build/release/day$day" 2>/dev/null || make_targets+=("build/release/day$day")
 make -q "build/debug/day$day" 2>/dev/null || make_targets+=("build/debug/day$day")
 if [[ ${#make_targets[@]} -gt 0 ]]; then
-  make -j"${#make_targets[@]}" "${make_targets[@]}" || true
+  make_wrapper -j"${#make_targets[@]}" "${make_targets[@]}" || true
 fi
 
 if [[ -v DISPLAY ]] && [[ $DISPLAY == :* ]] && [[ -z ${SSH_CONNECTION+x} ]]; then

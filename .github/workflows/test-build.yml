@@ -52,4 +52,4 @@ jobs:
       - name: Build targets
         run: |
           cd ${{ matrix.directory }}
-          make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE DISABLE_BEAR=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}
+          make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}

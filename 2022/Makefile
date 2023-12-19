@@ -2,10 +2,10 @@ ifeq ($(origin CXX), default)
 	CXX = clang++
 endif
 
-BEAR_INVOCATION = bear --append $(BEAR_ARGS) --
-ifeq ($(DISABLE_BEAR),TRUE)
-	BEAR_INVOCATION =
-endif
+# Set by the wrapper script to run the compiler under bear-intercept, then it
+# will combine all the generated files into a compilation database after make
+# finishes.
+INTERCEPT_WRAPPER ?=
 
 LOCAL_CXXFLAGS = -Wall -Wextra -O3 -std=c++20
 DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -g -Og -DDEBUG_MODE
@@ -43,7 +43,7 @@ REL_EXECUTABLES := $(REL_OBJ:.o=)
 DEBUG_EXECUTABLES := $(DEBUG_OBJ:.o=)
 FAST_EXECUTABLES := $(FAST_OBJ:.o=)
 PROFILE_EXECUTABLES := $(PROFILE_OBJ:.o=)
-all: compile_commands.json release debug fast
+all: release debug fast
 release: $(REL_EXECUTABLES)
 debug: $(DEBUG_EXECUTABLES)
 fast: $(FAST_EXECUTABLES)
@@ -54,11 +54,6 @@ list:
 	@printf 'debug:   %s\n' $(DEBUG_EXECUTABLES)
 	@printf 'fast:    %s\n' $(FAST_EXECUTABLES)
 	@printf 'profile: %s\n' $(PROFILE_EXECUTABLES)
-
-compile_commands.json: Makefile
-	@echo "Makefile changed, rebuilding entire compilation database..."
-	rm -f compile_commands.json
-	$(MAKE) -B $(REL_EXECUTABLES) $(DEBUG_EXECUTABLES)
 
 # create build directories if they don't exist
 $(REL_BUILD_DIR) $(DEBUG_BUILD_DIR) $(FAST_BUILD_DIR) $(PROFILE_BUILD_DIR):
@@ -73,10 +68,10 @@ $(REL_BUILD_DIR) $(DEBUG_BUILD_DIR) $(FAST_BUILD_DIR) $(PROFILE_BUILD_DIR):
 # The -MMD flags additionally creates a .d file with
 # the same name as the .o file.
 # Also include order-only dependencies on the build directory
-$(REL_BUILD_DIR)/%.o: src/%.cpp | $(REL_BUILD_DIR)
-	$(BEAR_INVOCATION) $(CXX) $(LOCAL_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
-$(DEBUG_BUILD_DIR)/%.o: src/%.cpp | $(DEBUG_BUILD_DIR)
-	$(BEAR_INVOCATION) $(CXX) $(DEBUG_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
+$(REL_BUILD_DIR)/%.o: src/%.cpp Makefile | $(REL_BUILD_DIR)
+	$(INTERCEPT_WRAPPER) $(CXX) $(LOCAL_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
+$(DEBUG_BUILD_DIR)/%.o: src/%.cpp Makefile | $(DEBUG_BUILD_DIR)
+	$(INTERCEPT_WRAPPER) $(CXX) $(DEBUG_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
 $(FAST_BUILD_DIR)/%.o: src/%.cpp | $(FAST_BUILD_DIR)
 	$(CXX) $(FAST_CXXFLAGS) $(CXXFLAGS) -MMD -c $< -o $@
 $(PROFILE_BUILD_DIR)/%.o: src/%.cpp | $(PROFILE_BUILD_DIR)

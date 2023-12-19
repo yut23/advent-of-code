@@ -52,9 +52,9 @@ jobs:
       - name: Build test
         run: |
           cd ${{ matrix.directory }}
-          make CXX=${{ matrix.compiler }} DISABLE_BEAR=TRUE build/debug/${{ matrix.target }}
+          make CXX=${{ matrix.compiler }} build/debug/${{ matrix.target }}
 
       - name: Run test
         run: |
           cd ${{ matrix.directory }}
-          make CXX=${{ matrix.compiler }} DISABLE_BEAR=TRUE ${{ matrix.target }}
+          make CXX=${{ matrix.compiler }} ${{ matrix.target }}

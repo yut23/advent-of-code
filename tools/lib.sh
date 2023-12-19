@@ -51,5 +51,13 @@ make_quiet() {
     >&2 echo "Internal error: make_quiet should only be passed one target"
     return 1
   fi
-  make -q "${targets[@]}" 2>/dev/null || make "$@"
+  make -q "${targets[@]}" 2>/dev/null || make_wrapper "$@"
+}
+
+make_wrapper() {
+  local MAKE=make
+  if [[ -e make_wrapper.sh ]]; then
+    MAKE=./make_wrapper.sh
+  fi
+  $MAKE "$@"
 }
