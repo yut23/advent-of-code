@@ -142,7 +142,7 @@ int dfs(const Key &source,
  * Returns the distance and path from the source to the first target found,
  * or -1 and an empty path if not found.
  */
-template <class Key>
+template <class Key, bool use_visited = false>
 std::pair<int, std::vector<Key>>
 dijkstra(const Key &source,
          std::function<std::vector<Key>(const Key &)> get_neighbors,
@@ -179,8 +179,10 @@ dijkstra(const Key &source,
             return {dist, path};
         }
         for (const Key &neighbor : get_neighbors(current)) {
-            if (visited.contains(neighbor)) {
-                continue;
+            if constexpr (use_visited) {
+                if (visited.contains(neighbor)) {
+                    continue;
+                }
             }
             int new_distance = dist + get_distance(current, neighbor);
             auto it = distances.find(neighbor);
@@ -194,7 +196,9 @@ dijkstra(const Key &source,
                 pq.emplace(new_distance, neighbor);
             }
         }
-        visited.insert(std::move(current));
+        if constexpr (use_visited) {
+            visited.insert(std::move(current));
+        }
     }
     return {-1, {}};
 }
