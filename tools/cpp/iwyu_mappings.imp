@@ -7,5 +7,6 @@
 { symbol: ["std::stringstream", "private", "<sstream>", "public" ] },
 { symbol: ["std::istringstream", "private", "<sstream>", "public" ] },
 { symbol: ["std::ostringstream", "private", "<sstream>", "public" ] },
+{ symbol: ["std::pair", "private", "<utility>", "public" ] },
 { include: ["<bits/std_abs.h>", "private", "<cstdlib>", "public" ] },
 ]

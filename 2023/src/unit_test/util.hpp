@@ -1,13 +1,13 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <typeinfo>
+#include <iostream> // for ostream, cout, streambuf
+#include <sstream>  // for ostringstream
+#include <string>   // for string
+#include <typeinfo> // for type_info
 
 template <typename... T>
-struct Debug;
+struct Debug; // IWYU pragma: keep
 #define reveal_type(x)                                                         \
     Debug<decltype(x)> {}
 
@@ -55,9 +55,9 @@ struct CaptureStream {
 } // namespace util
 
 #ifdef __GNUG__
-#include <cstdlib>
-#include <cxxabi.h>
-#include <memory>
+#include <cstdlib>  // for free
+#include <cxxabi.h> // for __cxa_demangle
+#include <memory>   // for unique_ptr
 
 std::string util::demangle(const char *name) {
     int status = -4; // some arbitrary value to eliminate the compiler warning

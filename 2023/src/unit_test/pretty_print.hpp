@@ -1,13 +1,15 @@
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
-#include <iomanip>
-#include <iostream>
-#include <optional>
-#include <ranges>
-#include <string>
-#include <tuple>
-#include <utility>
+#include <cstddef>  // for size_t
+#include <iomanip>  // for quoted
+#include <iostream> // for ostream, defaultfloat, hexfloat
+#include <iterator> // for begin, end
+#include <optional> // for optional
+#include <ranges>   // for range
+#include <string>   // for string
+#include <tuple>    // for tuple, get
+#include <utility>  // for pair
 
 // Additional ostream formatters needed for printing arguments/return values
 // for failing test cases
