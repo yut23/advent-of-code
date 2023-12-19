@@ -139,8 +139,8 @@ int dfs(const Key &source,
 /**
  * Generic Dijkstra's algorithm on an arbitrary weighted graph.
  *
- * Returns the distance from the source to the first target found, or -1 if not
- * found.
+ * Returns the distance and path from the source to the first target found,
+ * or -1 and an empty path if not found.
  */
 template <class Key>
 std::pair<int, std::vector<Key>>
@@ -150,31 +150,30 @@ dijkstra(const Key &source,
          std::function<bool(const Key &)> is_target,
          std::optional<std::function<void(const Key &, int)>> visit = {}) {
     detail::maybe_unordered_set<Key> visited{};
-    detail::maybe_unordered_map<Key, int> distances{};
-    detail::maybe_unordered_map<Key, Key> prev{};
+    detail::maybe_unordered_map<Key, std::pair<int, Key>> distances{};
 
     using pq_key = std::pair<int, Key>;
     std::priority_queue<pq_key, std::vector<pq_key>, std::greater<pq_key>> pq{};
 
-    distances[source] = 0;
+    distances[source] = {0, source};
     pq.emplace(0, source);
 
     while (!pq.empty()) {
         auto [dist, current] = std::move(pq.top());
         pq.pop();
-        if (dist != distances[current]) {
+        if (dist != distances[current].first) {
             continue;
         }
         if (visit.has_value()) {
             visit.value()(current, dist);
         }
         if (is_target(current)) {
+            // reconstruct path
             std::vector<Key> path{current};
-            const Key *u = &current;
-            typename decltype(prev)::const_iterator it;
-            while (*u != source && (it = prev.find(*u)) != prev.end()) {
-                path.emplace_back(it->second);
-                u = &it->second;
+            typename decltype(distances)::const_iterator it;
+            while (path.back() != source &&
+                   (it = distances.find(path.back())) != distances.end()) {
+                path.emplace_back(it->second.second);
             }
             std::ranges::reverse(path);
             return {dist, path};
@@ -183,12 +182,15 @@ dijkstra(const Key &source,
             if (visited.contains(neighbor)) {
                 continue;
             }
-            int new_distance =
-                distances[current] + get_distance(current, neighbor);
+            int new_distance = dist + get_distance(current, neighbor);
             auto it = distances.find(neighbor);
-            if (it == distances.end() || new_distance < it->second) {
-                distances[neighbor] = new_distance;
-                prev[neighbor] = current;
+            if (it == distances.end() || new_distance < it->second.first) {
+                std::pair<int, Key> value{new_distance, current};
+                if (it != distances.end()) {
+                    it->second = std::move(value);
+                } else {
+                    distances.try_emplace(neighbor, std::move(value));
+                }
                 pq.emplace(new_distance, neighbor);
             }
         }
@@ -234,7 +236,7 @@ shortest_distances(const Key &source,
     return distances;
 }
 
-// instantiate templates in an anonymous namespace, so the static analyzers will
+// instantiate templates in an anonymous namespace, so static analyzers will
 // check these functions
 namespace {
 using Key1 = std::pair<int, int>;
