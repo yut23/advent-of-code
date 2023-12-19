@@ -24,7 +24,6 @@
 namespace aoc::day17 {
 
 class CityMap {
-  public:
     struct Key {
         Pos pos;
         AbsDirection dir;
@@ -35,7 +34,7 @@ class CityMap {
 
     std::vector<std::vector<unsigned char>> block_costs;
 
-    std::vector<Key> get_neighbors(const Key &key) const;
+    std::vector<Key> get_neighbors(bool ultra, const Key &key) const;
     int get_distance(const Key &from, const Key &to) const;
     int height() const { return block_costs.size(); }
     int width() const { return block_costs[0].size(); }
@@ -47,7 +46,7 @@ class CityMap {
     }
 
   public:
-    int find_shortest_path() const;
+    int find_shortest_path(bool ultra = false) const;
     void print(std::ostream &, const std::vector<Key> &path = {}) const;
     static CityMap read(std::istream &is);
 
@@ -59,7 +58,10 @@ std::ostream &operator<<(std::ostream &os, const CityMap::Key &key) {
     return os;
 }
 
-std::vector<CityMap::Key> CityMap::get_neighbors(const Key &key) const {
+std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
+                                                 const Key &key) const {
+    const int min_straight_moves = ultra ? 4 : 0;
+    const int max_straight_moves = ultra ? 10 : 3;
     std::vector<Key> neighbors;
     for (const auto dir : {AbsDirection::north, AbsDirection::east,
                            AbsDirection::south, AbsDirection::west}) {
@@ -72,8 +74,15 @@ std::vector<CityMap::Key> CityMap::get_neighbors(const Key &key) const {
         }
         if (dir == key.dir) {
             neighbor.move_count = key.move_count + 1;
-            // not allowed to move in the same direction three times in a row
-            if (neighbor.move_count > 3) {
+            // not allowed to move in the same direction more than
+            // `max_straight_moves` times in a row
+            if (neighbor.move_count > max_straight_moves) {
+                continue;
+            }
+        } else {
+            // not allowed to turn before moving `min_straight_moves` times in
+            // a straight line, except at the start (key.move_count == 0)
+            if (key.move_count != 0 && key.move_count < min_straight_moves) {
                 continue;
             }
         }
@@ -87,17 +96,17 @@ int CityMap::get_distance([[maybe_unused]] const Key &from,
     return block_costs[to.pos.y][to.pos.x];
 }
 
-int CityMap::find_shortest_path() const {
+int CityMap::find_shortest_path(bool ultra) const {
     Key source{Pos(0, 0), AbsDirection::east, 0};
     Pos target(width() - 1, height() - 1);
     std::optional<std::function<void(const Key &, int)>> visit = {};
 #if 0
-    if constexpr (aoc::DEBUG) {
-        visit = [this](const Key &key, int dist) {
+    if (aoc::DEBUG && ultra) {
+        visit = [this, ultra](const Key &key, int dist) {
             std::cerr << "visiting " << key << ", with distance=" << dist
                       << "\n";
             std::cerr << "neighbors:\n";
-            for (const auto &neighbor : get_neighbors(key)) {
+            for (const auto &neighbor : get_neighbors(ultra, key)) {
                 std::cerr << "  " << neighbor
                           << ", dist=" << get_distance(key, neighbor) << "\n";
             }
@@ -105,12 +114,20 @@ int CityMap::find_shortest_path() const {
     }
 #endif
     const auto &[distance, path] = aoc::graph::dijkstra<Key>(
-        source, std::bind_front(&CityMap::get_neighbors, this),
+        source, std::bind_front(&CityMap::get_neighbors, this, ultra),
         std::bind_front(&CityMap::get_distance, this),
-        [&target](const Key &key) -> bool { return key.pos == target; }, visit);
+        [&target, ultra](const Key &key) -> bool {
+            return key.pos == target && (!ultra || key.move_count >= 4);
+        },
+        visit);
     if constexpr (aoc::DEBUG) {
-        std::cerr << "found path with distance " << distance << ", length "
-                  << path.size() << ":\n";
+        if (distance >= 0) {
+            std::cerr << "found path with distance " << distance << ", length "
+                      << path.size() << ":\n";
+        } else {
+            std::cerr << "no path found from " << source << " to " << target
+                      << "\n";
+        }
         for (const Key &key : path) {
             std::cerr << "  " << key << "\n";
         }
@@ -167,5 +184,17 @@ CityMap CityMap::read(std::istream &is) {
 }
 
 } // namespace aoc::day17
+
+#if 0
+template <>
+struct std::hash<aoc::day17::CityMap::Key> {
+    std::size_t operator()(const aoc::day17::CityMap::Key &key) const noexcept {
+        std::size_t seed = std::hash<aoc::Pos>{}(key.pos);
+        aoc::hash_combine(seed, std::hash<aoc::AbsDirection>{}(key.dir));
+        aoc::hash_combine(seed, std::hash<int>{}(key.move_count));
+        return seed;
+    }
+};
+#endif
 
 #endif /* end of include guard: DAY17_HPP_3D5Q7QMY */
