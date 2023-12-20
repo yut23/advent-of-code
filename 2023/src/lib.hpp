@@ -9,16 +9,15 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include <algorithm>   // for max
-#include <cassert>     // for assert
-#include <compare>     // for strong_ordering
-#include <cstdlib>     // for abs, size_t, exit
-#include <fstream>     // for ifstream  // IWYU pragma: keep
-#include <functional>  // for hash
-#include <iostream>    // for cout
-#include <string>      // for string
-#include <type_traits> // for underlying_type_t, is_same_v, is_signed_v,
-                       //     conditional_t, is_const_v
+#include <algorithm>  // for max
+#include <cassert>    // for assert
+#include <compare>    // for strong_ordering
+#include <cstdlib>    // for abs, size_t, exit
+#include <fstream>    // for ifstream  // IWYU pragma: keep
+#include <functional> // for hash
+#include <iostream>   // for cout
+#include <string>     // for string
+#include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 
 namespace aoc {
 
@@ -264,7 +263,7 @@ std::ostream &operator<<(std::ostream &os, const Pos &pos) {
     return os;
 }
 
-// use an anonymous namespace to hide this implementation detail
+// use an anonymous namespace to hide these implementation details
 namespace {
 template <typename T>
 struct SkipInputHelper {
@@ -276,6 +275,29 @@ struct SkipInputHelper {
         return is;
     }
 };
+
+template <class T>
+struct ExpectInputHelper {
+    T expected;
+    friend std::istream &operator>>(std::istream &is, ExpectInputHelper &&e) {
+        T temp{};
+        if constexpr (std::is_same_v<T, std::string>) {
+            char ch;
+            for (std::size_t i = 0; i < e.expected.size() && is >> ch; ++i) {
+                temp.push_back(ch);
+            }
+        } else {
+            is >> temp;
+        }
+        if (!is || temp != e.expected) {
+            is.setstate(std::ios_base::failbit);
+        }
+        return is;
+    }
+
+    explicit ExpectInputHelper(const T &expected) : expected(expected) {}
+    explicit ExpectInputHelper(T &&expected) : expected(std::move(expected)) {}
+};
 } // namespace
 
 template <typename T = std::string>
@@ -283,8 +305,16 @@ SkipInputHelper<T> skip(int count = 1) {
     return SkipInputHelper<T>{count};
 }
 
-// I/O manipulator that extracts an 8-bit number into a char instead of a single
-// ASCII character, and inserts a char as an 8-bit number.
+template <class T>
+ExpectInputHelper<std::remove_cvref_t<T>> expect_input(T &&expected) {
+    return ExpectInputHelper<std::remove_cvref_t<T>>(std::move(expected));
+}
+ExpectInputHelper<std::string> expect_input(const char *expected) {
+    return ExpectInputHelper<std::string>{std::string{expected}};
+}
+
+// I/O manipulator that extracts an 8-bit number into a char instead of
+// a single ASCII character, and inserts a char as an 8-bit number.
 template <typename T>
 class as_number {
     T &dest;
@@ -347,5 +377,25 @@ struct std::hash<aoc::Pos> {
         return h1 ^ (h2 << 1);
     }
 };
+
+// instantiate templates in an anonymous namespace, so static analyzers will
+// check these functions
+namespace {
+[[maybe_unused]] void _lint_helper(std::istream &is) {
+    is >> aoc::skip<char>(2);
+    is >> aoc::skip<int>(1);
+    is >> aoc::skip<std::string>(3);
+
+    is >> aoc::expect_input('a');
+    is >> aoc::expect_input("foo");
+    is >> aoc::expect_input<std::string>("foo");
+    is >> aoc::expect_input(std::string{"bar"});
+
+    char ch;
+    unsigned char uch;
+    is >> aoc::as_number(ch);
+    is >> aoc::as_number(uch);
+}
+} // namespace
 
 #endif /* end of include guard: LIB_HPP_0IZKV7KG */
