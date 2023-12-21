@@ -22,7 +22,7 @@
 #include <type_traits>   // for conditional_t
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
-#include <utility>       // for move, pair
+#include <utility>       // for move, pair, swap
 #include <vector>        // for vector
 
 /// graph traversal algorithms
@@ -93,39 +93,47 @@ int bfs(const Key &source,
 /**
  * Generic DFS on an arbitrary graph.
  *
- * At least one of `is_target` and `visit` must be passed.
+ * At least one of `is_target` and `visit_with_parent` must be passed.
  *
- * Will visit each node no more than once, calling `visit` with the node and the
- * depth at which it was found.
+ * If passed, `visit_with_parent` will be called for each node, with the node,
+ * its parent, and the depth at which it was found.
+ *
+ * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
+ * visited as a tree). `use_seen` should only be set to true if the graph has
+ * no cycles.
  *
  * Returns the distance from the source to the first target found, or -1 if not
  * found.
  */
-template <class Key>
+template <class Key, bool use_seen = true>
 int dfs(const Key &source,
         std::function<std::vector<Key>(const Key &)> get_neighbors,
         std::optional<std::function<bool(const Key &)>> is_target = {},
-        std::optional<std::function<void(const Key &, int)>> visit = {}) {
-    if (!is_target.has_value() && !visit.has_value()) {
+        std::optional<std::function<void(const Key &, const Key &, int)>>
+            visit_with_parent = {}) {
+    if (!is_target.has_value() && !visit_with_parent.has_value()) {
         throw std::invalid_argument(
             "At least one of is_target and visit must be passed!");
     }
     detail::maybe_unordered_set<Key> seen{};
 
     auto helper = [&seen, &get_neighbors, &is_target,
-                   &visit](const Key &key, int depth, const auto &rec) {
-        if (visit.has_value()) {
-            visit.value()(key, depth);
+                   &visit_with_parent](const Key &key, int depth,
+                                       const Key &parent, const auto &rec) {
+        if (visit_with_parent.has_value()) {
+            visit_with_parent.value()(key, parent, depth);
         }
         if (is_target.has_value() && is_target.value()(key)) {
             return depth;
         }
         seen.insert(key);
         for (const Key &neighbor : get_neighbors(key)) {
-            if (seen.contains(neighbor)) {
-                continue;
+            if constexpr (use_seen) {
+                if (seen.contains(neighbor)) {
+                    continue;
+                }
             }
-            int result = rec(neighbor, depth + 1, rec);
+            int result = rec(neighbor, depth + 1, key, rec);
             if (result != -1) {
                 return result;
             }
@@ -133,7 +141,7 @@ int dfs(const Key &source,
         return -1;
     };
 
-    return helper(source, 0, helper);
+    return helper(source, 0, source, helper);
 }
 
 /**
@@ -249,19 +257,27 @@ using Key1 = std::pair<int, int>;
     std::function<std::vector<Key1>(const Key1 &)> get_neighbors,
     std::function<bool(const Key1 &)> is_target,
     std::function<void(const Key1 &, int)> visit,
+    std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
     std::function<int(const Key1 &, const Key1 &)> get_distance) {
     bfs<Key1>(source, get_neighbors);
     bfs<Key1>(source, get_neighbors, is_target);
     bfs<Key1>(source, get_neighbors, {}, visit);
     bfs<Key1>(source, get_neighbors, is_target, visit);
 
-    dfs<Key1>(source, get_neighbors);
-    dfs<Key1>(source, get_neighbors, is_target);
-    dfs<Key1>(source, get_neighbors, {}, visit);
-    dfs<Key1>(source, get_neighbors, is_target, visit);
+    dfs<Key1, true>(source, get_neighbors);
+    dfs<Key1, true>(source, get_neighbors, is_target);
+    dfs<Key1, true>(source, get_neighbors, {}, visit_with_parent);
+    dfs<Key1, true>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<Key1, false>(source, get_neighbors);
+    dfs<Key1, false>(source, get_neighbors, is_target);
+    dfs<Key1, false>(source, get_neighbors, {}, visit_with_parent);
+    dfs<Key1, false>(source, get_neighbors, is_target, visit_with_parent);
 
-    dijkstra<Key1>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key1>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target);
+    dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target,
+                          visit);
+    dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target);
+    dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target, visit);
 
     shortest_distances<Key1>(source, get_neighbors, get_distance);
 }
@@ -271,19 +287,27 @@ using Key2 = int;
     std::function<std::vector<Key2>(const Key2 &)> get_neighbors,
     std::function<bool(const Key2 &)> is_target,
     std::function<void(const Key2 &, int)> visit,
+    std::function<void(const Key2 &, const Key2 &, int)> visit_with_parent,
     std::function<int(const Key2 &, const Key2 &)> get_distance) {
     bfs<Key2>(source, get_neighbors);
     bfs<Key2>(source, get_neighbors, is_target);
     bfs<Key2>(source, get_neighbors, {}, visit);
     bfs<Key2>(source, get_neighbors, is_target, visit);
 
-    dfs<Key2>(source, get_neighbors);
-    dfs<Key2>(source, get_neighbors, is_target);
-    dfs<Key2>(source, get_neighbors, {}, visit);
-    dfs<Key2>(source, get_neighbors, is_target, visit);
+    dfs<Key2, true>(source, get_neighbors);
+    dfs<Key2, true>(source, get_neighbors, is_target);
+    dfs<Key2, true>(source, get_neighbors, {}, visit_with_parent);
+    dfs<Key2, true>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<Key2, false>(source, get_neighbors);
+    dfs<Key2, false>(source, get_neighbors, is_target);
+    dfs<Key2, false>(source, get_neighbors, {}, visit_with_parent);
+    dfs<Key2, false>(source, get_neighbors, is_target, visit_with_parent);
 
-    dijkstra<Key2>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key2>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target);
+    dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target,
+                          visit);
+    dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target);
+    dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target, visit);
 
     shortest_distances<Key2>(source, get_neighbors, get_distance);
 }
