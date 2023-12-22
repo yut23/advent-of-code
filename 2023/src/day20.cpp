@@ -10,15 +10,27 @@
 #include <iostream> // for cout
 
 int part_1(aoc::day20::MessageBus &bus) {
+    using namespace aoc::day20;
     bool debug = aoc::DEBUG;
     for (int i = 0; i < 1000; ++i) {
-        using namespace aoc::day20;
         bus.send_message(Message{"button", "broadcaster", MessageType::low});
         while (bus.process(debug))
             ;
         debug = false;
     }
-    return bus.get_low_count() * bus.get_high_count();
+    return bus.low_count() * bus.high_count();
+}
+
+int part_2(aoc::day20::MessageBus &bus) {
+    using namespace aoc::day20;
+    int presses = 0;
+    while (!bus.rx_activated()) {
+        bus.send_message(Message{"button", "broadcaster", MessageType::low});
+        while (bus.process())
+            ;
+        ++presses;
+    }
+    return presses;
 }
 
 int main(int argc, char **argv) {
@@ -27,6 +39,11 @@ int main(int argc, char **argv) {
     auto bus = aoc::day20::MessageBus::read_modules(infile);
 
     std::cout << part_1(bus) << "\n";
+
+    if (bus.has_rx()) {
+        bus.reset();
+        std::cout << part_2(bus) << "\n";
+    }
 
     return 0;
 }

@@ -8,6 +8,7 @@
 #ifndef DAY20_HPP_QRITMDTC
 #define DAY20_HPP_QRITMDTC
 
+#include "lib.hpp"       // for DEBUG
 #include <cassert>       // for assert
 #include <iostream>      // for istream, ostream
 #include <memory>        // for unique_ptr
@@ -17,6 +18,7 @@
 #include <unordered_map> // for unordered_map
 #include <utility>       // for move, forward
 #include <vector>        // for vector
+// IWYU pragma: no_include <algorithm>  // for copy
 // IWYU pragma: no_include <functional>  // for hash (unordered_map)
 
 namespace aoc::day20 {
@@ -46,9 +48,7 @@ class ModuleBase {
 
   protected:
     std::vector<std::string> connections;
-    Message make_message(const std::string &dest, MessageType type) const {
-        return Message{name, dest, type};
-    }
+    void send_message(MessageBus *bus, MessageType type) const;
 
   public:
     explicit ModuleBase(const std::string &name) : name(name), connections() {}
@@ -58,41 +58,19 @@ class ModuleBase {
         connections.emplace_back(std::move(name));
     }
     virtual void setup_inputs(const std::vector<std::string> &) {}
+    virtual void reset() {}
     virtual void handle_message(MessageBus *, const Message &) {}
 };
 
 ModuleBase::~ModuleBase() {}
 
-class FlipFlop : public ModuleBase {
-    bool state = false;
-
-  public:
-    explicit FlipFlop(const std::string &name) : ModuleBase(name) {}
-    void handle_message(MessageBus *bus, const Message &msg) override;
-};
-
-class Conjunction : public ModuleBase {
-    std::unordered_map<std::string, MessageType> last_pulse;
-
-  public:
-    explicit Conjunction(const std::string &name) : ModuleBase(name) {}
-    void setup_inputs(const std::vector<std::string> &names) override;
-    void handle_message(MessageBus *bus, const Message &msg) override;
-};
-
-class Broadcaster : public ModuleBase {
-  public:
-    explicit Broadcaster(const std::string &name) : ModuleBase(name) {
-        assert(name == "broadcaster");
-    }
-    void handle_message(MessageBus *bus, const Message &msg) override;
-};
-
 class MessageBus {
     std::unordered_map<std::string, std::unique_ptr<ModuleBase>> modules;
     std::queue<Message> msg_queue;
-    int low_count = 0;
-    int high_count = 0;
+    int _low_count = 0;
+    int _high_count = 0;
+    bool _rx_activated = false;
+    bool _has_rx = false;
 
     template <class T, class... Args>
         requires std::is_base_of_v<ModuleBase, T>
@@ -110,26 +88,54 @@ class MessageBus {
 
     void send_message(Message &&msg);
     bool process(bool debug = false);
+    void reset();
 
-    int get_low_count() const { return low_count; }
-    int get_high_count() const { return high_count; }
+    int low_count() const { return _low_count; }
+    int high_count() const { return _high_count; }
+    bool has_rx() const { return _has_rx; }
+    bool rx_activated() const { return _rx_activated; }
+};
+
+void ModuleBase::send_message(MessageBus *bus, MessageType type) const {
+    for (const std::string &conn : connections) {
+        bus->send_message(Message{name, conn, type});
+    }
+}
+
+class FlipFlop : public ModuleBase {
+    bool state = false;
+
+  public:
+    explicit FlipFlop(const std::string &name) : ModuleBase(name) {}
+    void reset() override { state = false; }
+    void handle_message(MessageBus *bus, const Message &msg) override;
 };
 
 void FlipFlop::handle_message(MessageBus *bus, const Message &msg) {
     if (msg.type == MessageType::low) {
         state = !state;
         // send pulse
-        for (const std::string &conn : connections) {
-            bus->send_message(make_message(conn, MessageType(state)));
-        }
+        send_message(bus, MessageType(state));
     }
 }
 
-void Conjunction::setup_inputs(const std::vector<std::string> &names) {
-    for (const std::string &name : names) {
-        last_pulse[name] = MessageType::low;
+class Conjunction : public ModuleBase {
+    std::unordered_map<std::string, MessageType> last_pulse;
+
+  public:
+    explicit Conjunction(const std::string &name) : ModuleBase(name) {}
+    void setup_inputs(const std::vector<std::string> &names) override {
+        for (const std::string &name : names) {
+            last_pulse[name] = MessageType::low;
+        }
     }
-}
+    void reset() override {
+        for (auto &[_, state] : last_pulse) {
+            state = MessageType::low;
+        }
+    }
+    void handle_message(MessageBus *bus, const Message &msg) override;
+};
 
 void Conjunction::handle_message(MessageBus *bus, const Message &msg) {
     last_pulse[msg.source] = msg.type;
@@ -140,15 +146,19 @@ void Conjunction::handle_message(MessageBus *bus, const Message &msg) {
             break;
         }
     }
-    for (const std::string &conn : connections) {
-        bus->send_message(make_message(conn, type));
-    }
+    send_message(bus, type);
 }
 
-void Broadcaster::handle_message(MessageBus *bus, const Message &msg) {
-    for (const std::string &conn : connections) {
-        bus->send_message(make_message(conn, msg.type));
+class Broadcaster : public ModuleBase {
+  public:
+    explicit Broadcaster(const std::string &name) : ModuleBase(name) {
+        assert(name == "broadcaster");
     }
+    void handle_message(MessageBus *bus, const Message &msg) override;
+};
+
+void Broadcaster::handle_message(MessageBus *bus, const Message &msg) {
+    send_message(bus, msg.type);
 }
 
 void MessageBus::send_message(Message &&msg) {
@@ -162,13 +172,16 @@ bool MessageBus::process(bool debug) {
     const Message &msg = msg_queue.front();
     switch (msg.type) {
     case MessageType::low:
-        ++low_count;
+        ++_low_count;
         break;
     case MessageType::high:
-        ++high_count;
+        ++_high_count;
         break;
     default:
         assert(false);
+    }
+    if (msg.destination == "rx" && msg.type == MessageType::low) {
+        _rx_activated = true;
     }
     if (debug) {
         std::cerr << msg << "\n";
@@ -181,10 +194,19 @@ bool MessageBus::process(bool debug) {
     return !msg_queue.empty();
 }
 
+void MessageBus::reset() {
+    for (auto &[_, module] : modules) {
+        module->reset();
+    }
+}
+
 MessageBus MessageBus::read_modules(std::istream &is) {
     MessageBus bus;
     std::string line;
     std::unordered_map<std::string, std::vector<std::string>> inputs;
+    if (aoc::DEBUG) {
+        std::cerr << "digraph G {\n";
+    }
     while (std::getline(is, line)) {
         std::istringstream ss{line};
         std::string tmp;
@@ -194,9 +216,15 @@ MessageBus MessageBus::read_modules(std::istream &is) {
             curr_module = bus.emplace_module<Broadcaster>(std::move(tmp));
         } else if (tmp[0] == '%') {
             tmp = tmp.substr(1);
+            if constexpr (aoc::DEBUG) {
+                std::cerr << "  " << tmp << " [label=\"%" << tmp << "\"];\n";
+            }
             curr_module = bus.emplace_module<FlipFlop>(std::move(tmp));
         } else if (tmp[0] == '&') {
             tmp = tmp.substr(1);
+            if constexpr (aoc::DEBUG) {
+                std::cerr << "  " << tmp << " [label=\"&" << tmp << "\"];\n";
+            }
             curr_module = bus.emplace_module<Conjunction>(std::move(tmp));
         } else {
             assert(false);
@@ -207,9 +235,19 @@ MessageBus MessageBus::read_modules(std::istream &is) {
             if (tmp.back() == ',') {
                 tmp.resize(tmp.size() - 1);
             }
+            if (tmp == "rx") {
+                bus._has_rx = true;
+            }
             inputs[tmp].push_back(curr_module->name);
+            if constexpr (aoc::DEBUG) {
+                std::cerr << "  " << curr_module->name << " -> " << tmp
+                          << ";\n";
+            }
             curr_module->add_connection(std::move(tmp));
         }
+    }
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "}\n";
     }
 
     // tell each module what it's inputs are
