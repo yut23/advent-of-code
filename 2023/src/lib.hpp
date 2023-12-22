@@ -264,6 +264,24 @@ std::ostream &operator<<(std::ostream &os, const Pos &pos) {
     return os;
 }
 
+template <class T>
+T intersect_ranges(const T &range_1, const T &range_2) {
+    const auto &[r1_lo, r1_hi] = range_1;
+    const auto &[r2_lo, r2_hi] = range_2;
+    auto lo = std::max(r1_lo, r2_lo);
+    auto hi = std::min(r1_hi, r2_hi);
+    return {lo, std::max(hi, lo - 1)};
+}
+
+template <class T>
+bool ranges_overlap(const T &range_1, const T &range_2) {
+    const auto &[r1_lo, r1_hi] = range_1;
+    const auto &[r2_lo, r2_hi] = range_2;
+    auto lo = std::max(r1_lo, r2_lo);
+    auto hi = std::min(r1_hi, r2_hi);
+    return lo <= hi;
+}
+
 // use an anonymous namespace to hide these implementation details
 namespace {
 template <typename T>
