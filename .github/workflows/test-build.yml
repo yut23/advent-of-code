@@ -1,4 +1,4 @@
-name: Run unit tests
+name: Test building C++ targets
 
 on: [push]
 
@@ -20,7 +20,7 @@ jobs:
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT "test"
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT "day|test"
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}
@@ -46,12 +46,7 @@ jobs:
             sudo apt-get -qq -y install g++
           fi
 
-      - name: Build test
+      - name: Build targets
         run: |
           cd ${{ matrix.directory }}
-          make CXX=${{ matrix.compiler }} build/debug/${{ matrix.target }}
-
-      - name: Run test
-        run: |
-          cd ${{ matrix.directory }}
-          make CXX=${{ matrix.compiler }} ${{ matrix.target }}
+          make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}
