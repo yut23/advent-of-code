@@ -44,8 +44,7 @@ std::size_t test_mapping() {
     for (std::size_t i = 0; i < input_vec.size(); ++i) {
         test.run_on_args(input_vec[i], expected_vec[i]);
     }
-    test.done();
-    return test.num_failed();
+    return test.done(), test.num_failed();
 }
 
 ConversionMap parse_map(const std::string &text) {
@@ -68,8 +67,7 @@ std::size_t test_map_input() {
                                                 MapEntry(0, 15, 37),
                                                 MapEntry(37, 52, 2),
                                             }));
-    test.done();
-    return test.num_failed();
+    return test.done(), test.num_failed();
 }
 } // namespace aoc::day05::test
 

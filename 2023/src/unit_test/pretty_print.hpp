@@ -35,6 +35,20 @@ std::ostream &operator<<(std::ostream &os, const C<T> &container) {
     return os;
 }
 
+// arrays
+template <class T, std::size_t N>
+std::ostream &operator<<(std::ostream &os, const std::array<T, N> &arr) {
+    os << "{";
+    for (auto it = std::begin(arr); it != std::end(arr); ++it) {
+        if (it != std::begin(arr)) {
+            os << ", ";
+        }
+        pretty_print::write_repr(os, *it);
+    }
+    os << "}";
+    return os;
+}
+
 // tuple-like containers (tuple, pair)
 template <template <class...> class C, class... Ts>
     requires std::is_same_v<C<Ts...>, std::tuple<Ts...>> ||

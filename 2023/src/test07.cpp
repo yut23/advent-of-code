@@ -36,8 +36,7 @@ std::size_t test_read_hands() {
     test("32T3K 765\n", {hand1});
     test("32T3K 765\nT55J5 684", {hand1, hand2});
     test("32T3K 765\nT55J5 684\n", {hand1, hand2});
-    test.done();
-    return test.num_failed();
+    return test.done(), test.num_failed();
 }
 
 std::size_t test_hand_ordering() {
@@ -72,8 +71,7 @@ std::size_t test_hand_ordering() {
 
     test(hand5, hand5, std::strong_ordering::equal);
 
-    test.done();
-    return test.num_failed();
+    return test.done(), test.num_failed();
 }
 } // namespace aoc::day07::test
 

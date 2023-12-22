@@ -299,11 +299,52 @@ struct TestResult {
     std::string expected = "";
     std::string actual = "";
     std::string output = "";
+    std::string note = "";
+
+    void print(std::ostream &, int test_num) const;
 };
 
-int fix_exit_code(unsigned long count) {
+void TestResult::print(std::ostream &os, int test_num) const {
+    const TestResult &result = *this;
+    // Extra info to print after the test name, number, and arguments in case
+    // of a failure. Each element should have a final newline.
+    std::vector<std::string> extras{};
+    if (!result.actual.empty() || !result.expected.empty()) {
+        std::ostringstream ss{};
+        ss << "       got: " << result.actual << "\n"
+           << "  expected: " << result.expected << "\n";
+        extras.push_back(ss.str());
+    }
+    if (!result.output.empty()) {
+        std::ostringstream ss{};
+        ss << "  captured output:\n" << result.output;
+        extras.push_back(ss.str());
+    }
+    os << "test case " << test_num;
+    if (result.num_args > 0) {
+        os << " with " << (result.num_args == 1 ? "input" : "inputs") << " "
+           << result.arguments;
+    }
+    if (result.passed) {
+        os << " passed\n";
+    } else {
+        os << " failed";
+        if (!extras.empty() || !result.note.empty()) {
+            os << ":";
+        }
+        if (!result.note.empty()) {
+            os << " " << result.note;
+        }
+        os << "\n";
+        for (const std::string &extra : extras) {
+            os << extra;
+        }
+    }
+}
+
+short fix_exit_code(std::size_t count) {
     // max return value is 255, but upper 128 are used for signals
-    return static_cast<int>(std::min(count, 127UL));
+    return static_cast<short>(std::min(count, 127UL));
 }
 
 /**
@@ -352,15 +393,8 @@ struct BaseTest {
             if (failed_tests.empty()) {
                 std::cout << "\n";
             }
-            std::cout << "test case " << test_num << " with "
-                      << (result.num_args == 1 ? "input" : "inputs") << " "
-                      << result.arguments << " failed:\n"
-                      << "       got: " << result.actual << "\n"
-                      << "  expected: " << result.expected;
-            if (!result.output.empty()) {
-                std::cout << "\n  captured output:\n" << result.output;
-            }
-            std::cout << std::endl;
+            result.print(std::cout, test_num);
+            std::cout << std::flush;
             failed_tests.push_back(test_num);
         }
     }
@@ -577,6 +611,22 @@ PureTest(const std::string &, std::function<R(Args...)>)
 template <class R, class... Args>
 PureTest(const std::string &, std::function<R(Args...)>, int)
     -> PureTest<R, Args...>;
+
+struct ManualTest : public BaseTest {
+    explicit ManualTest(const std::string &name) : BaseTest(name) {}
+
+    template <class T>
+    bool operator()(T &&passed, const std::string &note = "") {
+        return (*this)(bool(std::forward<T>(passed)), note);
+    }
+    bool operator()(bool passed, const std::string &note = "") {
+        ++test_num;
+        TestResult result{passed};
+        result.note = note;
+        record_result(result);
+        return passed;
+    }
+};
 
 } // namespace unit_test
 

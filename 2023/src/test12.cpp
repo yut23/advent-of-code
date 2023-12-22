@@ -59,8 +59,7 @@ std::size_t test_repeat() {
     test(".#?. 2,1", 3, ".#?.?.#?.?.#?. 2,1,2,1,2,1");
     test(".?. 1", 1, ".?. 1");
 
-    test.done();
-    return test.num_failed();
+    return test.done(), test.num_failed();
 }
 
 } // namespace aoc::day12::test
