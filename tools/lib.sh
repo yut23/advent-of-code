@@ -13,6 +13,10 @@ if ! [[ -v AOC_PWD ]] && [[ $PWD != "${PWD#"$AOC_ROOT/"}" ]]; then
   fi
 fi
 
+pad_day_number() {
+  printf '%02d\n' "${1#0}"
+}
+
 # usage: parse_day_args [day [year]] | read -r day year
 parse_day_args() {
   local day year

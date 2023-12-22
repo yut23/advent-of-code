@@ -7,6 +7,12 @@ source "$AOC_ROOT/tools/lib.sh"
 # cd to the base directory for this year
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
+if ! command -v bear &> /dev/null; then
+  # just run make if bear isn't present
+  make "$@"
+  exit
+fi
+
 # check if the makefile is newer than the compilation database
 if [[ Makefile -nt compile_commands.json ]]; then
   echo "Makefile changed, rebuilding entire compilation database..."
@@ -32,12 +38,9 @@ if printf '3.1.0\n%s\n' "$(bear --version | cut -d' ' -f2)" | sort -V -C; then
 else
   BEAR_PREFIX=
 fi
-set +e
 # this is a variable expansion for make, not bash
 # shellcheck disable=SC2016
-INTERCEPT_WRAPPER="$BEAR_PREFIX"'intercept --output $(@:.o=_events.json) --' make "$@"
-ret=$?
-set -e
+INTERCEPT_WRAPPER="$BEAR_PREFIX"'intercept --output $(@:.o=_events.json) --' make "$@" && ret=$? || ret=$?
 
 shopt -s nullglob globstar
 events=(build/**/*_events.json)

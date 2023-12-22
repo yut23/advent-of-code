@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: aoc [day] [-t] [-d|-f] [--gdb] [-e [example number]|-i <input file name>]"
+  echo "Usage: aoc [day] [-t] [-q] [-d|-f] [--gdb] [-e [example number] [-w]|-i <input file name>]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
@@ -16,6 +16,8 @@ day=$(TZ='America/New_York' date +%-d)
 bin_dir=build/release
 memory_limit=4G
 prefix_args=()
+make_args=()
+write_answer=n
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
@@ -30,6 +32,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -t|--time)
       prefix_args=(/usr/bin/time)
+      shift
+      ;;
+    -q|--quiet|--silent)
+      make_args+=(--silent)
       shift
       ;;
     -m|--memory-limit)
@@ -51,14 +57,19 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -w|--write-answer)
+      write_answer=y
+      shift
+      ;;
     --gdb)
       bin_dir=build/debug
       prefix_args=(gdb --args)
       # run directly in the terminal
       memory_limit=none
-      # Both gdb and LeakSanitizer use ptrace, but only one process can attach
-      # at a time
-      ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=0
+      # detect_leaks=0:   Both gdb and LeakSanitizer use ptrace, but only one
+      #                   process can attach at a time
+      # abort_on_error=1: Break into gdb after a memory error is detected
+      ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=0:abort_on_error=1
       shift
       ;;
     -h|--help)
@@ -84,8 +95,7 @@ while [[ $# -gt 0 ]]; do
   first_iter=n
 done
 
-# pad with zeros to two digits
-day=$(printf '%02d' "${day#0}")
+day=$(pad_day_number "$day")
 
 input_path="input/day$day/$input_name"
 if ! [[ -e "$input_path" ]]; then
@@ -100,14 +110,29 @@ fi
 binary=$bin_dir/day$day
 
 # rebuild if make says it's necessary
-make_quiet "$binary"
+make_quiet "${make_args[@]}" "$binary"
 
-echo "Day ${day#0}:"
+if [[ $write_answer != y ]]; then
+  echo "Day ${day#0}:"
+fi
 args=("${prefix_args[@]}" "$binary" "$input_path")
 
 # run on the specified input
 exit_code=0
-if [[ $memory_limit = none ]]; then
+if [[ $write_answer == y ]]; then
+  output="answer_tests/${input_path#input/}"
+  out_dir="$(dirname "$output")"
+  mkdir -p "$out_dir"
+  tmp_output="$(mktemp -p "$out_dir")"
+  echo "Day ${day#0}:" > "$tmp_output"
+  "${args[@]}" >> "$tmp_output" || exit_code=$?
+  cat "$tmp_output"
+  if [[ $exit_code -eq 0 ]]; then
+    mv "$tmp_output" "$output" || true
+  else
+    rm -f "$tmp_output" || true
+  fi
+elif [[ $memory_limit == none ]]; then
   # have ASan print a backtrace when an assertion fails (which triggers an abort)
   ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
 else
