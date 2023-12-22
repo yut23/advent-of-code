@@ -8,7 +8,7 @@
 #include "day08.hpp"
 #include "lib.hpp"   // for parse_args, DEBUG
 #include <algorithm> // for max, any_of
-#include <cstddef>   // for size_t
+#include <cstdlib>   // for abs, size_t
 #include <iostream>  // for cout, cerr
 #include <numeric>   // for lcm
 #include <string>    // for string
