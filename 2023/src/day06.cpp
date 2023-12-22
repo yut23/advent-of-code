@@ -8,6 +8,7 @@
 #include "lib.hpp"
 #include <cmath>    // for sqrt
 #include <cstddef>  // for size_t
+#include <iomanip>  // for setprecision
 #include <iostream> // for cout
 #include <sstream>  // for istringstream, stringstream
 #include <string>   // for string, getline
@@ -38,12 +39,16 @@ long count_wins(long time, long distance) {
     //    x^2 - time*x + distance = 0
     // quadratic formula: (-b ± sqrt(b*b - 4*a*c)) / (2*a)
     double determinant = std::sqrt(time * time - 4 * distance);
-    long lo = (time - determinant) / 2;
-    // TODO: round this properly
-    long hi = (time + determinant - 0.5) / 2;
-    long count = hi - lo;
+    double lo = (time - determinant) / 2;
+    double hi = (time + determinant) / 2;
+    // upper bound is exclusive
+    if (std::trunc(hi) == hi) {
+        hi -= 1;
+    }
+    long count = static_cast<long>(hi) - static_cast<long>(lo);
     if constexpr (aoc::DEBUG) {
-        std::cerr << count << "\n";
+        std::cerr << count << " (" << std::setprecision(17) << hi << " - " << lo
+                  << ")\n";
     }
     return count;
 }
