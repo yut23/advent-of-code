@@ -8,7 +8,7 @@ endif
 INTERCEPT_WRAPPER ?=
 
 LOCAL_CXXFLAGS = -Wall -Wextra -O3 -std=c++20
-DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -g -Og -DDEBUG_MODE
+DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -g -O0 -DDEBUG_MODE
 LDFLAGS = -Wl,--as-needed
 FAST_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fno-omit-frame-pointer -DFAST_MODE
 PROFILE_CXXFLAGS = $(FAST_CXXFLAGS) -g
