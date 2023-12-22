@@ -57,6 +57,8 @@ class Target:
         for included_file in get_transitive_includes(src / f"{self}.cpp"):
             deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
+        for answer_test in self.base_dir.glob("answer_tests/*/*"):
+            deps.add(answer_test)
         return frozenset(deps)
 
 

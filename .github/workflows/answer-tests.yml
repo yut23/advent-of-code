@@ -1,4 +1,4 @@
-name: Test building C++ targets
+name: Run answer tests
 
 on:
   push:
@@ -53,3 +53,11 @@ jobs:
         run: |
           cd ${{ matrix.directory }}
           make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}
+
+      - name: Run answer tests
+        run: |
+          cd ${{ matrix.directory }}
+          if [[ -e run_answer_tests.sh ]]; then
+            make clean
+            ./run_answer_tests.sh ${{ matrix.target }}
+          fi
