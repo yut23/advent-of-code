@@ -138,7 +138,11 @@ elif [[ $memory_limit == none ]]; then
 else
   # limit memory usage using a systemd transient unit
   systemctl --quiet --user is-failed aoc.service && systemctl --user reset-failed aoc.service
+  # explicitly stop the unit on SIGINT, as systemd-run doesn't seem to handle
+  # it if any of the standard streams are redirected
+  trap 'systemctl --quiet --user is-active aoc.service && systemctl --quiet --user stop aoc.service; exit 1' INT
   systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
+  trap - INT
   if systemctl --quiet --user is-failed aoc.service; then
     result=$(systemctl --user show aoc | sed -ne 's/^Result=//p')
     if [[ $result == oom-kill ]]; then
