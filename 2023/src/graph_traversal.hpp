@@ -161,15 +161,16 @@ dijkstra(const Key &source,
     detail::maybe_unordered_map<Key, std::pair<int, Key>> distances{};
 
     using pq_key = std::pair<int, Key>;
-    std::priority_queue<pq_key, std::vector<pq_key>, std::greater<pq_key>> pq{};
+    std::priority_queue<pq_key, std::vector<pq_key>, std::greater<pq_key>>
+        frontier{};
 
     distances[source] = {0, source};
-    pq.emplace(0, source);
+    frontier.emplace(0, source);
 
-    while (!pq.empty()) {
-        auto [dist, current] = std::move(pq.top());
-        pq.pop();
-        if (dist != distances[current].first) {
+    while (!frontier.empty()) {
+        auto [dist, current] = std::move(frontier.top());
+        frontier.pop();
+        if (dist != distances.at(current).first) {
             continue;
         }
         if (visit.has_value()) {
@@ -201,11 +202,103 @@ dijkstra(const Key &source,
                 } else {
                     distances.try_emplace(neighbor, std::move(value));
                 }
-                pq.emplace(new_distance, neighbor);
+                frontier.emplace(new_distance, neighbor);
             }
         }
         if constexpr (use_visited) {
             visited.insert(std::move(current));
+        }
+    }
+    return {-1, {}};
+}
+
+/**
+ * Generic A* search on an arbitrary weighted graph.
+ *
+ * Returns the distance and path from the source to the first target found,
+ * or -1 and an empty path if not found.
+ */
+
+namespace detail {
+template <class Key>
+struct a_star_entry {
+    int estimate;
+    int dist;
+    Key key;
+
+    a_star_entry(int estimate, int dist, const Key &key)
+        : estimate(estimate), dist(dist), key(key) {}
+    a_star_entry(int estimate, int dist, Key &&key)
+        : estimate(estimate), dist(dist), key(std::move(key)) {}
+    // a_star_entry(const a_star_entry &) = default;
+    // a_star_entry(a_star_entry &&) = default;
+
+    auto operator<=>(const a_star_entry &) const = default;
+};
+} // namespace detail
+
+template <class Key, bool use_visited = false>
+std::pair<int, std::vector<Key>>
+a_star(const Key &source,
+       std::function<std::vector<Key>(const Key &)> get_neighbors,
+       std::function<int(const Key &, const Key &)> get_distance,
+       std::function<bool(const Key &)> is_target,
+       std::function<int(const Key &)> heuristic,
+       std::optional<std::function<void(const Key &, int)>> visit = {}) {
+    using Entry = detail::a_star_entry<Key>;
+
+    detail::maybe_unordered_set<Key> visited{};
+    detail::maybe_unordered_map<Key, Entry> distances{};
+    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>>
+        frontier{};
+
+    distances.emplace(source, Entry{heuristic(source), 0, source});
+    frontier.emplace(heuristic(source), 0, source);
+
+    while (!frontier.empty()) {
+        Entry curr = std::move(frontier.top());
+        frontier.pop();
+        {
+            const Entry &existing = distances.at(curr.key);
+            if (curr.dist != existing.dist) {
+                continue;
+            }
+        }
+        if (visit.has_value()) {
+            visit.value()(curr.key, curr.dist);
+        }
+        if (is_target(curr.key)) {
+            // reconstruct path
+            std::vector<Key> path{curr.key};
+            typename decltype(distances)::const_iterator it;
+            while (path.back() != source &&
+                   (it = distances.find(path.back())) != distances.end()) {
+                path.emplace_back(it->second.key);
+            }
+            std::ranges::reverse(path);
+            return {curr.dist, path};
+        }
+        for (const Key &neighbor : get_neighbors(curr.key)) {
+            if constexpr (use_visited) {
+                if (visited.contains(neighbor)) {
+                    continue;
+                }
+            }
+            int new_distance = curr.dist + get_distance(curr.key, neighbor);
+            auto it = distances.find(neighbor);
+            if (it == distances.end() || new_distance < it->second.dist) {
+                int new_estimate = new_distance + heuristic(neighbor);
+                Entry new_entry{new_estimate, new_distance, curr.key};
+                if (it != distances.end()) {
+                    it->second = std::move(new_entry);
+                } else {
+                    distances.try_emplace(neighbor, std::move(new_entry));
+                }
+                frontier.emplace(new_estimate, new_distance, neighbor);
+            }
+        }
+        if constexpr (use_visited) {
+            visited.insert(std::move(curr.key));
         }
     }
     return {-1, {}};
@@ -258,7 +351,8 @@ using Key1 = std::pair<int, int>;
     std::function<bool(const Key1 &)> is_target,
     std::function<void(const Key1 &, int)> visit,
     std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
-    std::function<int(const Key1 &, const Key1 &)> get_distance) {
+    std::function<int(const Key1 &, const Key1 &)> get_distance,
+    std::function<int(const Key1 &)> heuristic) {
     bfs<Key1>(source, get_neighbors);
     bfs<Key1>(source, get_neighbors, is_target);
     bfs<Key1>(source, get_neighbors, {}, visit);
@@ -279,6 +373,10 @@ using Key1 = std::pair<int, int>;
     dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target);
     dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target, visit);
 
+    a_star<Key1>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<Key1>(source, get_neighbors, get_distance, is_target, heuristic,
+                 visit);
+
     shortest_distances<Key1>(source, get_neighbors, get_distance);
 }
 using Key2 = int;
@@ -288,7 +386,8 @@ using Key2 = int;
     std::function<bool(const Key2 &)> is_target,
     std::function<void(const Key2 &, int)> visit,
     std::function<void(const Key2 &, const Key2 &, int)> visit_with_parent,
-    std::function<int(const Key2 &, const Key2 &)> get_distance) {
+    std::function<int(const Key2 &, const Key2 &)> get_distance,
+    std::function<int(const Key2 &)> heuristic) {
     bfs<Key2>(source, get_neighbors);
     bfs<Key2>(source, get_neighbors, is_target);
     bfs<Key2>(source, get_neighbors, {}, visit);
@@ -308,6 +407,10 @@ using Key2 = int;
                           visit);
     dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target);
     dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target, visit);
+
+    a_star<Key2>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<Key2>(source, get_neighbors, get_distance, is_target, heuristic,
+                 visit);
 
     shortest_distances<Key2>(source, get_neighbors, get_distance);
 }

@@ -113,6 +113,7 @@ int CityMap::find_shortest_path(bool ultra) const {
         };
     }
 #endif
+#if 0
     const auto &[distance, path] = aoc::graph::dijkstra<Key>(
         source, std::bind_front(&CityMap::get_neighbors, this, ultra),
         std::bind_front(&CityMap::get_distance, this),
@@ -120,6 +121,18 @@ int CityMap::find_shortest_path(bool ultra) const {
             return key.pos == target && (!ultra || key.move_count >= 4);
         },
         visit);
+#else
+    const auto &[distance, path] = aoc::graph::a_star<Key>(
+        source, std::bind_front(&CityMap::get_neighbors, this, ultra),
+        std::bind_front(&CityMap::get_distance, this),
+        [&target, ultra](const Key &key) -> bool {
+            return key.pos == target && (!ultra || key.move_count >= 4);
+        },
+        [&target](const Key &key) -> int {
+            return (key.pos - target).manhattan_distance();
+        },
+        visit);
+#endif
     if constexpr (aoc::DEBUG) {
         if (distance >= 0) {
             std::cerr << "found path with distance " << distance << ", length "
