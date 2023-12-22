@@ -46,11 +46,17 @@ jobs:
             sudo apt-get -qq -y install g++
           fi
 
+      - name: Build targets
+        run: |
+          cd ${{ matrix.directory }}
+          if [[ -e run_answer_tests.sh ]]; then
+            make -j2 CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
+          fi
+
       - name: Run answer tests
         timeout-minutes: 2
         run: |
           cd ${{ matrix.directory }}
           if [[ -e run_answer_tests.sh ]]; then
-            make clean
             ./run_answer_tests.sh ${{ matrix.target }}
           fi
