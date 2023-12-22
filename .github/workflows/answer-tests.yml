@@ -55,6 +55,7 @@ jobs:
           make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}
 
       - name: Run answer tests
+        timeout-minutes: 3
         run: |
           cd ${{ matrix.directory }}
           if [[ -e run_answer_tests.sh ]]; then
