@@ -27,7 +27,7 @@ struct Platform {
     std::vector<std::vector<Rock>> grid;
 
   private:
-    bool is_in_bounds(const Pos &pos) {
+    bool is_in_bounds(const Pos &pos) const {
         return pos.x >= 0 && pos.y >= 0 &&
                static_cast<std::size_t>(pos.y) < grid.size() &&
                static_cast<std::size_t>(pos.x) < grid[pos.y].size();

@@ -50,9 +50,9 @@ long part_2_slow(const std::vector<aoc::day08::CycleInfo> &cycles) {
     std::vector<long> diffs;
     if (base_cycle.entries.size() > 1) {
         for (std::size_t i = 0; i < base_cycle.entries.size(); ++i) {
-            diffs.push_back(
+            diffs.push_back(std::abs(
                 base_cycle.entries[(i + 1) % base_cycle.entries.size()].step -
-                base_cycle.entries[i].step);
+                base_cycle.entries[i].step));
         }
     } else {
         diffs.push_back(base_cycle.length);

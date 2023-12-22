@@ -39,7 +39,8 @@ long count_wins(long time, long distance) {
     // quadratic formula: (-b ± sqrt(b*b - 4*a*c)) / (2*a)
     double determinant = std::sqrt(time * time - 4 * distance);
     long lo = (time - determinant) / 2;
-    long hi = (time + determinant) / 2;
+    // TODO: round this properly
+    long hi = (time + determinant - 0.5) / 2;
     long count = hi - lo;
     if constexpr (aoc::DEBUG) {
         std::cerr << count << "\n";

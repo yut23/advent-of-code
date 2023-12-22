@@ -104,6 +104,12 @@ struct PipeGrid {
         }
     }
 
+    bool in_bounds(const Pos &pos) const {
+        return pos.x >= 0 && pos.y >= 0 &&
+               static_cast<std::size_t>(pos.y) < pipes.size() &&
+               static_cast<std::size_t>(pos.x) < pipes[pos.y].size();
+    }
+
   public:
     explicit PipeGrid(const std::vector<std::vector<Pipe>> &pipes)
         : pipes(pipes) {
@@ -163,8 +169,11 @@ struct PipeIterator {
 PipeIterator PipeGrid::begin() const {
     for (AbsDirection dir : {AbsDirection::east, AbsDirection::north,
                              AbsDirection::west, AbsDirection::south}) {
-        Pipe neighbor = at(start_pos + Delta(dir, true));
-        std::optional<AbsDirection> out_dir = get_out_dir(neighbor, dir);
+        Pos pos = start_pos + Delta(dir, true);
+        if (!in_bounds(pos)) {
+            continue;
+        }
+        std::optional<AbsDirection> out_dir = get_out_dir(at(pos), dir);
         if (out_dir) {
             return PipeIterator(*this, start_pos, dir);
         }
