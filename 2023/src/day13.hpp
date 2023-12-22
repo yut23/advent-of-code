@@ -14,6 +14,7 @@
 #include <string>    // for string, getline
 #include <utility>   // for move
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity, equal_to (ranges::mismatch)
 
 namespace aoc::day13 {
 

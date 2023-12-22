@@ -8,5 +8,19 @@
 { symbol: ["std::istringstream", "private", "<sstream>", "public" ] },
 { symbol: ["std::ostringstream", "private", "<sstream>", "public" ] },
 { symbol: ["std::pair", "private", "<utility>", "public" ] },
+{ symbol: ["std::swap", "private", "<utility>", "public" ] },
+{ symbol: ["std::hash", "private", "<functional>", "public" ] },
+# not in from <ranges>, according to cppreference
+{ symbol: ["std::ranges::find", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::__find_fn", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::find_if", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::__find_if_fn", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::mismatch", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::__mismatch_fn", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::ranges::mismatch_result", "private", "<algorithm>", "public" ] },
+# I get these from iostream
+{ symbol: ["std::istream", "private", "<iostream>", "public" ] },
+{ symbol: ["std::ostream", "private", "<iostream>", "public" ] },
+# this is internal
 { include: ["<bits/std_abs.h>", "private", "<cstdlib>", "public" ] },
 ]

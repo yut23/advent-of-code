@@ -5,17 +5,19 @@
  * Created:     2023-12-15
  *****************************************************************************/
 
-#include "day12.hpp"
+#include "day12.hpp" // IWYU pragma: associated
 #include "unit_test/unit_test.hpp"
 #include <cstddef> // for size_t
 #include <sstream> // for istringstream, ostringstream
 #include <string>  // for string
+#include <vector>  // for vector
 
 namespace aoc::day12::test {
 
 ConditionRecord from_string(const std::string &text) {
     std::istringstream ss{text};
-    return read_records(ss)[0];
+    std::vector<ConditionRecord> records = read_records(ss);
+    return records[0];
 }
 
 std::size_t test_count_dp() {

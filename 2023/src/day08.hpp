@@ -17,6 +17,7 @@
 #include <string>    // for string
 #include <utility>   // for pair, make_pair, move
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::sort)
 
 namespace aoc::day08 {
 

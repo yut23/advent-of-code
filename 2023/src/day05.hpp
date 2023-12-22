@@ -9,12 +9,14 @@
 #define DAY05_HPP_BJU0DY58
 
 #include "lib.hpp"   // for skip
-#include <algorithm> // for find_if, transform, max, min
+#include <algorithm> // for find_if, transform, max, min, sort
+#include <compare>   // for strong_ordering
 #include <iostream>  // for istream, ostream, ws
 #include <sstream>   // for istringstream
 #include <string>    // for string, getline
 #include <utility>   // for move, forward
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::{sort,find_if,transform})
 
 namespace aoc::day05 {
 
@@ -29,7 +31,7 @@ struct Range {
         return value >= start && value < start + length;
     }
 
-    auto operator<=>(const Range &) const = default;
+    std::strong_ordering operator<=>(const Range &) const = default;
 };
 
 std::ostream &operator<<(std::ostream &os, const Range &r) {
@@ -54,7 +56,7 @@ struct MapEntry : public Range {
         return {};
     }
 
-    auto operator<=>(const MapEntry &other) const = default;
+    std::strong_ordering operator<=>(const MapEntry &other) const = default;
 };
 
 std::istream &operator>>(std::istream &is, MapEntry &entry) {

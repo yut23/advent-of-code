@@ -5,13 +5,13 @@
  * Created:     2023-12-01
  *****************************************************************************/
 
-#include "lib.hpp"
-#include <iostream> // for cout
-#include <iterator> // for distance
-#include <ranges>   // for find
-#include <regex>    // for regex, sregex_iterator
-#include <string>   // for string, getline
-#include <vector>   // for vector
+#include "lib.hpp"   // for parse_args
+#include <algorithm> // for find
+#include <iostream>  // for cout
+#include <iterator>  // for distance
+#include <regex>     // for regex, sregex_iterator
+#include <string>    // for string, getline
+#include <vector>    // for vector
 
 const std::vector<std::string> digit_names{
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
@@ -23,8 +23,9 @@ int parse_digit(std::string match, const bool reverse = false) {
         if (reverse) {
             match = std::string{match.rbegin(), match.rend()};
         }
-        return std::distance(digit_names.begin(),
-                             std::ranges::find(digit_names, match)) +
+        return std::distance(
+                   digit_names.begin(),
+                   std::find(digit_names.begin(), digit_names.end(), match)) +
                1;
     }
 }

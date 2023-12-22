@@ -13,6 +13,7 @@
 #include <set>      // for set
 #include <string>   // for string, getline, stoi
 #include <vector>   // for vector
+// IWYU pragma: no_include <utility>  // for pair (map)
 
 namespace aoc::day03 {
 

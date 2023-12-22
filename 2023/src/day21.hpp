@@ -9,11 +9,13 @@
 #define DAY21_HPP_2X5T9V1Y
 
 #include "graph_traversal.hpp"
-#include "lib.hpp"    // for AbsDirection, Pos, Delta
-#include <functional> // for bind_front
-#include <iostream>   // for istream, noskipws
-#include <limits>     // for numeric_limits
-#include <vector>     // for vector
+#include "lib.hpp"          // for AbsDirection, Pos, Delta
+#include <functional>       // for bind_front
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for istream, noskipws
+#include <limits>           // for numeric_limits
+#include <vector>           // for vector
+// IWYU pragma: no_include <algorithm>  // for copy
 
 namespace aoc::day21 {
 

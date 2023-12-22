@@ -6,11 +6,12 @@ AOC_ROOT="$(git rev-parse --show-toplevel)"
 source "$AOC_ROOT/tools/lib.sh"
 
 sources=()
-check_also=()
 tool_args=()
 iwyu_args=()
-arg_dest=tool_args
 while [[ $# -gt 0 ]]; do
+  if [[ $1 == -- ]]; then
+    break;
+  fi
   case $1 in
     *.cpp)
       sources+=("$1")
@@ -20,19 +21,28 @@ while [[ $# -gt 0 ]]; do
       iwyu_args+=(-Xiwyu --check_also="$1")
       shift
       ;;
-    --)
-      arg_dest=iwyu_args
+    --help)
+      iwyu-tool --help
+      printf '\n\n'
+      include-what-you-use --help
+      exit
+      ;;
+    -Xiwyu)
+      iwyu_args+=("$1" "$2")
+      shift 2
+      ;;
+    --verbose=*)
+      # pass directly to include-what-you-use
+      iwyu_args+=(-Xiwyu "$1")
       shift
       ;;
     *)
-      if [[ $arg_dest == tool_args ]]; then
-        tool_args+=("$1")
-      elif [[ $arg_dest == iwyu_args ]]; then
-        iwyu_args+=("$1")
-      fi
+      tool_args+=("$1")
       shift
       ;;
   esac
 done
+# add remaining arguments to include-what-you-use args
+iwyu_args+=("$@")
 
 iwyu-tool -p . "${tool_args[@]}" "${sources[@]}" -- --no-warnings -Xiwyu --quoted_includes_first -Xiwyu --max_line_length=300 -Xiwyu --mapping_file="$TOOLS_DIR/cpp/iwyu_mappings.imp" -resource-dir "$(clang -print-resource-dir)" "${iwyu_args[@]}"

@@ -17,6 +17,7 @@
 #include <string>    // for string, getline
 #include <utility>   // for pair, make_pair
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity (ranges::count_if)
 
 namespace aoc::day16 {
 

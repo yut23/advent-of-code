@@ -1,6 +1,7 @@
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
+#include <compare>  // for strong_ordering
 #include <cstddef>  // for size_t
 #include <iomanip>  // for quoted
 #include <iostream> // for ostream, defaultfloat, hexfloat
@@ -58,6 +59,18 @@ std::ostream &operator<<(std::ostream &os, const std::optional<T> &opt) {
         os << *opt;
     } else {
         os << "{}";
+    }
+    return os;
+}
+
+// strong_ordering
+std::ostream &operator<<(std::ostream &os, const std::strong_ordering &value) {
+    if (value < 0) {
+        os << "less";
+    } else if (value > 0) {
+        os << "greater";
+    } else {
+        os << "equal";
     }
     return os;
 }

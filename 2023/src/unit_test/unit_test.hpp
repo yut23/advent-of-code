@@ -3,6 +3,7 @@
 
 #include <algorithm>        // for transform, min
 #include <cassert>          // for assert
+#include <compare>          // for strong_ordering
 #include <cstddef>          // for size_t
 #include <cstdlib>          // for abs
 #include <filesystem>       // for path
@@ -207,9 +208,10 @@ To transform_tuple(Arg &from) {
  *                  argument_traits specializations                   *
  **********************************************************************/
 
-// arithmetic types and strings don't need any special handling
+// these types don't need any special handling
 template <class T>
-    requires std::is_arithmetic_v<T> || std::is_same_v<T, std::string>
+    requires std::is_arithmetic_v<T> || std::is_same_v<T, std::string> ||
+             std::is_same_v<T, std::strong_ordering>
 struct argument_traits<T> : detail::base_argument_traits<T> {};
 
 // vector

@@ -15,6 +15,7 @@
 #include <string>   // for string
 #include <utility>  // for move, pair
 #include <vector>   // for vector
+// IWYU pragma: no_include <algorithm>  // for copy
 
 namespace aoc::day18 {
 

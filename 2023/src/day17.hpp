@@ -11,15 +11,17 @@
 #include "graph_traversal.hpp" // for dijkstra
 #include "lib.hpp" // for Pos, AbsDirection, Delta, opposite, DEBUG, as_number
 
-#include <algorithm>     // for transform
-#include <functional>    // for function, bind_front
-#include <iostream>      // for cerr, istream, ostream
-#include <iterator>      // for back_inserter
-#include <optional>      // for optional
-#include <string>        // for string, getline
-#include <unordered_map> // for unordered_map
-#include <utility>       // for move, pair
-#include <vector>        // for vector
+#include <algorithm>        // for transform
+#include <compare>          // for strong_ordering
+#include <functional>       // for function, bind_front
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for cerr, istream, ostream
+#include <iterator>         // for back_inserter
+#include <optional>         // for optional
+#include <string>           // for string, getline
+#include <unordered_map>    // for unordered_map
+#include <utility>          // for move, pair
+#include <vector>           // for vector
 
 namespace aoc::day17 {
 
@@ -29,7 +31,7 @@ class CityMap {
         AbsDirection dir;
         int move_count;
 
-        auto operator<=>(const Key &) const = default;
+        std::strong_ordering operator<=>(const Key &) const = default;
     };
 
     std::vector<std::vector<unsigned char>> block_costs;

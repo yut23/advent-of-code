@@ -74,7 +74,7 @@ long ConditionRecord::count_arrangements(std::size_t spring_idx,
         long count = it == springs.end() ? 1 : 0;
         if constexpr (aoc::DEBUG) {
             if (count == 0) {
-                std::cerr << "found unmatched bad spring at index "
+                std::cerr << pad << "found unmatched bad spring at index "
                           << std::distance(springs.begin(), it) << "\n";
             } else {
                 std::cerr << pad << "got final count = 1\n";

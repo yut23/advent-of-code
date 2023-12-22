@@ -5,32 +5,19 @@
  * Created:     2023-12-07
  *****************************************************************************/
 
-#include <compare>  // for strong_ordering
-#include <iostream> // for ostream
-
-std::ostream &operator<<(std::ostream &os, const std::strong_ordering &value) {
-    if (value < 0) {
-        os << "less";
-    } else if (value > 0) {
-        os << "greater";
-    } else {
-        os << "equal";
-    }
-    return os;
-}
-
-#include "day07.hpp"
+#include "day07.hpp" // IWYU pragma: associated
 #include "unit_test/unit_test.hpp"
+#include <compare> // for strong_ordering
 #include <cstddef> // for size_t
 #include <sstream> // for istringstream
+#include <string>  // for string
+#include <vector>  // for vector
 
+// IWYU pragma: no_forward_declare unit_test::argument_traits
 namespace unit_test {
 template <>
 struct argument_traits<aoc::day07::Hand>
     : detail::base_argument_traits<aoc::day07::Hand> {};
-template <>
-struct argument_traits<std::strong_ordering>
-    : detail::base_argument_traits<std::strong_ordering> {};
 } // namespace unit_test
 
 namespace aoc::day07::test {

@@ -17,6 +17,7 @@
 #include <unordered_map> // for unordered_map
 #include <utility>       // for move, forward
 #include <vector>        // for vector
+// IWYU pragma: no_include <functional>  // for hash (unordered_map)
 
 namespace aoc::day20 {
 

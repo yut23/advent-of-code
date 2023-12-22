@@ -14,6 +14,7 @@
 #include <set>       // for set
 #include <string>    // for string, getline
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity (ranges::transform)
 
 namespace aoc::day11 {
 

@@ -12,6 +12,7 @@
 #include <iostream>  // for cout, cerr
 #include <numeric>   // for lcm
 #include <string>    // for string
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::{max,any_of})
 
 int part_1(const std::string &directions, const aoc::day08::Network &network) {
     int steps = 0;

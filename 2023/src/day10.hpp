@@ -8,16 +8,18 @@
 #ifndef DAY10_HPP_CJA1L45J
 #define DAY10_HPP_CJA1L45J
 
-#include "lib.hpp"   // for AbsDirection, Pos, Delta, DEBUG
-#include <algorithm> // for transform
-#include <cassert>   // for assert
-#include <cstddef>   // for size_t
-#include <iostream>  // for cerr, istream
-#include <iterator>  // for back_inserter
-#include <optional>  // for optional
-#include <string>    // for string, getline
-#include <utility>   // for move
-#include <vector>    // for vector
+#include "lib.hpp"          // for AbsDirection, Pos, Delta, DEBUG
+#include <algorithm>        // for transform
+#include <cassert>          // for assert
+#include <cstddef>          // for size_t
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for cerr, istream
+#include <iterator>         // for back_inserter
+#include <optional>         // for optional
+#include <string>           // for string, getline
+#include <utility>          // for move
+#include <vector>           // for vector
+// IWYU pragma: no_include <functional>  // for identity (ranges::transform)
 
 namespace aoc::day10 {
 

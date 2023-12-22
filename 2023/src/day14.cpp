@@ -11,6 +11,8 @@
 #include <array>     // for array
 #include <iostream>  // for cout, cerr
 #include <map>       // for map
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::sort)
+// IWYU pragma: no_include <utility>  // for pair (map)
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);

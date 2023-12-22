@@ -12,6 +12,7 @@
 #include <stack>     // for stack
 #include <string>    // for string, getline
 #include <vector>    // for vector
+// IWYU pragma: no_include <functional>  // for identity (ranges::any_of)
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);

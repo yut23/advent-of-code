@@ -5,13 +5,14 @@
  * Created:     2023-12-05
  *****************************************************************************/
 
-#include "day05.hpp"
+#include "day05.hpp" // IWYU pragma: associated
 #include "unit_test/unit_test.hpp"
 #include <cstddef>  // for size_t
 #include <iterator> // for distance
 #include <numeric>  // for iota
 #include <vector>   // for vector
 
+// IWYU pragma: no_forward_declare unit_test::argument_traits
 namespace unit_test {
 template <>
 struct argument_traits<aoc::day05::ConversionMap>

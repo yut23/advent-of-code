@@ -7,10 +7,11 @@
 
 #include "day05.hpp"
 #include "lib.hpp"   // for parse_args, DEBUG
-#include <algorithm> // for min_element
+#include <algorithm> // for min_element, sort
 #include <cstddef>   // for size_t
 #include <iostream>  // for cerr, cout, ws
 #include <limits>    // for numeric_limits
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::{min_element,sort})
 
 long part_1(const std::vector<long> &seeds,
             const std::vector<aoc::day05::ConversionMap> &maps) {
