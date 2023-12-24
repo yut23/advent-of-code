@@ -20,7 +20,7 @@ jobs:
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT "test"
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT unit
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}

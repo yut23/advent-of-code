@@ -20,7 +20,7 @@ jobs:
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT "day"
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT answer
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}
@@ -52,14 +52,10 @@ jobs:
           if [[ ${{ matrix.stdlib }} == libc++ ]]; then
             export USE_LIBCXX=TRUE
           fi
-          if [[ -e run_answer_tests.sh ]]; then
-            make -j2 CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
-          fi
+          make -j2 CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
 
       - name: Run answer tests
         timeout-minutes: 2
         run: |
           cd ${{ matrix.directory }}
-          if [[ -e run_answer_tests.sh ]]; then
-            ./run_answer_tests.sh ${{ matrix.target }}
-          fi
+          ./run_answer_tests.sh ${{ matrix.target }}
