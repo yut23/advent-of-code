@@ -12,7 +12,12 @@ run_test() {
   # just the basename
   input=$(basename "$2")
   output=$3
-  ./aoc "$day" -q -i "$input" | diff "$output" - && ret=$? || ret=$?
+  args=()
+  if [[ -n ${GITHUB_ACTIONS:+x} ]]; then
+    # don't use systemd-run when running on GHA
+    args+=(-m none)
+  fi
+  ./aoc "$day" -q "${args[@]}" -i "$input" | diff "$output" - && ret=$? || ret=$?
   if [[ $ret -eq 0 ]]; then
     printf 'Day %2d, %s: answer test \033[32mpassed\033[0m\n' "${day#0}" "$input"
   else
