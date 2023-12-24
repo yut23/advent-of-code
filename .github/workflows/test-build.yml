@@ -49,4 +49,7 @@ jobs:
       - name: Build targets
         run: |
           cd ${{ matrix.directory }}
+          if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+            export USE_LIBCXX=TRUE
+          fi
           make -j2 CXX=${{ matrix.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.target }} build/debug/${{ matrix.target }} build/fast/${{ matrix.target }}

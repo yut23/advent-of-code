@@ -67,12 +67,14 @@ class Target:
 class Config:
     target: Target
     compiler: str
+    stdlib: str = "libstdc++"
 
     def to_dict(self) -> dict[str, str]:
         return {
             "directory": str(self.target.base_dir),
             "target": str(self.target),
             "compiler": self.compiler,
+            "stdlib": self.stdlib,
         }
 
 
@@ -120,6 +122,7 @@ class Matrix:
 
     def add_config(self, target: Target) -> None:
         self.configs.add(Config(target=target, compiler="clang++"))
+        self.configs.add(Config(target=target, compiler="clang++", stdlib="libc++"))
         self.configs.add(Config(target=target, compiler="g++"))
 
     def write_combinations(self, output_file: str) -> None:

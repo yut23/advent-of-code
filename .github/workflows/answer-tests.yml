@@ -49,6 +49,9 @@ jobs:
       - name: Build targets
         run: |
           cd ${{ matrix.directory }}
+          if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+            export USE_LIBCXX=TRUE
+          fi
           if [[ -e run_answer_tests.sh ]]; then
             make -j2 CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
           fi
