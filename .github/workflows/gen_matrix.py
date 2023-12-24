@@ -129,7 +129,7 @@ class Matrix:
 
     def add_config(self, target: Target) -> None:
         self.configs.add(Config(target=target, compiler="clang++"))
-        self.configs.add(Config(target=target, compiler="clang++", stdlib="libc++"))
+        self.configs.add(Config(target=target, compiler="clang++-17", stdlib="libc++"))
         self.configs.add(Config(target=target, compiler="g++"))
 
     def write_combinations(self, output_file: str) -> None:

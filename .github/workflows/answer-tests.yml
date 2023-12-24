@@ -32,30 +32,53 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix-combinations) }}
+    container: ubuntu:latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.directory }}
     steps:
+      - name: Install git
+        working-directory: /
+        run: |
+          apt-get -qq -y update
+          apt-get -qq -y install git
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Install compiler
         run: |
-          sudo apt-get -qq -y update
-          if [[ ${{ matrix.compiler }} == clang++ ]]; then
-            sudo apt-get -qq -y install clang
+          apt-get -qq -y install build-essential
+          apt-get -qq -y install lsb-release wget software-properties-common gnupg
+          if [[ ${{ matrix.compiler }} == clang++-* ]]; then
+            # install clang and libc++ from the LLVM nightly repository
+            LLVM_VERSION=${{ matrix.compiler }}
+            LLVM_VERSION=${LLVM_VERSION#clang++-}
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            ./llvm.sh $LLVM_VERSION
+            if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+              apt-get -y install libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev
+            fi
+          elif [[ ${{ matrix.compiler }} == clang++ ]]; then
+            apt-get -y install clang
           else
-            sudo apt-get -qq -y install g++
+            apt-get -y install g++
           fi
 
       - name: Build targets
         run: |
-          cd ${{ matrix.directory }}
           if [[ ${{ matrix.stdlib }} == libc++ ]]; then
             export USE_LIBCXX=TRUE
           fi
-          make -j2 CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
+          ${{ matrix.compiler }} --version
+          make CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
 
       - name: Run answer tests
         timeout-minutes: 2
         run: |
-          cd ${{ matrix.directory }}
+          # mark git checkout as safe
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ./run_answer_tests.sh ${{ matrix.target }}
