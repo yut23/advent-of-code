@@ -8,6 +8,7 @@
 #include "day05.hpp"
 #include "lib.hpp"   // for parse_args, DEBUG
 #include <algorithm> // for min_element, sort
+#include <cassert>   // for assert
 #include <cstddef>   // for size_t
 #include <iostream>  // for cerr, cout, ws
 #include <limits>    // for numeric_limits
@@ -32,6 +33,7 @@ long part_2(const std::vector<long> &seeds,
      */
     using namespace aoc::day05;
     std::vector<Range> seed_ranges;
+    assert(seeds.size() % 2 == 0);
     for (std::size_t i = 0; i < seeds.size(); i += 2) {
         seed_ranges.emplace_back(seeds[i], seeds[i + 1]);
     }
