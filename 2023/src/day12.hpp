@@ -69,8 +69,11 @@ long ConditionRecord::count_arrangements(std::size_t spring_idx,
     }
     std::string pad((depth + 1) * 2, ' ');
     if (group_idx == groups.size()) {
-        auto it =
-            std::find(springs.begin() + spring_idx, springs.end(), Spring::bad);
+        auto it = springs.end();
+        if (spring_idx < springs.size()) {
+            it = std::find(springs.begin() + spring_idx, springs.end(),
+                           Spring::bad);
+        }
         long count = it == springs.end() ? 1 : 0;
         if constexpr (aoc::DEBUG) {
             if (count == 0) {
