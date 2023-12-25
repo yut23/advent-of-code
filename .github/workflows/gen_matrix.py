@@ -50,16 +50,19 @@ class Target:
         assert m is not None, source_file
         return cls(base_dir=base_dir, day=int(m["day"]), prefix=m["prefix"])
 
-    def get_deps(self) -> frozenset[Path]:
+    def get_deps(self, mode: str) -> frozenset[Path]:
         deps = set()
         src = self.base_dir / "src"
         deps.add(src / f"{self}.cpp")
         for included_file in get_transitive_includes(src / f"{self}.cpp"):
             deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
-        if self.prefix == "day":
+        if mode == "answer":
             for answer_test in self.base_dir.glob("answer_tests/*/*"):
                 deps.add(answer_test)
+            run_answer_tests = self.base_dir / "run_answer_tests.sh"
+            if run_answer_tests.exists():
+                deps.add(run_answer_tests.resolve())
         return frozenset(deps)
 
 
@@ -67,12 +70,14 @@ class Target:
 class Config:
     target: Target
     compiler: str
+    stdlib: str = "libstdc++"
 
     def to_dict(self) -> dict[str, str]:
         return {
             "directory": str(self.target.base_dir),
             "target": str(self.target),
             "compiler": self.compiler,
+            "stdlib": self.stdlib,
         }
 
 
@@ -89,29 +94,33 @@ def find_base_dirs() -> list[Path]:
 
 
 class Matrix:
-    def __init__(self, target_regex: str | None = None) -> None:
-        if target_regex is not None:
-            target_pat = re.compile(target_regex)
-        else:
-            target_pat = None
+    def __init__(self, mode: str) -> None:
+        if mode == "unit":
+            target_pat = re.compile("test")
+        elif mode == "build":
+            target_pat = re.compile("day|test")
+        elif mode == "answer":
+            target_pat = re.compile("day")
         self.configs: set[Config] = set()
 
         self.targets: list[Target] = []
         for base_dir in find_base_dirs():
+            if mode == "answer" and not (base_dir / "run_answer_tests.sh").exists():
+                continue
             for target in enumerate_targets(base_dir):
-                if target_pat is None or target_pat.match(target.prefix):
+                if target_pat.match(target.prefix):
                     self.targets.append(target)
         self.targets.sort()
 
         self.file_lookup: dict[Path, list[Target]] = defaultdict(list)
         for target in self.targets:
-            for dep in target.get_deps():
+            for dep in target.get_deps(mode):
                 self.file_lookup[dep].append(target)
 
         self.file_lookup[Path(".github/workflows/gen_matrix.py")] = self.targets
         for file in Path().glob(".github/workflows/*.yml"):
             with open(file, "r") as f:
-                if "gen_matrix.py" in f.read():
+                if mode in file.name and "gen_matrix.py" in f.read():
                     self.file_lookup[file] = self.targets
 
     def process_changed_file(self, file: Path) -> None:
@@ -120,6 +129,7 @@ class Matrix:
 
     def add_config(self, target: Target) -> None:
         self.configs.add(Config(target=target, compiler="clang++"))
+        self.configs.add(Config(target=target, compiler="clang++-17", stdlib="libc++"))
         self.configs.add(Config(target=target, compiler="g++"))
 
     def write_combinations(self, output_file: str) -> None:
@@ -141,9 +151,9 @@ class Matrix:
 def main() -> None:
     changed_files_json = sys.argv[1]
     output_file = sys.argv[2]
-    target_regex = sys.argv[3] if len(sys.argv) > 3 else None
+    mode = sys.argv[3]
 
-    matrix = Matrix(target_regex)
+    matrix = Matrix(mode)
 
     for f in json.loads(changed_files_json):
         print(f"  {f}")

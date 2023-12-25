@@ -1,6 +1,6 @@
 name: Run unit tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   setup-matrix:
@@ -20,7 +20,7 @@ jobs:
       # reference: https://stackoverflow.com/a/65094398
       - name: Setup matrix combinations
         id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT "test"
+        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT unit
 
     outputs:
       matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}
@@ -32,26 +32,49 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix-combinations) }}
+    container: ubuntu:latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.directory }}
     steps:
+      - name: Install git
+        working-directory: /
+        run: |
+          apt-get -qq -y update
+          apt-get -qq -y install git
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Install compiler
         run: |
-          sudo apt-get -qq -y update
-          if [[ ${{ matrix.compiler }} == clang++ ]]; then
-            sudo apt-get -qq -y install clang
+          apt-get -qq -y install build-essential
+          apt-get -qq -y install lsb-release wget software-properties-common gnupg
+          if [[ ${{ matrix.compiler }} == clang++-* ]]; then
+            # install clang and libc++ from the LLVM nightly repository
+            LLVM_VERSION=${{ matrix.compiler }}
+            LLVM_VERSION=${LLVM_VERSION#clang++-}
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            ./llvm.sh $LLVM_VERSION
+            if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+              apt-get -y install libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev
+            fi
+          elif [[ ${{ matrix.compiler }} == clang++ ]]; then
+            apt-get -y install clang
           else
-            sudo apt-get -qq -y install g++
+            apt-get -y install g++
           fi
 
       - name: Build test
         run: |
-          cd ${{ matrix.directory }}
+          if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+            export USE_LIBCXX=TRUE
+          fi
+          ${{ matrix.compiler }} --version
           make CXX=${{ matrix.compiler }} build/debug/${{ matrix.target }}
 
       - name: Run test
-        run: |
-          cd ${{ matrix.directory }}
-          make CXX=${{ matrix.compiler }} ${{ matrix.target }}
+        run: make CXX=${{ matrix.compiler }} ${{ matrix.target }}
