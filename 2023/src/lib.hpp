@@ -9,7 +9,7 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include <algorithm>  // for max
+#include <algorithm>  // for max, min
 #include <cassert>    // for assert
 #include <compare>    // for strong_ordering
 #include <cstdlib>    // for abs, size_t, exit
