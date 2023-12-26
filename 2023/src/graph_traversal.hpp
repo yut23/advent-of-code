@@ -95,8 +95,8 @@ int bfs(const Key &source,
  *
  * At least one of `is_target` and `visit_with_parent` must be passed.
  *
- * If passed, `visit_with_parent` will be called for each node, with the node,
- * its parent, and the depth at which it was found.
+ * If passed, `visit_with_parent(node, parent, depth)` will be called for each
+ * node.
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to true if the graph has
@@ -142,6 +142,105 @@ int dfs(const Key &source,
     };
 
     return helper(source, 0, source, helper);
+}
+
+/**
+ * Topologically sort a directed acyclic graph.
+ *
+ * Throws a std::invalid_argument exception if the graph contains any cycles.
+ */
+template <class Key>
+std::vector<Key>
+topo_sort(const Key &source,
+          std::function<std::vector<Key>(const Key &)> get_neighbors) {
+    detail::maybe_unordered_set<Key> temp_marks{};
+    detail::maybe_unordered_set<Key> perm_marks{};
+
+    std::vector<Key> ordered{};
+
+    auto visit = [&](const Key &n, auto &rec) -> void {
+        if (perm_marks.contains(n)) {
+            return;
+        }
+        if (temp_marks.contains(n)) {
+            throw std::invalid_argument("graph contains at least one cycle");
+        }
+        temp_marks.emplace(n);
+        for (const Key &neighbor : get_neighbors(n)) {
+            rec(neighbor, rec);
+        }
+        perm_marks.insert(temp_marks.extract(n));
+        ordered.emplace_back(n);
+    };
+
+    visit(source, visit);
+
+    std::ranges::reverse(ordered);
+
+    return ordered;
+}
+
+/**
+ * Longest path algorithm for a DAG.
+ */
+template <class Key>
+std::pair<int, std::vector<Key>>
+longest_path(const Key &source,
+             std::function<std::vector<Key>(const Key &)> get_neighbors,
+             std::function<int(const Key &, const Key &)> get_distance,
+             std::function<bool(const Key &)> is_target) {
+    std::vector<Key> ordering = topo_sort<Key>(source, get_neighbors);
+    detail::maybe_unordered_map<Key, std::pair<int, Key>> longest_path{};
+    // longest_path.try_emplace(source, std::make_pair(0, source));
+
+    // find all the incoming neighbors of each node
+    detail::maybe_unordered_map<Key, detail::maybe_unordered_set<Key>>
+        incoming_neighbors{};
+    incoming_neighbors[source] = {};
+    constexpr bool use_seen = false;
+    dfs<Key, use_seen>(
+        source, get_neighbors, {},
+        [&incoming_neighbors](const Key &node, const Key &parent, int) {
+            incoming_neighbors[node].emplace(parent);
+        });
+
+    // find longest path from source to each node
+    longest_path.emplace(source, std::make_pair(0, source));
+    for (const auto &key : ordering) {
+        std::pair<int, Key> max_distance = {0, key};
+        for (const auto parent : incoming_neighbors.at(key)) {
+            int new_distance = get_distance(parent, key);
+            const auto it = longest_path.find(parent);
+            if (it != longest_path.end()) {
+                new_distance += longest_path.at(parent).first;
+            }
+            if (new_distance > max_distance.first) {
+                max_distance = {new_distance, parent};
+            }
+        }
+        longest_path.try_emplace(key, std::move(max_distance));
+    }
+
+    // find furthest target from source
+    int max_distance = 0;
+    Key target = source;
+    for (const auto &[key, dist_pair] : longest_path) {
+        const int &distance = dist_pair.first;
+        if (is_target(key) && distance > max_distance) {
+            max_distance = distance;
+            target = key;
+        }
+    }
+
+    // reconstruct path from source to target
+    std::vector<Key> path{target};
+    typename decltype(longest_path)::const_iterator it;
+    while (path.back() != source &&
+           (it = longest_path.find(path.back())) != longest_path.end()) {
+        path.emplace_back(it->second.second);
+    }
+    std::ranges::reverse(path);
+    return {max_distance, path};
 }
 
 /**
@@ -367,6 +466,10 @@ using Key1 = std::pair<int, int>;
     dfs<Key1, false>(source, get_neighbors, {}, visit_with_parent);
     dfs<Key1, false>(source, get_neighbors, is_target, visit_with_parent);
 
+    topo_sort<Key1>(source, get_neighbors);
+
+    longest_path<Key1>(source, get_neighbors, get_distance, is_target);
+
     dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target);
     dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target,
                           visit);
@@ -401,6 +504,10 @@ using Key2 = int;
     dfs<Key2, false>(source, get_neighbors, is_target);
     dfs<Key2, false>(source, get_neighbors, {}, visit_with_parent);
     dfs<Key2, false>(source, get_neighbors, is_target, visit_with_parent);
+
+    topo_sort<Key2>(source, get_neighbors);
+
+    longest_path<Key2>(source, get_neighbors, get_distance, is_target);
 
     dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target);
     dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target,
