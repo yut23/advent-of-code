@@ -208,7 +208,7 @@ longest_path(const Key &source,
     longest_path.emplace(source, std::make_pair(0, source));
     for (const auto &key : ordering) {
         std::pair<int, Key> max_distance = {0, key};
-        for (const auto parent : incoming_neighbors.at(key)) {
+        for (const auto &parent : incoming_neighbors.at(key)) {
             int new_distance = get_distance(parent, key);
             const auto it = longest_path.find(parent);
             if (it != longest_path.end()) {
