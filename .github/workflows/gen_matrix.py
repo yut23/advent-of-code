@@ -58,11 +58,12 @@ class Target:
             deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
         if mode == "answer":
-            for answer_test in self.base_dir.glob("answer_tests/*/*"):
+            for answer_test in self.base_dir.glob(f"answer_tests/{self}/*"):
                 deps.add(answer_test)
+                deps.add(self.base_dir / f"input/{self}/{answer_test.name}")
             run_answer_tests = self.base_dir / "run_answer_tests.sh"
-            if run_answer_tests.exists():
-                deps.add(run_answer_tests.resolve())
+            assert run_answer_tests.exists()
+            deps.add(run_answer_tests.resolve())
         return frozenset(deps)
 
 
