@@ -8,6 +8,8 @@
 #ifndef DAY25_HPP_PXSWLG7Y
 #define DAY25_HPP_PXSWLG7Y
 
+#include "data_structures.hpp" // for pairing_heap
+
 #include <cassert>       // for assert
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream, cerr
@@ -36,9 +38,6 @@ class Graph {
     void remove_vertex(const vertex_t &u);
 
     void merge_vertices(const vertex_t &u, const vertex_t &v);
-
-    std::pair<weight_t, vertex_t>
-    find_most_tightly_connected(const std::unordered_set<vertex_t> &A) const;
 
   public:
     vertex_t get_arbitrary_vertex() const { return edges.begin()->first; }
@@ -90,39 +89,37 @@ void Graph::merge_vertices(const vertex_t &s, const vertex_t &t) {
 
 // Stoer-Wagner minimum cut algorithm
 
-std::pair<weight_t, vertex_t> Graph::find_most_tightly_connected(
-    const std::unordered_set<vertex_t> &A) const {
-    // find the vertex z ∉ A satisfying w(A, z) = max{w(A, y) | y ∉ A}, where
-    // w(A, y) is the sum of the weights of all edges between A and y.
-    std::pair<weight_t, vertex_t> max_vertex;
-    for (const auto &[y, neighbors] : edges) {
-        if (A.contains(y)) {
-            continue;
-        }
-        weight_t sum = 0;
-        for (const auto &[v, w] : neighbors) {
-            if (A.contains(v)) {
-                sum += w;
-            }
-        }
-        if (sum > max_vertex.first) {
-            max_vertex = {sum, y};
-        }
-    }
-    return max_vertex;
-}
-
 cut_t Graph::MinimumCutPhase(const vertex_t &a) {
     std::unordered_set<vertex_t> A = {a};
     vertex_t s = a, t = a;
     weight_t cut_value = 0;
+    aoc::ds::pairing_heap<std::pair<weight_t, vertex_t>> pq;
+    std::unordered_map<vertex_t, decltype(pq)::handle_type> handle_map;
+    for (const auto &[v, w] : edges.at(a)) {
+        handle_map.emplace(v, pq.emplace(w, v));
+    }
     while (A.size() != num_vertices()) {
         // add to A the most tightly connected vertex
-        const auto tmp = find_most_tightly_connected(A);
+        const auto tmp = pq.top();
+        pq.pop();
+        handle_map.erase(tmp.second);
         s = t;
         t = tmp.second;
         cut_value = tmp.first;
         A.insert(t);
+        // update or add all nodes connected to t in the priority queue
+        for (const auto &[v, w] : edges.at(t)) {
+            if (A.contains(v)) {
+                continue;
+            }
+            auto it = handle_map.find(v);
+            if (it != handle_map.end()) {
+                weight_t prev_weight = it->second->value().first;
+                pq.update(it->second, std::make_pair(prev_weight + w, v));
+            } else {
+                handle_map.emplace(v, pq.emplace(w, v));
+            }
+        }
     }
     cut_t cut_of_the_phase{cut_value, {}};
     std::istringstream ss{t};
@@ -142,7 +139,6 @@ cut_t MinimumCut(Graph G, const std::string &a) {
         if (cut_of_the_phase.first < min_cut.first) {
             min_cut = cut_of_the_phase;
         }
-        std::cerr << "iter " << i << "/" << total_iters << " done\n";
     }
     assert(G.num_vertices() == 1);
     return min_cut;
