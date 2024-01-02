@@ -36,19 +36,24 @@ class Target:
     base_dir: Path
     day: int
     prefix: str
+    extra: str
 
     @property
     def suffix(self) -> str:
-        return f"{self.day:02d}"
+        return f"{self.day:02d}{self.extra}"
 
     def __str__(self) -> str:
-        return f"{self.prefix}{self.day:02d}"
+        return f"{self.prefix}{self.day:02d}{self.extra}"
 
     @classmethod
     def from_file(cls, base_dir: Path, source_file: Path) -> Target:
-        m = re.match(r"(?P<prefix>day|test)(?P<day>\d+)$", source_file.stem)
+        m = re.match(
+            r"(?P<prefix>day|test)(?P<day>\d+)(?P<extra>.*)$", source_file.stem
+        )
         assert m is not None, source_file
-        return cls(base_dir=base_dir, day=int(m["day"]), prefix=m["prefix"])
+        return cls(
+            base_dir=base_dir, day=int(m["day"]), prefix=m["prefix"], extra=m["extra"]
+        )
 
     def get_deps(self, mode: str) -> frozenset[Path]:
         deps = set()
