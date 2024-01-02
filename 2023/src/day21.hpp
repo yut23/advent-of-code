@@ -61,10 +61,9 @@ class Farm {
 int Farm::part_1() {
     int target_distance = 64;
 
-    aoc::graph::bfs<Key>(
-        start, std::bind_front(&Farm::get_neighbors, this),
-        std::bind_front(&Farm::is_target, this, target_distance),
-        std::bind_front(&Farm::visit, this));
+    aoc::graph::bfs(start, std::bind_front(&Farm::get_neighbors, this),
+                    std::bind_front(&Farm::is_target, this, target_distance),
+                    std::bind_front(&Farm::visit, this));
 
     int count = 0;
     for (const auto &row : distances) {

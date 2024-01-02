@@ -139,9 +139,9 @@ void TrailMap::parse_grid() {
             grid_prev[pos].emplace(parent);
         }
     };
-    aoc::graph::dfs<Pos, false>(
-        start, std::bind_front(&TrailMap::get_grid_neighbors, this), {},
-        visit_with_parent);
+    aoc::graph::dfs<false>(start,
+                           std::bind_front(&TrailMap::get_grid_neighbors, this),
+                           visit_with_parent);
 
     if constexpr (aoc::DEBUG && false) {
         for (const auto &[parent, children] : grid_path) {

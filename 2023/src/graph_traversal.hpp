@@ -11,20 +11,22 @@
 #define GRAPH_TRAVERSAL_HPP_56T9ZURK
 
 #include <algorithm>     // for reverse
-#include <concepts>      // for convertible_to
+#include <concepts>      // for convertible_to, same_as, integral
 #include <cstddef>       // for size_t
 #include <functional>    // for function, greater, hash
 #include <map>           // for map
-#include <optional>      // for optional
 #include <queue>         // for priority_queue
 #include <set>           // for set
 #include <stdexcept>     // for invalid_argument
-#include <type_traits>   // for conditional_t
+#include <type_traits>   // for conditional_t // IWYU pragma: export
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
-#include <utility>       // for move, pair, make_pair, swap
+#include <utility>       // for move, pair, make_pair, swap, forward
 #include <vector>        // for vector
 // IWYU pragma: no_include <compare>  // for operator==
+
+// the export above avoids having to include type_traits in all source files
+// for invoke_result_t
 
 /// graph traversal algorithms
 namespace aoc::graph {
@@ -48,6 +50,42 @@ template <class Key, class T>
 using maybe_unordered_map =
     std::conditional_t<Hashable<Key>, std::unordered_map<Key, T>,
                        std::map<Key, T>>;
+
+template <class Func, class Key>
+concept GetNeighbors = requires(Func get_neighbors, const Key &key) {
+                           {
+                               get_neighbors(key)
+                               } -> std::same_as<std::vector<Key>>;
+                       };
+
+template <class Func, class Key>
+concept IsTarget = requires(Func is_target, const Key &key) {
+                       { is_target(key) } -> std::same_as<bool>;
+                   };
+
+template <class Func, class Key>
+concept Visit = requires(Func visit, const Key &key, int depth) {
+                    { visit(key, depth) } -> std::same_as<void>;
+                };
+
+template <class Func, class Key>
+concept VisitWithParent = requires(Func visit_with_parent, const Key &key,
+                                   const Key &parent, int depth) {
+                              {
+                                  visit_with_parent(key, parent, depth)
+                                  } -> std::same_as<void>;
+                          };
+
+template <class Func, class Key>
+concept GetDistance = requires(Func get_distance, const Key &u, const Key &v) {
+                          { get_distance(u, v) } -> std::integral;
+                      };
+
+template <class Func, class Key>
+concept Heuristic = requires(Func heuristic, const Key &key) {
+                        { heuristic(key) } -> std::integral;
+                    };
+
 } // namespace detail
 
 /**
@@ -61,25 +99,18 @@ using maybe_unordered_map =
  * Returns the distance from the source to the first target found, or -1 if not
  * found.
  */
-template <class Key>
-int bfs(const Key &source,
-        std::function<std::vector<Key>(const Key &)> get_neighbors,
-        std::optional<std::function<bool(const Key &)>> is_target = {},
-        std::optional<std::function<void(const Key &, int)>> visit = {}) {
-    if (!is_target.has_value() && !visit.has_value()) {
-        throw std::invalid_argument(
-            "At least one of is_target and visit must be passed!");
-    }
+template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+          detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
+int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
+        Visit &&visit) {
     int distance = 0;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
 
     while (!queue.empty()) {
         for (const Key &key : queue) {
-            if (visit.has_value()) {
-                visit.value()(key, distance);
-            }
-            if (is_target.has_value() && is_target.value()(key)) {
+            visit(key, distance);
+            if (is_target(key)) {
                 return distance;
             }
             auto neighbors = get_neighbors(key);
@@ -89,6 +120,21 @@ int bfs(const Key &source,
         ++distance;
     }
     return -1;
+}
+
+template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+          detail::IsTarget<Key> IsTarget>
+int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
+    return bfs(source, std::forward<GetNeighbors>(get_neighbors),
+               std::forward<IsTarget>(is_target), [](const Key &, int) {});
+}
+
+template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+          detail::Visit<Key> Visit>
+int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
+    return bfs(
+        source, std::forward<GetNeighbors>(get_neighbors),
+        [](const Key &) { return false; }, std::forward<Visit>(visit));
 }
 
 /**
@@ -106,25 +152,19 @@ int bfs(const Key &source,
  * Returns the distance from the source to the first target found, or -1 if not
  * found.
  */
-template <class Key, bool use_seen = true>
-int dfs(const Key &source,
-        std::function<std::vector<Key>(const Key &)> get_neighbors,
-        std::optional<std::function<bool(const Key &)>> is_target = {},
-        std::optional<std::function<void(const Key &, const Key &, int)>>
-            visit_with_parent = {}) {
-    if (!is_target.has_value() && !visit_with_parent.has_value()) {
-        throw std::invalid_argument(
-            "At least one of is_target and visit must be passed!");
-    }
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::IsTarget<Key> IsTarget,
+          detail::VisitWithParent<Key> VisitWithParent>
+int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
+        VisitWithParent &&visit_with_parent) {
     detail::maybe_unordered_set<Key> seen{};
 
     auto helper = [&seen, &get_neighbors, &is_target,
                    &visit_with_parent](const Key &key, int depth,
                                        const Key &parent, const auto &rec) {
-        if (visit_with_parent.has_value()) {
-            visit_with_parent.value()(key, parent, depth);
-        }
-        if (is_target.has_value() && is_target.value()(key)) {
+        visit_with_parent(key, parent, depth);
+        if (is_target(key)) {
             return depth;
         }
         seen.insert(key);
@@ -145,15 +185,33 @@ int dfs(const Key &source,
     return helper(source, 0, source, helper);
 }
 
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::IsTarget<Key> IsTarget>
+int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
+    return dfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
+                         std::forward<IsTarget>(is_target),
+                         [](const Key &, const Key &, int) {});
+}
+
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::VisitWithParent<Key> VisitWithParent>
+int dfs(const Key &source, GetNeighbors &&get_neighbors,
+        VisitWithParent &&visit_with_parent) {
+    return dfs<use_seen>(
+        source, std::forward<GetNeighbors>(get_neighbors),
+        [](const Key &) { return false; },
+        std::forward<VisitWithParent>(visit_with_parent));
+}
+
 /**
  * Topologically sort a directed acyclic graph.
  *
  * Throws a std::invalid_argument exception if the graph contains any cycles.
  */
-template <class Key>
-std::vector<Key>
-topo_sort(const Key &source,
-          std::function<std::vector<Key>(const Key &)> get_neighbors) {
+template <class Key, detail::GetNeighbors<Key> GetNeighbors>
+std::vector<Key> topo_sort(const Key &source, GetNeighbors &&get_neighbors) {
     detail::maybe_unordered_set<Key> temp_marks{};
     detail::maybe_unordered_set<Key> perm_marks{};
 
@@ -184,12 +242,11 @@ topo_sort(const Key &source,
 /**
  * Longest path algorithm for a DAG.
  */
-template <class Key>
+template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
 std::pair<int, std::vector<Key>>
-longest_path(const Key &source,
-             std::function<std::vector<Key>(const Key &)> get_neighbors,
-             std::function<int(const Key &, const Key &)> get_distance,
-             std::function<bool(const Key &)> is_target) {
+longest_path(const Key &source, GetNeighbors &&get_neighbors,
+             GetDistance &&get_distance, IsTarget &&is_target) {
     std::vector<Key> ordering = topo_sort<Key>(source, get_neighbors);
     detail::maybe_unordered_map<Key, std::pair<int, Key>> longest_path{};
     // longest_path.try_emplace(source, std::make_pair(0, source));
@@ -199,8 +256,8 @@ longest_path(const Key &source,
         incoming_neighbors{};
     incoming_neighbors[source] = {};
     constexpr bool use_seen = false;
-    dfs<Key, use_seen>(
-        source, get_neighbors, {},
+    dfs<use_seen>(
+        source, get_neighbors,
         [&incoming_neighbors](const Key &node, const Key &parent, int) {
             incoming_neighbors[node].emplace(parent);
         });
@@ -250,13 +307,13 @@ longest_path(const Key &source,
  * Returns the distance and path from the source to the first target found,
  * or -1 and an empty path if not found.
  */
-template <class Key, bool use_visited = false>
+template <bool use_visited = false, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
+          detail::Visit<Key> Visit>
 std::pair<int, std::vector<Key>>
-dijkstra(const Key &source,
-         std::function<std::vector<Key>(const Key &)> get_neighbors,
-         std::function<int(const Key &, const Key &)> get_distance,
-         std::function<bool(const Key &)> is_target,
-         std::optional<std::function<void(const Key &, int)>> visit = {}) {
+dijkstra(const Key &source, GetNeighbors &&get_neighbors,
+         GetDistance &&get_distance, IsTarget &&is_target, Visit &&visit) {
     detail::maybe_unordered_set<Key> visited{};
     detail::maybe_unordered_map<Key, std::pair<int, Key>> distances{};
 
@@ -273,9 +330,7 @@ dijkstra(const Key &source,
         if (dist != distances.at(current).first) {
             continue;
         }
-        if (visit.has_value()) {
-            visit.value()(current, dist);
-        }
+        visit(current, dist);
         if (is_target(current)) {
             // reconstruct path
             std::vector<Key> path{current};
@@ -312,6 +367,18 @@ dijkstra(const Key &source,
     return {-1, {}};
 }
 
+template <bool use_visited = false, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
+std::pair<int, std::vector<Key>>
+dijkstra(const Key &source, GetNeighbors &&get_neighbors,
+         GetDistance &&get_distance, IsTarget &&is_target) {
+    return dijkstra<use_visited>(source,
+                                 std::forward<GetNeighbors>(get_neighbors),
+                                 std::forward<GetDistance>(get_distance),
+                                 std::forward<IsTarget>(is_target));
+}
+
 /**
  * Generic A* search on an arbitrary weighted graph.
  *
@@ -337,14 +404,14 @@ struct a_star_entry {
 };
 } // namespace detail
 
-template <class Key, bool use_visited = false>
+template <bool use_visited = false, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
+          detail::Heuristic<Key> Heuristic, detail::Visit<Key> Visit>
 std::pair<int, std::vector<Key>>
-a_star(const Key &source,
-       std::function<std::vector<Key>(const Key &)> get_neighbors,
-       std::function<int(const Key &, const Key &)> get_distance,
-       std::function<bool(const Key &)> is_target,
-       std::function<int(const Key &)> heuristic,
-       std::optional<std::function<void(const Key &, int)>> visit = {}) {
+a_star(const Key &source, GetNeighbors &&get_neighbors,
+       GetDistance &&get_distance, IsTarget &&is_target, Heuristic &&heuristic,
+       Visit &&visit) {
     using Entry = detail::a_star_entry<Key>;
 
     detail::maybe_unordered_set<Key> visited{};
@@ -364,9 +431,7 @@ a_star(const Key &source,
                 continue;
             }
         }
-        if (visit.has_value()) {
-            visit.value()(curr.key, curr.dist);
-        }
+        visit(curr.key, curr.dist);
         if (is_target(curr.key)) {
             // reconstruct path
             std::vector<Key> path{curr.key};
@@ -403,15 +468,29 @@ a_star(const Key &source,
     }
     return {-1, {}};
 }
+template <bool use_visited = false, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
+          detail::Heuristic<Key> Heuristic>
+std::pair<int, std::vector<Key>>
+a_star(const Key &source, GetNeighbors &&get_neighbors,
+       GetDistance &&get_distance, IsTarget &&is_target,
+       Heuristic &&heuristic) {
+    return a_star<use_visited>(
+        source, std::forward<GetNeighbors>(get_neighbors),
+        std::forward<GetDistance>(get_distance),
+        std::forward<IsTarget>(is_target), std::forward<Heuristic>(heuristic),
+        [](const Key &, int) {});
+}
 
 /**
  * Shortest distances from a single node using Dijkstra's algorithm.
  */
-template <class Key>
+template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+          detail::GetDistance<Key> GetDistance>
 detail::maybe_unordered_map<Key, int>
-shortest_distances(const Key &source,
-                   std::function<std::vector<Key>(const Key &)> get_neighbors,
-                   std::function<int(const Key &, const Key &)> get_distance) {
+shortest_distances(const Key &source, GetNeighbors &&get_neighbors,
+                   GetDistance &&get_distance) {
     detail::maybe_unordered_set<Key> visited{};
     detail::maybe_unordered_map<Key, int> distances{};
     std::priority_queue<std::pair<int, Key>> pq{};
@@ -453,35 +532,34 @@ using Key1 = std::pair<int, int>;
     std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
     std::function<int(const Key1 &, const Key1 &)> get_distance,
     std::function<int(const Key1 &)> heuristic) {
-    bfs<Key1>(source, get_neighbors);
-    bfs<Key1>(source, get_neighbors, is_target);
-    bfs<Key1>(source, get_neighbors, {}, visit);
-    bfs<Key1>(source, get_neighbors, is_target, visit);
+    bfs(source, get_neighbors, is_target);
+    bfs(source, get_neighbors, visit);
+    bfs(source, get_neighbors, is_target, visit);
 
-    dfs<Key1, true>(source, get_neighbors);
-    dfs<Key1, true>(source, get_neighbors, is_target);
-    dfs<Key1, true>(source, get_neighbors, {}, visit_with_parent);
-    dfs<Key1, true>(source, get_neighbors, is_target, visit_with_parent);
-    dfs<Key1, false>(source, get_neighbors);
-    dfs<Key1, false>(source, get_neighbors, is_target);
-    dfs<Key1, false>(source, get_neighbors, {}, visit_with_parent);
-    dfs<Key1, false>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<true>(source, get_neighbors, is_target);
+    dfs<true>(source, get_neighbors, visit_with_parent);
+    dfs<true>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<false>(source, get_neighbors, is_target);
+    dfs<false>(source, get_neighbors, visit_with_parent);
+    dfs<false>(source, get_neighbors, is_target, visit_with_parent);
 
-    topo_sort<Key1>(source, get_neighbors);
+    topo_sort(source, get_neighbors);
 
-    longest_path<Key1>(source, get_neighbors, get_distance, is_target);
+    longest_path(source, get_neighbors, get_distance, is_target);
 
-    dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key1, false>(source, get_neighbors, get_distance, is_target,
-                          visit);
-    dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key1, true>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<false>(source, get_neighbors, get_distance, is_target);
+    dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<true>(source, get_neighbors, get_distance, is_target);
+    dijkstra<true>(source, get_neighbors, get_distance, is_target, visit);
 
-    a_star<Key1>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<Key1>(source, get_neighbors, get_distance, is_target, heuristic,
+    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic,
+                  visit);
+    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic,
                  visit);
 
-    shortest_distances<Key1>(source, get_neighbors, get_distance);
+    shortest_distances(source, get_neighbors, get_distance);
 }
 using Key2 = int;
 [[maybe_unused]] void _lint_helper_hashable(
@@ -492,35 +570,34 @@ using Key2 = int;
     std::function<void(const Key2 &, const Key2 &, int)> visit_with_parent,
     std::function<int(const Key2 &, const Key2 &)> get_distance,
     std::function<int(const Key2 &)> heuristic) {
-    bfs<Key2>(source, get_neighbors);
-    bfs<Key2>(source, get_neighbors, is_target);
-    bfs<Key2>(source, get_neighbors, {}, visit);
-    bfs<Key2>(source, get_neighbors, is_target, visit);
+    bfs(source, get_neighbors, is_target);
+    bfs(source, get_neighbors, visit);
+    bfs(source, get_neighbors, is_target, visit);
 
-    dfs<Key2, true>(source, get_neighbors);
-    dfs<Key2, true>(source, get_neighbors, is_target);
-    dfs<Key2, true>(source, get_neighbors, {}, visit_with_parent);
-    dfs<Key2, true>(source, get_neighbors, is_target, visit_with_parent);
-    dfs<Key2, false>(source, get_neighbors);
-    dfs<Key2, false>(source, get_neighbors, is_target);
-    dfs<Key2, false>(source, get_neighbors, {}, visit_with_parent);
-    dfs<Key2, false>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<true>(source, get_neighbors, is_target);
+    dfs<true>(source, get_neighbors, visit_with_parent);
+    dfs<true>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<false>(source, get_neighbors, is_target);
+    dfs<false>(source, get_neighbors, visit_with_parent);
+    dfs<false>(source, get_neighbors, is_target, visit_with_parent);
 
-    topo_sort<Key2>(source, get_neighbors);
+    topo_sort(source, get_neighbors);
 
-    longest_path<Key2>(source, get_neighbors, get_distance, is_target);
+    longest_path(source, get_neighbors, get_distance, is_target);
 
-    dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key2, false>(source, get_neighbors, get_distance, is_target,
-                          visit);
-    dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target);
-    dijkstra<Key2, true>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<false>(source, get_neighbors, get_distance, is_target);
+    dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<true>(source, get_neighbors, get_distance, is_target);
+    dijkstra<true>(source, get_neighbors, get_distance, is_target, visit);
 
-    a_star<Key2>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<Key2>(source, get_neighbors, get_distance, is_target, heuristic,
+    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic,
+                  visit);
+    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic);
+    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic,
                  visit);
 
-    shortest_distances<Key2>(source, get_neighbors, get_distance);
+    shortest_distances(source, get_neighbors, get_distance);
 }
 } // namespace
 

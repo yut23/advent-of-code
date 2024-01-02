@@ -17,7 +17,6 @@
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cerr, istream, ostream
 #include <iterator>         // for back_inserter
-#include <optional>         // for optional
 #include <string>           // for string, getline
 #include <unordered_map>    // for unordered_map
 #include <utility>          // for move, pair
@@ -101,7 +100,7 @@ int CityMap::get_distance([[maybe_unused]] const Key &from,
 int CityMap::find_shortest_path(bool ultra) const {
     Key source{Pos(0, 0), AbsDirection::east, 0};
     Pos target(width() - 1, height() - 1);
-    std::optional<std::function<void(const Key &, int)>> visit = {};
+    std::function<void(const Key &, int)> visit = [](const Key &, int) {};
 #if 0
     if (aoc::DEBUG && ultra) {
         visit = [this, ultra](const Key &key, int dist) {
@@ -116,7 +115,7 @@ int CityMap::find_shortest_path(bool ultra) const {
     }
 #endif
 #if 0
-    const auto &[distance, path] = aoc::graph::dijkstra<Key>(
+    const auto &[distance, path] = aoc::graph::dijkstra(
         source, std::bind_front(&CityMap::get_neighbors, this, ultra),
         std::bind_front(&CityMap::get_distance, this),
         [&target, ultra](const Key &key) -> bool {
@@ -124,7 +123,7 @@ int CityMap::find_shortest_path(bool ultra) const {
         },
         visit);
 #else
-    const auto &[distance, path] = aoc::graph::a_star<Key>(
+    const auto &[distance, path] = aoc::graph::a_star(
         source, std::bind_front(&CityMap::get_neighbors, this, ultra),
         std::bind_front(&CityMap::get_distance, this),
         [&target, ultra](const Key &key) -> bool {

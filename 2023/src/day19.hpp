@@ -292,8 +292,8 @@ std::optional<Condition> Part2Solver::get_condition(const Key &from,
 
 long Part2Solver::solve() {
     constexpr bool use_seen = false;
-    aoc::graph::dfs<Key, use_seen>(
-        source, std::bind_front(&Part2Solver::get_neighbors, this), {},
+    aoc::graph::dfs<use_seen>(
+        source, std::bind_front(&Part2Solver::get_neighbors, this),
         std::bind_front(&Part2Solver::visit_with_parent, this));
 
     if constexpr (aoc::DEBUG) {
