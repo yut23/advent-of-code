@@ -9,6 +9,68 @@
 #include "lib.hpp"  // for parse_args, DEBUG
 #include <iostream> // for cout, cerr
 
+int part_1(aoc::day22::BrickStack &stack) {
+    int count = 0;
+    for (const auto &[_, brick] : stack.settled_bricks) {
+        bool is_safe = !stack.unsafe.contains(brick.get());
+        if (is_safe) {
+            ++count;
+        }
+        if constexpr (aoc::DEBUG) {
+            bool can_disintegrate = stack.can_disintegrate(brick.get());
+            if (can_disintegrate != is_safe) {
+                std::cerr << "mismatch for brick " << *brick
+                          << ": can_disintegrate=" << can_disintegrate
+                          << ", is_safe=" << is_safe << "\n";
+                {
+                    const auto range =
+                        stack.settled_bricks.equal_range(brick->p2.z);
+                    std::cerr << "other blocks at same height:\n";
+                    for (auto it = range.first; it != range.second; ++it) {
+                        std::cerr << "  " << *it->second << "\n";
+                    }
+                }
+                if (!is_safe) {
+                    const auto range = stack.unsafe.equal_range(brick.get());
+                    std::cerr << "\nresting blocks:\n";
+                    for (auto it = range.first; it != range.second; ++it) {
+                        std::cerr << "  " << *it->second << "\n";
+                    }
+                }
+                assert(can_disintegrate == is_safe);
+            }
+        }
+    }
+    return count;
+}
+
+int part_2(aoc::day22::BrickStack &stack) {
+    using namespace aoc::day22;
+
+    std::map<const Brick *, int> counts;
+
+    auto helper = [&stack, &counts](const Brick *brick, const auto rec) {
+        {
+            const auto it = counts.find(brick);
+            if (it != counts.end()) {
+                return it->second;
+            }
+        }
+        int count = 0;
+        const auto range = stack.unsafe.equal_range(brick);
+        for (auto it = range.first; it != range.second; ++it) {
+            count += 1 + rec(it->second, rec);
+        }
+        return count;
+    };
+
+    int count = 0;
+    for (const auto &[_, brick] : stack.settled_bricks) {
+        count += helper(brick.get(), helper);
+    }
+    return count;
+}
+
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
@@ -50,39 +112,8 @@ int main(int argc, char **argv) {
         std::cerr << "\n";
     }
 
-    int part_1 = 0;
-    for (const auto &[_, brick] : stack.settled_bricks) {
-        bool is_safe = !stack.unsafe.contains(brick.get());
-        if (is_safe) {
-            ++part_1;
-        }
-        if constexpr (aoc::DEBUG) {
-            bool can_disintegrate = stack.can_disintegrate(brick.get());
-            if (can_disintegrate != is_safe) {
-                std::cerr << "mismatch for brick " << *brick
-                          << ": can_disintegrate=" << can_disintegrate
-                          << ", is_safe=" << is_safe << "\n";
-                {
-                    const auto range =
-                        stack.settled_bricks.equal_range(brick->p2.z);
-                    std::cerr << "other blocks at same height:\n";
-                    for (auto it = range.first; it != range.second; ++it) {
-                        std::cerr << "  " << *it->second << "\n";
-                    }
-                }
-                if (!is_safe) {
-                    const auto range = stack.unsafe.equal_range(brick.get());
-                    std::cerr << "\nresting blocks:\n";
-                    for (auto it = range.first; it != range.second; ++it) {
-                        std::cerr << "  " << *it->second << "\n";
-                    }
-                }
-                assert(can_disintegrate == is_safe);
-            }
-        }
-    }
-
-    std::cout << part_1 << "\n";
+    std::cout << part_1(stack) << "\n";
+    // std::cout << part_2(stack) << "\n";
 
     return 0;
 }
