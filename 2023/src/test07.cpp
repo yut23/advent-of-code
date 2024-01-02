@@ -31,7 +31,6 @@ std::size_t test_read_hands() {
     unit_test::PureTest test("test07::test_read_hands", &read_hands_helper);
     Hand hand1{Card::THREE, Card::TWO, Card::TEN, Card::THREE, Card::KING, 765};
     Hand hand2{Card::TEN, Card::FIVE, Card::FIVE, Card::JACK, Card::FIVE, 684};
-    Hand hand3{Card::THREE, Card::TWO, Card::TEN, Card::THREE, Card::KING, 765};
     test("32T3K 765", {hand1});
     test("32T3K 765\n", {hand1});
     test("32T3K 765\nT55J5 684", {hand1, hand2});

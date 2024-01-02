@@ -22,8 +22,9 @@
 #include <type_traits>   // for conditional_t
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
-#include <utility>       // for move, pair, swap
+#include <utility>       // for move, pair, make_pair, swap
 #include <vector>        // for vector
+// IWYU pragma: no_include <compare>  // for operator==
 
 /// graph traversal algorithms
 namespace aoc::graph {

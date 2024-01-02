@@ -628,6 +628,19 @@ struct ManualTest : public BaseTest {
     }
 };
 
+namespace {
+[[maybe_unused]] void _lint_helper() {
+    unit_test::PureTest test(
+        "foobar",
+        +[](const std::vector<int> &vec1, const std::vector<int> &vec2)
+            -> std::strong_ordering { return vec1 <=> vec2; });
+    test({1, 2}, {1, 2}, std::strong_ordering::equal);
+    test({1, 2, 3}, {1, 2}, std::strong_ordering::greater);
+    test({2, 2, 3}, {1, 2}, std::strong_ordering::less);
+    test.done();
+}
+} // namespace
+
 } // namespace unit_test
 
 #endif /* end of include guard: UNIT_TEST_HPP */

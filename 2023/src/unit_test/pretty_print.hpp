@@ -1,16 +1,20 @@
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
+#include <array>    // for array // IWYU pragma: keep
 #include <compare>  // for strong_ordering
 #include <cstddef>  // for size_t
 #include <iomanip>  // for quoted
 #include <iostream> // for ostream, defaultfloat, hexfloat
 #include <iterator> // for begin, end
+#include <list>     // for vector // IWYU pragma: keep
 #include <optional> // for optional
 #include <ranges>   // for range
+#include <set>      // for vector // IWYU pragma: keep
 #include <string>   // for string
 #include <tuple>    // for tuple, get
 #include <utility>  // for pair
+#include <vector>   // for vector // IWYU pragma: keep
 
 // Additional ostream formatters needed for printing arguments/return values
 // for failing test cases

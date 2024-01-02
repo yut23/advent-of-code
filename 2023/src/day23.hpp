@@ -8,13 +8,17 @@
 #ifndef DAY23_HPP_VAEIOPZT
 #define DAY23_HPP_VAEIOPZT
 
-#include "lib.hpp"  // for Pos, AbsDirection, Delta
-#include <cassert>  // for assert
-#include <iostream> // for istream
-#include <map>      // for map, multimap
-#include <set>      // for set
-#include <string>   // for string, getline
-#include <vector>   // for vector
+#include "lib.hpp"          // for Pos, AbsDirection, Delta
+#include <cassert>          // for assert
+#include <functional>       // for bind_front
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for istream
+#include <map>              // for map, multimap
+#include <set>              // for set
+#include <string>           // for string, getline
+#include <utility>          // for move
+#include <vector>           // for vector
+// IWYU pragma: no_include <unordered_set>  // no clue why it wants this
 
 #include "graph_traversal.hpp"
 
