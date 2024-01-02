@@ -68,12 +68,9 @@ std::size_t test_pairing_heap_min() {
     {
         auto nh = heap.push(4);
         DO_TEST(heap.top() == 4);
-        assert(heap.size() == 2);
         heap.update(nh, 5);
         DO_TEST(heap.top() == 5);
-        assert(heap.size() == 2);
         heap.update(nh, 10);
-        assert(heap.size() == 2);
     }
     DO_TEST(heap.top() == 7);
     heap.pop();

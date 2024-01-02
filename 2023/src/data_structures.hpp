@@ -17,6 +17,7 @@
 #include <iterator>         // for next, advance
 #include <list>             // for list
 #include <memory> // for shared_ptr, weak_ptr, make_shared, enable_shared_from_this
+#include <string>      // for string
 #include <type_traits> // for is_invocable_r_v // IWYU pragma: keep
 #include <utility>     // for move, swap, forward, pair
 
@@ -302,7 +303,7 @@ namespace {
     assert(heap.size() == 0);
     assert(heap.empty());
     pairing_heap<int, std::greater<int>> h2;
-    pairing_heap<std::pair<int, int *>> h3;
+    pairing_heap<std::pair<int, std::string>> h3;
     pairing_heap<std::pair<int, int *>, std::greater<std::pair<int, int *>>> h4;
 }
 } // namespace

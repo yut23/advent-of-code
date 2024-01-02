@@ -14,6 +14,7 @@
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream, cerr
 #include <limits>        // for numeric_limits
+#include <memory>        // for shared_ptr (pairing_heap)
 #include <sstream>       // for istringstream
 #include <string>        // for string, getline
 #include <unordered_map> // for unordered_map
