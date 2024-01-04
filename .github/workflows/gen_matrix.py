@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from __future__ import annotations
 
 import functools
@@ -7,6 +9,8 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 @functools.cache
@@ -80,7 +84,7 @@ class Config:
 
     def to_dict(self) -> dict[str, str]:
         return {
-            "directory": str(self.target.base_dir),
+            "directory": str(self.target.base_dir.relative_to(ROOT)),
             "target": str(self.target),
             "compiler": self.compiler,
             "stdlib": self.stdlib,
@@ -96,7 +100,13 @@ def enumerate_targets(base_dir: Path) -> list[Target]:
 
 
 def find_base_dirs() -> list[Path]:
-    return sorted(makefile.parent for makefile in Path().glob("*/Makefile"))
+    return sorted(makefile.parent for makefile in ROOT.glob("*/Makefile"))
+
+
+def validate_path(path: Path) -> None:
+    """Make a path is absolute and inside ROOT."""
+    assert path.is_absolute(), f"{path} not absolute"
+    assert path.is_relative_to(ROOT), f"{path} not inside ROOT"
 
 
 class Matrix:
@@ -123,13 +133,17 @@ class Matrix:
             for dep in target.get_deps(mode):
                 self.file_lookup[dep].append(target)
 
-        self.file_lookup[Path(".github/workflows/gen_matrix.py")] = self.targets
-        for file in Path().glob(".github/workflows/*.yml"):
+        self.file_lookup[ROOT / ".github/workflows/gen_matrix.py"] = self.targets
+        for file in ROOT.glob(".github/workflows/*.yml"):
             with open(file, "r") as f:
                 if mode in file.name and "gen_matrix.py" in f.read():
                     self.file_lookup[file] = self.targets
 
+        for file in self.file_lookup:
+            validate_path(file)
+
     def process_changed_file(self, file: Path) -> None:
+        validate_path(file)
         for target in self.file_lookup.get(file, ()):
             self.add_config(target)
 
@@ -146,7 +160,7 @@ class Matrix:
             print("\nconfigurations:")
             for config in config_list:
                 includes.append(config.to_dict())
-                print(f"  {config}")
+                print(f"  {config.to_dict()}")
             matrix["include"] = includes
         with open(output_file, "a") as f:
             f.write("matrix-combinations=")
@@ -163,7 +177,7 @@ def main() -> None:
 
     for f in json.loads(changed_files_json):
         print(f"  {f}")
-        matrix.process_changed_file(Path(f))
+        matrix.process_changed_file(ROOT / f)
 
     matrix.write_combinations(output_file)
 
