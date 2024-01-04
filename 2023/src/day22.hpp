@@ -9,15 +9,17 @@
 #define DAY22_HPP_9NHUADRF
 
 #include "lib.hpp"       // for expect_input, ranges_overlap, DEBUG
-#include <algorithm>     // for copy, sort, any_of
+#include <algorithm>     // for sort, any_of, transform, move
 #include <cassert>       // for assert
 #include <compare>       // for strong_ordering
 #include <deque>         // for deque
 #include <iostream>      // for istream, ostream, cerr
-#include <iterator>      // for back_inserter
-#include <map>           // for multimap
+#include <iterator>      // for back_inserter, inserter
+#include <map>           // for map
 #include <memory>        // for unique_ptr, make_unique
-#include <unordered_map> // for unordered_multimap
+#include <set>           // for set
+#include <unordered_map> // for unordered_map
+#include <unordered_set> // for unordered_set
 #include <utility>       // for move, pair
 #include <vector>        // for vector
 
@@ -86,41 +88,72 @@ std::ostream &operator<<(std::ostream &os, const Brick &brick) {
 
 struct BrickStack {
     using BrickPtr = std::unique_ptr<Brick>;
+    struct BrickPtrCmp {
+        template <class T, class U>
+        bool operator()(const T &lhs, const U &rhs) const {
+            return *lhs < *rhs;
+        }
+    };
+
     std::deque<BrickPtr> pending_bricks{};
     // bricks in their final positions, indexed by their upper z coordinate
-    std::multimap<unsigned int, BrickPtr> settled_bricks{};
-    // bricks that are not safe to disintegrate
-    std::unordered_multimap<const Brick *, const Brick *> unsafe{};
+    std::map<unsigned int, std::vector<BrickPtr>> settled_bricks{};
+    // which bricks the key is resting on (i.e. those directly below)
+    std::unordered_map<const Brick *, std::unordered_set<const Brick *>>
+        supported_by{};
+    // which bricks the key is supporting (i.e. those directly above)
+    std::unordered_map<const Brick *, std::unordered_set<const Brick *>>
+        supporting{};
 
   private:
     void mark_settled(BrickPtr &&brick,
-                      const std::vector<const Brick *> &overlaps);
+                      std::unordered_set<const Brick *> &&overlaps);
+
+    std::set<const Brick *, BrickPtrCmp> _bricks{};
 
   public:
     explicit BrickStack(std::vector<BrickPtr> &&bricks);
 
     bool settle_one();
     bool can_disintegrate(const Brick *candidate) const;
+    bool is_unsafe(const Brick *brick) const;
+    const std::set<const Brick *, BrickPtrCmp> &bricks() const {
+        return _bricks;
+    }
 
     static BrickStack read(std::istream &);
 };
 
 BrickStack::BrickStack(std::vector<BrickPtr> &&bricks) {
     // sort bricks according to their lower z coordinate
-    std::sort(
-        bricks.begin(), bricks.end(),
-        [](const BrickPtr &bp1, const BrickPtr &bp2) { return *bp1 < *bp2; });
+    std::sort(bricks.begin(), bricks.end(), BrickPtrCmp{});
+    // store raw pointers to the bricks in _bricks, for users to iterate over
+    std::transform(bricks.begin(), bricks.end(),
+                   std::inserter(_bricks, _bricks.begin()),
+                   [](const BrickPtr &bp) { return bp.get(); });
     // put everything into the pending queue
     std::move(bricks.begin(), bricks.end(), std::back_inserter(pending_bricks));
 }
 
-void BrickStack::mark_settled(BrickPtr &&brick,
-                              const std::vector<const Brick *> &overlaps) {
-    unsigned int z = brick->p2.z;
-    if (overlaps.size() == 1) {
-        unsafe.emplace(overlaps[0], brick.get());
+bool BrickStack::is_unsafe(const Brick *brick) const {
+    for (const Brick *other : supporting.at(brick)) {
+        if (supported_by.at(other).size() == 1) {
+            return true;
+        }
     }
-    settled_bricks.emplace(z, std::move(brick));
+    return false;
+}
+
+void BrickStack::mark_settled(BrickPtr &&brick,
+                              std::unordered_set<const Brick *> &&overlaps) {
+    unsigned int z = brick->p2.z;
+    // ensure this brick has an entry in supporting
+    supporting[brick.get()];
+    for (const auto other : overlaps) {
+        supporting[other].insert(brick.get());
+    }
+    supported_by[brick.get()] = std::move(overlaps);
+    settled_bricks[z].push_back(std::move(brick));
 }
 
 bool BrickStack::settle_one() {
@@ -137,18 +170,17 @@ bool BrickStack::settle_one() {
     assert(z1 >= 1);
     assert(z2 >= z1);
     unsigned int height = z2 - z1 + 1;
-    std::vector<const Brick *> overlaps;
+    std::unordered_set<const Brick *> overlaps;
     for (; z1 > 1; --z1, --z2) {
-        auto range = settled_bricks.equal_range(z1 - 1);
-        for (auto it = range.first; it != range.second; ++it) {
-            if (curr->overlaps_xy(*it->second)) {
-                overlaps.push_back(it->second.get());
+        for (const BrickPtr &brick : settled_bricks[z1 - 1]) {
+            if (curr->overlaps_xy(*brick)) {
+                overlaps.insert(brick.get());
             }
         }
         if (!overlaps.empty()) {
             assert(z1 > 1);
-            mark_settled(std::move(curr), overlaps);
-            break;
+            mark_settled(std::move(curr), std::move(overlaps));
+            return !pending_bricks.empty();
         }
     }
 
@@ -156,7 +188,7 @@ bool BrickStack::settle_one() {
 
     if (z1 == 1) {
         assert(overlaps.empty());
-        mark_settled(std::move(curr), overlaps);
+        mark_settled(std::move(curr), std::move(overlaps));
     }
 
     return !pending_bricks.empty();
@@ -165,21 +197,21 @@ bool BrickStack::settle_one() {
 bool BrickStack::can_disintegrate(const Brick *candidate) const {
     // find all bricks directly resting on the candidate, and all other bricks
     // that they could be resting on
-    std::vector<const Brick *> resting;
+    std::vector<const Brick *> resting_above;
     std::vector<const Brick *> neighbors;
-    for (const auto &[_, brick] : settled_bricks) {
-        if (brick.get() == candidate) {
+    for (const Brick *brick : bricks()) {
+        if (brick == candidate) {
             continue;
         }
         if (brick->p2.z == candidate->p2.z) {
-            neighbors.push_back(brick.get());
+            neighbors.push_back(brick);
         } else if (brick->p1.z == candidate->p2.z + 1 &&
                    candidate->overlaps_xy(*brick)) {
-            resting.push_back(brick.get());
+            resting_above.push_back(brick);
         }
     }
 
-    if (resting.empty()) {
+    if (resting_above.empty()) {
         if constexpr (aoc::DEBUG) {
             std::cerr << "brick " << *candidate << ": no bricks above\n";
         }
@@ -189,7 +221,7 @@ bool BrickStack::can_disintegrate(const Brick *candidate) const {
     // check that all bricks resting on this one are also supported by one of
     // the neighbors
     bool found_other_brick = true;
-    for (const auto resting_brick : resting) {
+    for (const auto resting_brick : resting_above) {
         found_other_brick =
             std::any_of(neighbors.begin(), neighbors.end(),
                         [&resting_brick](const Brick *neighbor) {
@@ -208,14 +240,14 @@ bool BrickStack::can_disintegrate(const Brick *candidate) const {
 }
 
 BrickStack BrickStack::read(std::istream &is) {
-    std::vector<BrickPtr> bricks;
+    std::vector<BrickPtr> all_bricks;
     while (is) {
         BrickPtr brick = std::make_unique<Brick>();
         if (is >> *brick) {
-            bricks.push_back(std::move(brick));
+            all_bricks.push_back(std::move(brick));
         }
     }
-    return BrickStack(std::move(bricks));
+    return BrickStack(std::move(all_bricks));
 }
 
 } // namespace aoc::day22

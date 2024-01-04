@@ -6,37 +6,24 @@
  *****************************************************************************/
 
 #include "day22.hpp"
-#include "lib.hpp"  // for parse_args, DEBUG
-#include <iostream> // for cout, cerr
+#include "graph_traversal.hpp" // for topo_sort
+#include "lib.hpp"             // for parse_args, DEBUG
+#include <iostream>            // for cout, cerr
+#include <unordered_set>       // for unordered_set
 
-int part_1(aoc::day22::BrickStack &stack) {
+int part_1(const aoc::day22::BrickStack &stack) {
     int count = 0;
-    for (const auto &[_, brick] : stack.settled_bricks) {
-        bool is_safe = !stack.unsafe.contains(brick.get());
+    for (const aoc::day22::Brick *brick : stack.bricks()) {
+        bool is_safe = !stack.is_unsafe(brick);
         if (is_safe) {
             ++count;
         }
         if constexpr (aoc::DEBUG) {
-            bool can_disintegrate = stack.can_disintegrate(brick.get());
+            bool can_disintegrate = stack.can_disintegrate(brick);
             if (can_disintegrate != is_safe) {
                 std::cerr << "mismatch for brick " << *brick
                           << ": can_disintegrate=" << can_disintegrate
                           << ", is_safe=" << is_safe << "\n";
-                {
-                    const auto range =
-                        stack.settled_bricks.equal_range(brick->p2.z);
-                    std::cerr << "other blocks at same height:\n";
-                    for (auto it = range.first; it != range.second; ++it) {
-                        std::cerr << "  " << *it->second << "\n";
-                    }
-                }
-                if (!is_safe) {
-                    const auto range = stack.unsafe.equal_range(brick.get());
-                    std::cerr << "\nresting blocks:\n";
-                    for (auto it = range.first; it != range.second; ++it) {
-                        std::cerr << "  " << *it->second << "\n";
-                    }
-                }
                 assert(can_disintegrate == is_safe);
             }
         }
@@ -44,30 +31,41 @@ int part_1(aoc::day22::BrickStack &stack) {
     return count;
 }
 
-int part_2(aoc::day22::BrickStack &stack) {
+int part_2(const aoc::day22::BrickStack &stack) {
     using namespace aoc::day22;
 
-    std::map<const Brick *, int> counts;
+    int count = 0;
 
-    auto helper = [&stack, &counts](const Brick *brick, const auto rec) {
-        {
-            const auto it = counts.find(brick);
-            if (it != counts.end()) {
-                return it->second;
+    for (const Brick *root : stack.bricks()) {
+        if constexpr (aoc::DEBUG) {
+            std::cerr << "resting on " << *root << ":\n";
+            for (const auto tmp : stack.supporting.at(root)) {
+                std::cerr << "  " << *tmp << "\n";
             }
         }
-        int count = 0;
-        const auto range = stack.unsafe.equal_range(brick);
-        for (auto it = range.first; it != range.second; ++it) {
-            count += 1 + rec(it->second, rec);
-        }
-        return count;
-    };
 
-    int count = 0;
-    for (const auto &[_, brick] : stack.settled_bricks) {
-        count += helper(brick.get(), helper);
+        const auto get_neighbors = [&stack](const Brick *brick) {
+            return stack.supporting.at(brick);
+        };
+        const auto ordering = aoc::graph::topo_sort(root, get_neighbors);
+
+        std::unordered_set<const Brick *> falling{root};
+        for (const Brick *brick : ordering) {
+            bool can_fall = true;
+            for (const Brick *b : stack.supported_by.at(brick)) {
+                if (!falling.contains(b)) {
+                    can_fall = false;
+                    break;
+                }
+            }
+            if (can_fall) {
+                falling.insert(brick);
+            }
+        }
+        falling.erase(root);
+        count += falling.size();
     }
+
     return count;
 }
 
@@ -87,8 +85,10 @@ int main(int argc, char **argv) {
     while (stack.settle_one()) {
         if constexpr (aoc::DEBUG) {
             std::cerr << "settled bricks:\n";
-            for (const auto &[_, brick] : stack.settled_bricks) {
-                std::cerr << "  " << *brick << "\n";
+            for (const auto &[_, bricks] : stack.settled_bricks) {
+                for (const auto &brick : bricks) {
+                    std::cerr << "  " << *brick << "\n";
+                }
             }
             std::cerr << "\npending bricks:\n";
             for (const auto &brick : stack.pending_bricks) {
@@ -100,20 +100,24 @@ int main(int argc, char **argv) {
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "settled bricks:\n";
-        for (const auto &[_, brick] : stack.settled_bricks) {
-            std::cerr << "  " << *brick << "\n";
+        for (const auto &[_, bricks] : stack.settled_bricks) {
+            for (const auto &brick : bricks) {
+                std::cerr << "  " << *brick << "\n";
+            }
         }
         std::cerr << "\nsafe to remove:\n";
-        for (const auto &[_, brick] : stack.settled_bricks) {
-            if (!stack.unsafe.contains(brick.get())) {
-                std::cerr << "  " << *brick << "\n";
+        for (const auto &[_, bricks] : stack.settled_bricks) {
+            for (const auto &brick : bricks) {
+                if (!stack.is_unsafe(brick.get())) {
+                    std::cerr << "  " << *brick << "\n";
+                }
             }
         }
         std::cerr << "\n";
     }
 
     std::cout << part_1(stack) << "\n";
-    // std::cout << part_2(stack) << "\n";
+    std::cout << part_2(stack) << "\n";
 
     return 0;
 }
