@@ -51,11 +51,23 @@ using maybe_unordered_map =
     std::conditional_t<Hashable<Key>, std::unordered_map<Key, T>,
                        std::map<Key, T>>;
 
+template <typename C, typename T>
+// clang-format off
+concept any_iterable_collection =
+    std::same_as<typename C::value_type, T> &&
+    requires (C c) {
+        { c.begin() } -> std::forward_iterator;
+        { c.end() }   -> std::forward_iterator;
+        { const_cast<const C&>(c).begin() } -> std::forward_iterator;
+        { const_cast<const C&>(c).end() }   -> std::forward_iterator;
+    };
+// clang-format on
+
 template <class Func, class Key>
 concept GetNeighbors = requires(Func get_neighbors, const Key &key) {
                            {
                                get_neighbors(key)
-                               } -> std::same_as<std::vector<Key>>;
+                               } -> any_iterable_collection<Key>;
                        };
 
 template <class Func, class Key>
