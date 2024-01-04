@@ -23,20 +23,23 @@ jobs:
         run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT answer
 
     outputs:
-      matrix-combinations: ${{ steps.setup-matrix-combinations.outputs.matrix-combinations }}
+      targets: ${{ steps.setup-matrix-combinations.outputs.matrix-targets }}
+      build-configs: ${{ steps.setup-matrix-combinations.outputs.matrix-build-configs }}
 
   matrix-job:
     runs-on: ubuntu-latest
     needs: setup-matrix
-    if: ${{ needs.setup-matrix.outputs.matrix-combinations != '{}' }}
+    if: ${{ needs.setup-matrix.outputs.targets != '{}' }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix-combinations) }}
+      matrix:
+        TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
+        BUILD_CONFIG: ${{ fromJson(needs.setup-matrix.outputs.build-configs) }}
     container: ubuntu:latest
     defaults:
       run:
         shell: bash
-        working-directory: ${{ matrix.directory }}
+        working-directory: ${{ matrix.TARGET.directory }}
     steps:
       - name: Install git
         working-directory: /
@@ -52,17 +55,17 @@ jobs:
         run: |
           apt-get -qq -y install build-essential
           apt-get -qq -y install lsb-release wget software-properties-common gnupg
-          if [[ ${{ matrix.compiler }} == clang++-* ]]; then
+          if [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++-* ]]; then
             # install clang and libc++ from the LLVM nightly repository
-            LLVM_VERSION=${{ matrix.compiler }}
+            LLVM_VERSION=${{ matrix.BUILD_CONFIG.compiler }}
             LLVM_VERSION=${LLVM_VERSION#clang++-}
             wget https://apt.llvm.org/llvm.sh
             chmod +x llvm.sh
             ./llvm.sh $LLVM_VERSION
-            if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+            if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
               apt-get -y install libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev
             fi
-          elif [[ ${{ matrix.compiler }} == clang++ ]]; then
+          elif [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++ ]]; then
             apt-get -y install clang
           else
             apt-get -y install g++
@@ -70,15 +73,15 @@ jobs:
 
       - name: Build targets
         run: |
-          if [[ ${{ matrix.stdlib }} == libc++ ]]; then
+          if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
             export USE_LIBCXX=TRUE
           fi
-          ${{ matrix.compiler }} --version
-          make CXX=${{ matrix.compiler }} build/release/${{ matrix.target }}
+          ${{ matrix.BUILD_CONFIG.compiler }} --version
+          make CXX=${{ matrix.BUILD_CONFIG.compiler }} build/release/${{ matrix.TARGET.name }}
 
       - name: Run answer tests
         timeout-minutes: 2
         run: |
           # mark git checkout as safe
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          ./run_answer_tests.sh ${{ matrix.target }}
+          ./run_answer_tests.sh ${{ matrix.TARGET.name }}

@@ -75,17 +75,20 @@ class Target:
             deps.add(run_answer_tests.resolve())
         return frozenset(deps)
 
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "directory": str(self.base_dir.relative_to(ROOT)),
+            "name": str(self),
+        }
+
 
 @dataclass(order=True, frozen=True, kw_only=True)
-class Config:
-    target: Target
+class BuildConfig:
     compiler: str
     stdlib: str = "libstdc++"
 
     def to_dict(self) -> dict[str, str]:
         return {
-            "directory": str(self.target.base_dir.relative_to(ROOT)),
-            "target": str(self.target),
             "compiler": self.compiler,
             "stdlib": self.stdlib,
         }
@@ -117,27 +120,32 @@ class Matrix:
             target_pat = re.compile("day|test")
         elif mode == "answer":
             target_pat = re.compile("day")
-        self.configs: set[Config] = set()
+        self.targets: set[Target] = set()
+        self.build_configs = [
+            BuildConfig(compiler="clang++"),
+            BuildConfig(compiler="g++"),
+            BuildConfig(compiler="clang++17", stdlib="libc++"),
+        ]
 
-        self.targets: list[Target] = []
+        all_targets: list[Target] = []
         for base_dir in find_base_dirs():
             if mode == "answer" and not (base_dir / "run_answer_tests.sh").exists():
                 continue
             for target in enumerate_targets(base_dir):
                 if target_pat.match(target.prefix):
-                    self.targets.append(target)
-        self.targets.sort()
+                    all_targets.append(target)
+        all_targets.sort()
 
         self.file_lookup: dict[Path, list[Target]] = defaultdict(list)
-        for target in self.targets:
+        for target in all_targets:
             for dep in target.get_deps(mode):
                 self.file_lookup[dep].append(target)
 
-        self.file_lookup[ROOT / ".github/workflows/gen_matrix.py"] = self.targets
+        self.file_lookup[ROOT / ".github/workflows/gen_matrix.py"] = all_targets
         for file in ROOT.glob(".github/workflows/*.yml"):
             with open(file, "r") as f:
                 if mode in file.name and "gen_matrix.py" in f.read():
-                    self.file_lookup[file] = self.targets
+                    self.file_lookup[file] = all_targets
 
         for file in self.file_lookup:
             validate_path(file)
@@ -145,26 +153,26 @@ class Matrix:
     def process_changed_file(self, file: Path) -> None:
         validate_path(file)
         for target in self.file_lookup.get(file, ()):
-            self.add_config(target)
-
-    def add_config(self, target: Target) -> None:
-        self.configs.add(Config(target=target, compiler="clang++"))
-        self.configs.add(Config(target=target, compiler="clang++-17", stdlib="libc++"))
-        self.configs.add(Config(target=target, compiler="g++"))
+            self.targets.add(target)
 
     def write_combinations(self, output_file: str) -> None:
-        matrix = {}
-        if self.configs:
-            config_list = sorted(self.configs)
-            includes = []
-            print("\nconfigurations:")
-            for config in config_list:
-                includes.append(config.to_dict())
-                print(f"  {config.to_dict()}")
-            matrix["include"] = includes
+        target_dicts = []
+        config_dicts = []
+        if self.targets:
+            print("\ntargets:")
+            for target in sorted(self.targets):
+                target_dicts.append(target.to_dict())
+                print(f"  {target_dicts[-1]}")
+            print("\nconfigs:")
+            for config in self.build_configs:
+                config_dicts.append(config.to_dict())
+                print(f"  {config_dicts[-1]}")
         with open(output_file, "a") as f:
-            f.write("matrix-combinations=")
-            json.dump(matrix, f, indent=None, separators=(",", ":"))
+            f.write("matrix-targets=")
+            json.dump(target_dicts, f, indent=None, separators=(",", ":"))
+            f.write("\n")
+            f.write("matrix-build-configs=")
+            json.dump(config_dicts, f, indent=None, separators=(",", ":"))
             f.write("\n")
 
 
