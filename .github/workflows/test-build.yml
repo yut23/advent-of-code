@@ -55,22 +55,21 @@ jobs:
         run: |
           apt-get -qq -y install build-essential
           apt-get -qq -y install lsb-release wget software-properties-common gnupg
-          #if [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++-* ]]; then
+          if [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++-* ]]; then
             # install clang and libc++ from the LLVM nightly repository
-            #LLVM_VERSION=${{ matrix.BUILD_CONFIG.compiler }}
-            #LLVM_VERSION=${LLVM_VERSION#clang++-}
-            LLVM_VERSION=17
+            LLVM_VERSION=${{ matrix.BUILD_CONFIG.compiler }}
+            LLVM_VERSION=${LLVM_VERSION#clang++-}
             wget https://apt.llvm.org/llvm.sh
             chmod +x llvm.sh
             ./llvm.sh $LLVM_VERSION
-            #if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
+            if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
               apt-get -y install libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev
-            #fi
-          #elif [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++ ]]; then
+            fi
+          elif [[ ${{ matrix.BUILD_CONFIG.compiler }} == clang++ ]]; then
             apt-get -y install clang
-          #else
+          else
             apt-get -y install g++
-          #fi
+          fi
 
       - name: Build targets
         run: |
