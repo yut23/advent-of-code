@@ -18,6 +18,7 @@ memory_limit=4G
 prefix_args=()
 make_args=()
 write_answer=n
+skip_make=n
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
@@ -72,6 +73,14 @@ while [[ $# -gt 0 ]]; do
       ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=0:abort_on_error=1
       shift
       ;;
+    --no-make)
+      skip_make=y
+      shift
+      ;;
+    --no-make-wrapper)
+      make_args+=("$1")
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -109,8 +118,10 @@ fi
 
 binary=$bin_dir/day$day
 
-# rebuild if make says it's necessary
-make_quiet "${make_args[@]}" "$binary"
+if [[ $skip_make != y ]]; then
+  # rebuild if make says it's necessary
+  make_quiet "${make_args[@]}" "$binary"
+fi
 
 if [[ $write_answer != y ]]; then
   echo "Day ${day#0}:"
@@ -140,7 +151,7 @@ else
   systemctl --quiet --user is-failed aoc.service && systemctl --user reset-failed aoc.service
   # explicitly stop the unit on SIGINT, as systemd-run doesn't seem to handle
   # it if any of the standard streams are redirected
-  trap 'systemctl --quiet --user is-active aoc.service && systemctl --quiet --user stop aoc.service; exit 1' INT
+  trap 'systemctl --quiet --user is-active aoc.service && systemctl --quiet --user stop aoc.service; exit 130' INT
   systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
   trap - INT
   if systemctl --quiet --user is-failed aoc.service; then

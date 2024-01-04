@@ -38,14 +38,19 @@ make_quiet() {
   # make a target only if make thinks it's necessary (outputs nothing if not)
   targets=()
   args=()
+  local MAKE="make_wrapper"
   while [[ $# -gt 0 ]]; do
-    args+=("$1")
     case $1 in
+      --no-make-wrapper)
+        MAKE="make"
+        ;;
       -*)
         # allow any number of options
+        args+=("$1")
         ;;
       *)
         targets+=("$1")
+        args+=("$1")
         ;;
     esac
     shift
@@ -55,7 +60,7 @@ make_quiet() {
     >&2 echo "Internal error: make_quiet should only be passed one target"
     return 1
   fi
-  make -q "${targets[@]}" 2>/dev/null || make_wrapper "$@"
+  make -q "${targets[@]}" 2>/dev/null || $MAKE "$@"
 }
 
 make_wrapper() {
