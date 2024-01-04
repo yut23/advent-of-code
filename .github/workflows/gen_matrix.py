@@ -124,7 +124,7 @@ class Matrix:
         self.build_configs = [
             BuildConfig(compiler="clang++"),
             BuildConfig(compiler="g++"),
-            BuildConfig(compiler="clang++17", stdlib="libc++"),
+            BuildConfig(compiler="clang++-17", stdlib="libc++"),
         ]
 
         all_targets: list[Target] = []
@@ -163,7 +163,9 @@ class Matrix:
             for target in sorted(self.targets):
                 target_dicts.append(target.to_dict())
                 print(f"  {target_dicts[-1]}")
-            print("\nconfigs:")
+                if len(target_dicts) >= 2:
+                    break
+            print("\nbuild configurations:")
             for config in self.build_configs:
                 config_dicts.append(config.to_dict())
                 print(f"  {config_dicts[-1]}")
