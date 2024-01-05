@@ -10,6 +10,7 @@ jobs:
 
   docker-build:
     uses: ./.github/workflows/docker-build.yml
+    needs: setup-matrix
     if: ${{ !needs.setup-matrix.outputs.empty }}
     permissions:
       packages: write
