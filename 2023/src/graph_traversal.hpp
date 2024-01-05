@@ -14,6 +14,7 @@
 #include <concepts>      // for convertible_to, same_as, integral
 #include <cstddef>       // for size_t
 #include <functional>    // for function, greater, hash
+#include <iterator>      // for forward_iterator
 #include <map>           // for map
 #include <queue>         // for priority_queue
 #include <set>           // for set
@@ -76,8 +77,8 @@ concept IsTarget = requires(Func is_target, const Key &key) {
                    };
 
 template <class Func, class Key>
-concept Visit = requires(Func visit, const Key &key, int depth) {
-                    { visit(key, depth) } -> std::same_as<void>;
+concept Visit = requires(Func visit, const Key &key, int distance) {
+                    { visit(key, distance) } -> std::same_as<void>;
                 };
 
 template <class Func, class Key>
@@ -180,7 +181,12 @@ int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         if (is_target(key)) {
             return depth;
         }
-        seen.insert(key);
+        if constexpr (use_seen) {
+            seen.insert(key);
+        } else {
+            // suppress unused lambda capture warning
+            (void)seen;
+        }
         for (const Key &neighbor : get_neighbors(key)) {
             if constexpr (use_seen) {
                 if (seen.contains(neighbor)) {
