@@ -19,7 +19,7 @@ jobs:
   matrix-job:
     runs-on: ubuntu-latest
     needs: [setup-matrix, docker-build]
-    if: ${{ needs.setup-matrix.outputs.nonempty }}
+    if: ${{ needs.setup-matrix.outputs.targets != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +37,7 @@ jobs:
 
       - name: Build targets
         run: |
+          printf 'empty=%s\nnonempty=%s\n' "${{ needs.setup-matrix.outputs.empty }}" "${{ needs.setup-matrix.outputs.nonempty }}"
           if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
             export USE_LIBCXX=TRUE
           fi
