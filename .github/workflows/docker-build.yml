@@ -60,11 +60,12 @@ jobs:
       - name: Check for existing build
         id: check-existing
         run: |
-          if docker manifest inspect $REGISTRY/$IMAGE_NAME:$IMAGE_TAG > /dev/null; then
+          if docker manifest inspect $REGISTRY/$IMAGE_NAME:$IMAGE_TAG; then
             echo "in-registry=true" >> $GITHUB_OUTPUT
           else
             echo "in-registry=false" >> $GITHUB_OUTPUT
           fi
+          cat $GITHUB_OUTPUT
 
     outputs:
       in-registry: ${{ steps.check-existing.outputs.in-registry }}
