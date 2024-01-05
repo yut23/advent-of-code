@@ -12,9 +12,6 @@ RUN apt-get update && \
       gnupg
 RUN wget https://apt.llvm.org/llvm.sh -O /tmp/llvm.sh
 # install compilers and libc++
-RUN bash /tmp/llvm.sh $LLVM_VERSION
-RUN apt-get install -y \
-      libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev \
-      clang \
-      g++
+RUN bash /tmp/llvm.sh ${LLVM_VERSION}
+RUN apt-get install -y clang g++ libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev
 CMD ["/bin/bash"]
