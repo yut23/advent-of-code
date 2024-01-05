@@ -35,3 +35,4 @@ jobs:
     outputs:
       targets: ${{ steps.setup-matrix-combinations.outputs.matrix-targets }}
       build-configs: ${{ steps.setup-matrix-combinations.outputs.matrix-build-configs }}
+      empty: ${{ steps.setup-matrix-combinations.outputs.matrix-targets == '[]' }}

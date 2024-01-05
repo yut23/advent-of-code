@@ -144,7 +144,10 @@ class Matrix:
         self.file_lookup[ROOT / ".github/workflows/gen_matrix.py"] = all_targets
         for file in ROOT.glob(".github/workflows/*.yml"):
             with open(file, "r") as f:
-                if mode in file.name and "gen_matrix.py" in f.read():
+                contents = f.read()
+                if mode in file.name and (
+                    "gen_matrix.py" in contents or "generate-matrix.yml" in contents
+                ):
                     self.file_lookup[file] = all_targets
 
         for file in self.file_lookup:
