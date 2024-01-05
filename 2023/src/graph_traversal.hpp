@@ -128,6 +128,7 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
             auto neighbors = get_neighbors(key);
             next_queue.insert(neighbors.begin(), neighbors.end());
         }
+        queue.clear();
         std::swap(queue, next_queue);
         ++distance;
     }
