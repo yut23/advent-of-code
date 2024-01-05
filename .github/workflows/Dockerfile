@@ -3,8 +3,9 @@
 ARG UBUNTU_VERSION
 ARG LLVM_VERSION
 FROM ubuntu:$UBUNTU_VERSION
-RUN apt-get update && \
-    apt-get install -y \
+ENV LLVM_VERSION ${LLVM_VERSION}
+RUN apt-get update -qq && \
+    apt-get install -qq -y \
       git \
       build-essential \
       lsb-release \
