@@ -4,27 +4,9 @@ on: [push, pull_request]
 
 jobs:
   setup-matrix:
-    runs-on: ubuntu-latest
-    name: Get changed files
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v40
-        with:
-          json: true
-
-      # reference: https://stackoverflow.com/a/65094398
-      - name: Setup matrix combinations
-        id: setup-matrix-combinations
-        run: python $GITHUB_WORKSPACE/.github/workflows/gen_matrix.py "${{ steps.changed-files.outputs.all_changed_files }}" $GITHUB_OUTPUT build
-
-    outputs:
-      targets: ${{ steps.setup-matrix-combinations.outputs.matrix-targets }}
-      build-configs: ${{ steps.setup-matrix-combinations.outputs.matrix-build-configs }}
+    uses: ./.github/workflows/generate-matrix.yml
+    with:
+      mode: build
 
   matrix-job:
     runs-on: ubuntu-latest
