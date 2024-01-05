@@ -77,7 +77,7 @@ jobs:
       #contents: read
       packages: write
     needs: check-registry
-    if: ${{ inputs.rebuild || !needs.check-registry.outputs.in-registry }}
+    if: ${{ inputs.rebuild || !fromJson(needs.check-registry.outputs.in-registry) }}
 
     steps:
       - uses: actions/checkout@v4
