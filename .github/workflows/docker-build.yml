@@ -109,6 +109,6 @@ jobs:
             UBUNTU_VERSION=${{ inputs.ubuntu-version }}
             LLVM_VERSION=${{ inputs.llvm-version }}
           push: true
-          tags: $IMAGE_TAG
+          tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
