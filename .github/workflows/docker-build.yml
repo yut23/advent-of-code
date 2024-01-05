@@ -15,7 +15,7 @@ on:
         default: false
     outputs:
       image:
-        value: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        value: ${{ jobs.check-registry.outputs.image }}
   workflow_dispatch:
     inputs:
       ubuntu-version:
@@ -68,6 +68,7 @@ jobs:
 
     outputs:
       in-registry: ${{ steps.check-existing.outputs.in-registry }}
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
   build-image:
     runs-on: ubuntu-latest
