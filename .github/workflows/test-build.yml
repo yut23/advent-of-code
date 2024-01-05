@@ -10,9 +10,10 @@ jobs:
 
   docker-build:
     uses: ./.github/workflows/docker-build.yml
+    if: ${{ needs.setup-matrix.outputs.targets != '[]' }}
     permissions:
       packages: write
-    if: ${{ needs.setup-matrix.outputs.targets != '[]' }}
+      #contents: read
     with:
       ubuntu-version: 22.04
       llvm-version: 17

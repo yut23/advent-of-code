@@ -73,7 +73,7 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      #contents: read
       packages: write
     needs: check-registry
     if: ${{ inputs.rebuild || !needs.check-registry.outputs.in-registry }}
