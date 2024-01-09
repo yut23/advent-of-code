@@ -12,9 +12,10 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    auto farm = aoc::day21::Farm::read(infile);
+    auto garden = aoc::day21::Garden::read(infile);
 
-    std::cout << farm.part_1() << "\n";
+    std::cout << garden.part_1() << "\n";
+    // std::cout << garden.part_2() << "\n";
 
     return 0;
 }
