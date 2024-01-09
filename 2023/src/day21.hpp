@@ -95,11 +95,6 @@ struct Grid {
     constexpr const_reference operator[](const Pos &pos) const {
         return data[get_index(pos.x, pos.y)];
     }
-
-    constexpr Pos wrap(const Pos &pos) const {
-        return Pos((pos.x % width + width) % width,
-                   (pos.y % height + height) % height);
-    }
 };
 
 struct Garden {
@@ -276,8 +271,8 @@ class EdgeSet {
     };
 
     const Garden &garden;
-    std::map<Pos, Entry> edge_set;
-    std::map<Pos, Entry> next_edge_set;
+    std::vector<Entry> edge_set;
+    std::vector<Entry> next_edge_set;
 
     std::map<Pos, const DistanceInfo> dist_info_cache;
     long reachable = 0;
@@ -285,8 +280,7 @@ class EdgeSet {
   public:
     explicit EdgeSet(const Garden &garden_, int target_distance)
         : garden(garden_), edge_set(), next_edge_set() {
-        add_tile(Pos(0, 0), garden.start, target_distance);
-        std::swap(edge_set, next_edge_set);
+        edge_set.push_back(Entry{Pos(0, 0), garden.start, target_distance});
     }
 
     const DistanceInfo &get_info(const Pos &start) {
@@ -300,23 +294,6 @@ class EdgeSet {
                 .emplace(start, DistanceInfo(garden.get_distances(start)))
                 .first;
         return it_2->second;
-    }
-
-  private:
-    bool add_tile(const Pos &tile_pos, const Pos &start, int distance_left) {
-        Entry new_entry{tile_pos, start, distance_left};
-        auto it = next_edge_set.lower_bound(tile_pos);
-        // replace existing entry if it has a lower remaining distance
-        if (it != next_edge_set.end() && it->first == tile_pos) {
-            if (it->second.distance_left < distance_left) {
-                it->second = std::move(new_entry);
-                return true;
-            }
-        } else {
-            next_edge_set.emplace_hint(it, tile_pos, std::move(new_entry));
-            return true;
-        }
-        return false;
     }
 
   public:
@@ -339,7 +316,8 @@ std::ostream &operator<<(std::ostream &os, const EdgeSet::Entry &entry) {
 
 void EdgeSet::expand() {
     constexpr bool debug = aoc::DEBUG && false;
-    for (const auto &[tile_pos, entry] : edge_set) {
+    for (const auto &entry : edge_set) {
+        const Pos &tile_pos = entry.tile_pos;
         const DistanceInfo &info = get_info(entry.start);
         int prev_reachable = reachable;
         if (entry.distance_left >= info.max_distance) {
@@ -367,30 +345,38 @@ void EdgeSet::expand() {
             (void)prev_reachable;
         }
         const Grid<int> &distances = info.distances;
-        for (const AbsDirection &dir : aoc::DIRECTIONS) {
+        std::vector<AbsDirection> dirs;
+        const int xpy = tile_pos.x + tile_pos.y;
+        const int xmy = tile_pos.x - tile_pos.y;
+        const int i = (tile_pos - Pos(0, 0)).manhattan_distance() & 1;
+        if (xpy <= -i && xmy >= -i) {
+            dirs.push_back(AbsDirection::north);
+        }
+        if (xpy >= -i && xmy >= i) {
+            dirs.push_back(AbsDirection::east);
+        }
+        if (xpy >= i && xmy <= i) {
+            dirs.push_back(AbsDirection::south);
+        }
+        if (xpy <= i && xmy <= -i) {
+            dirs.push_back(AbsDirection::west);
+        }
+        for (const AbsDirection &dir : dirs) {
             Delta delta(dir, true);
             Pos new_tile_pos = tile_pos + delta;
-            if ((new_tile_pos - Pos(0, 0)).manhattan_distance() <=
-                (tile_pos - Pos(0, 0)).manhattan_distance()) {
-                // don't go backwards
-                continue;
-            }
             // add new tile, starting from the lowest distance value on the
             // adjacent edge
             const auto &[min_pos, min_dist] = info.get_edge_pos(dir);
             const int new_distance = entry.distance_left - (min_dist + 1);
             if (new_distance >= 0) {
-                bool added =
-                    add_tile(new_tile_pos, distances.wrap(min_pos + delta),
-                             new_distance);
+                Pos new_start = min_pos;
+                new_start.x -= delta.dx * (distances.width - 1);
+                new_start.y -= delta.dy * (distances.height - 1);
+                next_edge_set.push_back(
+                    Entry{new_tile_pos, new_start, new_distance});
                 if constexpr (debug) {
-                    if (added) {
-                        std::cerr << "  adding "
-                                  << next_edge_set.at(new_tile_pos)
-                                  << " to edge set from " << tile_pos << "\n";
-                    }
-                } else {
-                    (void)added;
+                    std::cerr << "  adding " << next_edge_set.back()
+                              << " to edge set from " << tile_pos << "\n";
                 }
             }
         }
@@ -403,16 +389,16 @@ void EdgeSet::expand() {
             if (it != edge_set.begin()) {
                 std::cerr << ", ";
             }
-            std::cerr << it->first;
+            std::cerr << *it;
         }
         std::cerr << "\n";
     }
 }
 
 long Garden::part_2() const {
-    constexpr int target_distance = 26501365; // = 2023 * 100 * 131 + 65
+    // constexpr int target_distance = 26501365; // = 2023 * 100 * 131 + 65
     // constexpr int target_distance = 11;
-    // constexpr int target_distance = 2023 * 1 * 131 + 65;
+    constexpr int target_distance = 2023 * 1 * 131 + 65;
 
     // check our assumptions
     if (!check_part_2()) {
