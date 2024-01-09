@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: aoc [day] [-t] [-q] [-d|-f] [--gdb] [-e [example number] [-w]|-i <input file name>]"
+  echo "Usage: aoc [day] [-t|--gdb] [-q] [-d|-f] [-e [example number] [-w]|-i <input file name>]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
@@ -19,6 +19,7 @@ prefix_args=()
 make_args=()
 write_answer=n
 skip_make=n
+use_gdb=n
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
@@ -63,7 +64,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --gdb)
-      bin_dir=build/debug
+      use_gdb=y
       prefix_args=(gdb --args)
       # run directly in the terminal
       memory_limit=none
@@ -113,6 +114,15 @@ if ! [[ -e "$input_path" ]]; then
   else
     >&2 echo "ERROR: could not find input file at $input_path"
     exit 2
+  fi
+fi
+
+# if --gdb was passed, use debug build, or profile build if --fast was also passed
+if [[ $use_gdb == y ]]; then
+  if [[ $bin_dir == build/fast ]]; then
+    bin_dir=build/profile
+  else
+    bin_dir=build/debug
   fi
 fi
 
