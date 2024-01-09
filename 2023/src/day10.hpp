@@ -167,8 +167,7 @@ struct PipeIterator {
 };
 
 PipeIterator PipeGrid::begin() const {
-    for (AbsDirection dir : {AbsDirection::east, AbsDirection::north,
-                             AbsDirection::west, AbsDirection::south}) {
+    for (AbsDirection dir : aoc::DIRECTIONS) {
         Pos pos = start_pos + Delta(dir, true);
         if (!in_bounds(pos)) {
             continue;

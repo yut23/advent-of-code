@@ -9,7 +9,7 @@
 #define DAY17_HPP_3D5Q7QMY
 
 #include "graph_traversal.hpp" // for dijkstra
-#include "lib.hpp" // for Pos, AbsDirection, Delta, opposite, DEBUG, as_number
+#include "lib.hpp" // for Pos, AbsDirection, Delta, opposite, DEBUG, DIRECTIONS, as_number
 
 #include <algorithm>        // for transform
 #include <compare>          // for strong_ordering
@@ -64,8 +64,7 @@ std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
     const int min_straight_moves = ultra ? 4 : 0;
     const int max_straight_moves = ultra ? 10 : 3;
     std::vector<Key> neighbors;
-    for (const auto dir : {AbsDirection::north, AbsDirection::east,
-                           AbsDirection::south, AbsDirection::west}) {
+    for (const AbsDirection &dir : aoc::DIRECTIONS) {
         if (dir == opposite(key.dir)) {
             continue;
         }

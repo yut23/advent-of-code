@@ -9,14 +9,15 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include <algorithm>  // for max, min
-#include <cassert>    // for assert
-#include <compare>    // for strong_ordering
-#include <cstdlib>    // for abs, size_t, exit
-#include <fstream>    // for ifstream  // IWYU pragma: keep
-#include <functional> // for hash
-#include <iostream>   // for cout
-#include <string>     // for string
+#include <algorithm>        // for max, min
+#include <cassert>          // for assert
+#include <compare>          // for strong_ordering
+#include <cstdlib>          // for abs, size_t, exit
+#include <fstream>          // for ifstream  // IWYU pragma: keep
+#include <functional>       // for hash
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for cout
+#include <string>           // for string
 #include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 #include <utility> // for move
 
@@ -39,6 +40,12 @@ enum class AbsDirection : unsigned char {
     east = 1,
     south = 2,
     west = 3,
+};
+[[maybe_unused]] constexpr std::initializer_list<AbsDirection> DIRECTIONS = {
+    AbsDirection::north,
+    AbsDirection::east,
+    AbsDirection::south,
+    AbsDirection::west,
 };
 
 std::istream &operator>>(std::istream &is, AbsDirection &dir) {

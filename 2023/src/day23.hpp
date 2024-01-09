@@ -94,8 +94,7 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
     case 'v':
         return {pos + Delta(AbsDirection::south, true)};
     case '.':
-        for (const auto dir : {AbsDirection::north, AbsDirection::east,
-                               AbsDirection::south, AbsDirection::west}) {
+        for (const auto dir : aoc::DIRECTIONS) {
             Pos new_pos = pos + Delta(dir, true);
             if (!in_bounds(new_pos)) {
                 continue;
