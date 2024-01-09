@@ -250,7 +250,7 @@ int TrailMap::part_1() const {
     auto is_target = [&after_target](const Pos &pos) {
         return pos == after_target;
     };
-    const auto &[distance, path] = aoc::graph::longest_path<Pos>(
+    const auto &[distance, path] = aoc::graph::longest_path_dag(
         start, get_neighbors, get_distance, is_target);
 
     if constexpr (aoc::DEBUG) {

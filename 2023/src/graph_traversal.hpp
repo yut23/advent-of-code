@@ -264,8 +264,8 @@ std::vector<Key> topo_sort(const Key &source, GetNeighbors &&get_neighbors) {
 template <class Key, detail::GetNeighbors<Key> GetNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
 std::pair<int, std::vector<Key>>
-longest_path(const Key &source, GetNeighbors &&get_neighbors,
-             GetDistance &&get_distance, IsTarget &&is_target) {
+longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
+                 GetDistance &&get_distance, IsTarget &&is_target) {
     std::vector<Key> ordering = topo_sort<Key>(source, get_neighbors);
     detail::maybe_unordered_map<Key, std::pair<int, Key>> longest_path{};
     // longest_path.try_emplace(source, std::make_pair(0, source));
@@ -564,7 +564,7 @@ using Key1 = std::pair<int, int>;
 
     topo_sort(source, get_neighbors);
 
-    longest_path(source, get_neighbors, get_distance, is_target);
+    longest_path_dag(source, get_neighbors, get_distance, is_target);
 
     dijkstra<false>(source, get_neighbors, get_distance, is_target);
     dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
@@ -602,7 +602,7 @@ using Key2 = int;
 
     topo_sort(source, get_neighbors);
 
-    longest_path(source, get_neighbors, get_distance, is_target);
+    longest_path_dag(source, get_neighbors, get_distance, is_target);
 
     dijkstra<false>(source, get_neighbors, get_distance, is_target);
     dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
