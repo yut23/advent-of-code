@@ -106,19 +106,24 @@ concept Heuristic = requires(Func heuristic, const Key &key) {
  *
  * At least one of `is_target` and `visit` must be passed.
  *
- * Will visit each node no more than once, calling `visit` with the node and the
- * depth at which it was found.
+ * If passed, `visit(node, distance)` will be called for each node.
+
+ * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
+ * visited as a tree). `use_seen` should only be set to false if the graph has
+ * no cycles.
  *
  * Returns the distance from the source to the first target found, or -1 if not
  * found.
  */
-template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
           detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
 int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         Visit &&visit) {
     int distance = 0;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
+    detail::maybe_unordered_set<Key> seen{};
 
     while (!queue.empty()) {
         for (const Key &key : queue) {
@@ -126,8 +131,17 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
             if (is_target(key)) {
                 return distance;
             }
-            auto neighbors = get_neighbors(key);
-            next_queue.insert(neighbors.begin(), neighbors.end());
+            if constexpr (use_seen) {
+                seen.insert(key);
+            }
+            for (const Key &neighbor : get_neighbors(key)) {
+                if constexpr (use_seen) {
+                    if (seen.contains(neighbor)) {
+                        continue;
+                    }
+                }
+                next_queue.insert(neighbor);
+            }
         }
         queue.clear();
         std::swap(queue, next_queue);
@@ -136,17 +150,19 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
     return -1;
 }
 
-template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors,
           detail::IsTarget<Key> IsTarget>
 int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
-    return bfs(source, std::forward<GetNeighbors>(get_neighbors),
-               std::forward<IsTarget>(is_target), [](const Key &, int) {});
+    return bfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
+                         std::forward<IsTarget>(is_target),
+                         [](const Key &, int) {});
 }
 
-template <class Key, detail::GetNeighbors<Key> GetNeighbors,
-          detail::Visit<Key> Visit>
+template <bool use_seen = true, class Key,
+          detail::GetNeighbors<Key> GetNeighbors, detail::Visit<Key> Visit>
 int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
-    return bfs(
+    return bfs<use_seen>(
         source, std::forward<GetNeighbors>(get_neighbors),
         [](const Key &) { return false; }, std::forward<Visit>(visit));
 }
@@ -160,7 +176,7 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
  * node.
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
- * visited as a tree). `use_seen` should only be set to true if the graph has
+ * visited as a tree). `use_seen` should only be set to false if the graph has
  * no cycles.
  *
  * Returns the distance from the source to the first target found, or -1 if not
@@ -551,9 +567,12 @@ using Key1 = std::pair<int, int>;
     std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
     std::function<int(const Key1 &, const Key1 &)> get_distance,
     std::function<int(const Key1 &)> heuristic) {
-    bfs(source, get_neighbors, is_target);
-    bfs(source, get_neighbors, visit);
-    bfs(source, get_neighbors, is_target, visit);
+    bfs<true>(source, get_neighbors, is_target);
+    bfs<true>(source, get_neighbors, visit);
+    bfs<true>(source, get_neighbors, is_target, visit);
+    bfs<false>(source, get_neighbors, is_target);
+    bfs<false>(source, get_neighbors, visit);
+    bfs<false>(source, get_neighbors, is_target, visit);
 
     dfs<true>(source, get_neighbors, is_target);
     dfs<true>(source, get_neighbors, visit_with_parent);
@@ -589,9 +608,12 @@ using Key2 = int;
     std::function<void(const Key2 &, const Key2 &, int)> visit_with_parent,
     std::function<int(const Key2 &, const Key2 &)> get_distance,
     std::function<int(const Key2 &)> heuristic) {
-    bfs(source, get_neighbors, is_target);
-    bfs(source, get_neighbors, visit);
-    bfs(source, get_neighbors, is_target, visit);
+    bfs<true>(source, get_neighbors, is_target);
+    bfs<true>(source, get_neighbors, visit);
+    bfs<true>(source, get_neighbors, is_target, visit);
+    bfs<false>(source, get_neighbors, is_target);
+    bfs<false>(source, get_neighbors, visit);
+    bfs<false>(source, get_neighbors, is_target, visit);
 
     dfs<true>(source, get_neighbors, is_target);
     dfs<true>(source, get_neighbors, visit_with_parent);
