@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     auto garden = aoc::day21::Garden::read(infile);
 
     std::cout << garden.part_1() << "\n";
-    // std::cout << garden.part_2() << "\n";
+    std::cout << garden.part_2() << "\n";
 
     return 0;
 }
