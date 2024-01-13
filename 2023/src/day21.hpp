@@ -274,6 +274,7 @@ struct EdgeSet {
     std::map<std::pair<Pos, int>, int> reachable_cache;
     std::size_t reachable_cache_accesses = 0;
     long reachable = 0;
+    long tiles_visited = 0;
 
   public:
     explicit EdgeSet(const Garden &garden_, int target_distance_)
@@ -312,6 +313,7 @@ struct EdgeSet {
                   << "\n";
         std::cerr << "reachable cache size: " << reachable_cache.size()
                   << "; accesses: " << reachable_cache_accesses << "\n";
+        std::cerr << "visited " << tiles_visited << " tiles\n";
     }
 };
 
@@ -366,7 +368,7 @@ void EdgeSet::add_tile(const Pos &tile_pos) {
     // }
     if (distance_left >= 0) {
         next_edge_set.push_back(
-            Entry{std::move(tile_pos), std::move(start), distance_left});
+            Entry{tile_pos, std::move(start), distance_left});
     }
 }
 
@@ -378,9 +380,10 @@ void EdgeSet::expand() {
         const DistanceInfo &info = get_info(entry.start);
         const Grid<int> &distances = info.distances;
         int prev_reachable = reachable;
+        ++tiles_visited;
         if (entry.distance_left >= info.max_distance) {
             // tile is fully reachable; use pre-calculated values
-            if constexpr (aoc::DEBUG) {
+            if constexpr (aoc::DEBUG && false) {
                 if constexpr (!debug) {
                     std::cerr << "  ";
                 }
@@ -406,7 +409,7 @@ void EdgeSet::expand() {
             }
             reachable += it->second;
         }
-        if constexpr (debug) {
+        if constexpr (aoc::DEBUG) {
             std::cerr << "processing " << entry << ": "
                       << (reachable - prev_reachable)
                       << " new reachable positions\n";
@@ -441,10 +444,6 @@ void EdgeSet::expand() {
             // new_start.y -= delta.dy * (distances.height - 1);
             //  add_tile(new_tile_pos, new_start, new_distance);
             add_tile(new_tile_pos);
-            if constexpr (debug) {
-                std::cerr << "  adding " << next_edge_set.back()
-                          << " to edge set from " << tile_pos << "\n";
-            }
             //}
         }
         dirs.clear();
@@ -476,13 +475,11 @@ long Garden::part_2() const {
     EdgeSet es(*this, target_distance);
     int i = 0;
     // do the first three iterations to populate dist_info_cache
-    for (i = 0; !es.empty() && i < 3; ++i) {
-        /*
-        if (aoc::DEBUG || i % 1000 == 1) {
-            std::cerr << "starting iteration " << i << " with " << es.size()
+    for (i = 0; !es.empty() && i <= 3; ++i) {
+        if (aoc::DEBUG) {
+            std::cerr << "\nstarting iteration " << i << " with " << es.size()
                       << " tiles in edge set...\n";
         }
-        */
         es.expand();
     }
     if (!es.empty()) {
@@ -512,7 +509,7 @@ long Garden::part_2() const {
         long manual_reachable = es.get_reachable();
         // skip to the last fully covered iteration
         int last_full_iter =
-            (target_distance - start.x - max_distance) / stones.width;
+            (target_distance - start.x - max_distance) / stones.width - 4;
         {
             std::vector<EdgeSet::DistanceInfo> midpoints;
             std::vector<EdgeSet::DistanceInfo> corners;
@@ -522,19 +519,21 @@ long Garden::part_2() const {
             }
             for (; i < last_full_iter; ++i) {
                 /*
-                if (aoc::DEBUG || i % 1000 == 1) {
-                    std::cerr << "starting iteration " << i << " with "
+                if (aoc::DEBUG) {
+                    std::cerr << "\nstarting iteration " << i << " with "
                               << es.size() << " tiles in edge set...\n";
                 }
                 */
                 // es.expand();
-                int parity = (i % 2) ^ (target_distance % 2);
+                int corner_parity = (i % 2) ^ (target_distance % 2);
+                int midpoint_parity = corner_parity ^ (start.x & 1);
+                es.tiles_visited += 4 * i;
                 for (const auto &info : midpoints) {
-                    manual_reachable += info.total_reachable[1 - parity];
+                    manual_reachable += info.total_reachable[midpoint_parity];
                 }
                 for (const auto &info : corners) {
-                    manual_reachable +=
-                        std::max(0, i - 1) * info.total_reachable[parity];
+                    manual_reachable += std::max(0, i - 1) *
+                                        info.total_reachable[corner_parity];
                 }
                 // assert(manual_reachable == es.get_reachable());
             }
@@ -545,17 +544,17 @@ long Garden::part_2() const {
             const int x = j;
             const int y = i - j;
             es.add_tile(Pos(x, y));
-            es.add_tile(Pos(x, -y));
-            es.add_tile(Pos(-x, y));
+            es.add_tile(Pos(y, -x));
             es.add_tile(Pos(-x, -y));
+            es.add_tile(Pos(-y, x));
         }
         std::swap(es.edge_set, es.next_edge_set);
         es.reachable = manual_reachable;
         // assert(es.size() == old_size);
         for (; !es.empty(); ++i) {
-            if (aoc::DEBUG || i % 1000 == 1) {
-                std::cerr << "starting iteration " << i << " with " << es.size()
-                          << " tiles in edge set...\n";
+            if (aoc::DEBUG) {
+                std::cerr << "\nstarting iteration " << i << " with "
+                          << es.size() << " tiles in edge set...\n";
             }
             es.expand();
         }
@@ -585,8 +584,26 @@ long Garden::part_2() const {
         }
     } else if (stones.width == 11) {
         // example3.txt
-        if (target_distance == 26501365) {
-            if (reachable != 504975595803724) {
+        if (target_distance == 2023 * 1 * stones.width + start.x) {
+            if (reachable != 356242232) {
+                std::cerr << reachable << "\n";
+                assert(false);
+            }
+            assert(i == 2025);
+        } else if (target_distance == 2023 * 10 * stones.width + start.x) {
+            if (reachable != 35606924174) {
+                std::cerr << reachable << "\n";
+                assert(false);
+            }
+            assert(i == 20232);
+        } else if (target_distance == 2023 * 100 * stones.width + start.x) {
+            if (reachable != 3560519448524) {
+                std::cerr << reachable << "\n";
+                assert(false);
+            }
+            assert(i == 202302);
+        } else if (target_distance == 26501365) {
+            if (reachable != 504975595803726) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
@@ -595,7 +612,7 @@ long Garden::part_2() const {
     } else if (stones.width == 33) {
         // example4.txt
         if (target_distance == 26501365) {
-            if (reachable != 504975595803724) {
+            if (reachable != 504975595803726) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
