@@ -18,6 +18,7 @@
 #include <iostream>         // for istream, noskipws, cerr
 #include <limits>           // for numeric_limits
 #include <map>              // for map
+#include <memory>           // for unique_ptr, make_unique
 #include <utility>          // for pair, move, swap
 #include <vector>           // for vector
 
@@ -271,7 +272,8 @@ struct EdgeSet {
     int iter = 0;
     bool _made_progress = true;
 
-    std::map<Pos, const DistanceInfo> dist_info_cache;
+    std::vector<std::unique_ptr<DistanceInfo>> dist_info_cache;
+    std::vector<DistanceInfo *> dist_info_cache_lookup;
     std::map<std::pair<Pos, int>, int> reachable_cache;
     std::size_t reachable_cache_accesses = 0;
     long reachable = 0;
@@ -279,18 +281,21 @@ struct EdgeSet {
 
   public:
     explicit EdgeSet(const Garden &garden_, int target_distance_)
-        : garden(garden_), target_distance(target_distance_) {}
+        : garden(garden_), target_distance(target_distance_),
+          dist_info_cache_lookup(garden.stones.height * garden.stones.width) {}
 
     Entry make_entry(const Pos &tile_pos) const;
 
     const DistanceInfo &get_info(const Pos &start) {
-        auto it = dist_info_cache.lower_bound(start);
-        if (it == dist_info_cache.end() || it->first != start) {
+        std::size_t idx = start.y * garden.stones.width + start.x;
+        DistanceInfo *&ptr = dist_info_cache_lookup[idx];
+        if (ptr == nullptr) {
             // add to cache
-            it = dist_info_cache.emplace_hint(
-                it, start, DistanceInfo(garden.get_distances(start)));
+            dist_info_cache.emplace_back(
+                std::make_unique<DistanceInfo>(garden.get_distances(start)));
+            ptr = dist_info_cache.back().get();
         }
-        return it->second;
+        return *ptr;
     }
 
     bool process_tile(const Pos &tile_pos);
