@@ -353,12 +353,10 @@ EdgeSet::Entry EdgeSet::make_entry(const Pos &tile_pos) const {
 
 bool EdgeSet::process_tile(const Pos &tile_pos) {
     const Entry entry = make_entry(tile_pos);
-    const DistanceInfo &info = get_info(entry.start);
-    const Grid<int> &distances = info.distances;
     if (entry.distance_left < 0) {
         return false;
     }
-    ++tiles_visited;
+    const DistanceInfo &info = get_info(entry.start);
     int prev_reachable = reachable;
     if (entry.distance_left >= info.max_distance) {
         // tile is fully reachable; use pre-calculated values
@@ -370,6 +368,7 @@ bool EdgeSet::process_tile(const Pos &tile_pos) {
         auto it = reachable_cache.find(key);
         ++reachable_cache_accesses;
         if (it == reachable_cache.end()) {
+            const auto &distances = info.distances;
             int count = std::count_if(
                 distances.begin(), distances.end(),
                 [&curr_target_distance](int distance) {
@@ -380,8 +379,9 @@ bool EdgeSet::process_tile(const Pos &tile_pos) {
         }
         reachable += it->second;
     }
+    ++tiles_visited;
     if constexpr (aoc::DEBUG) {
-        std::cerr << "processing " << entry << ": "
+        std::cerr << "processed " << entry << ": "
                   << (reachable - prev_reachable)
                   << " new reachable positions\n";
     } else {
@@ -418,7 +418,7 @@ long Garden::part_2() const {
 
     EdgeSet es(*this, target_distance);
     // do the first three iterations to populate dist_info_cache
-    while (!es.done() && es.iter <= 3) {
+    while (!es.done() && es.iter < 3) {
         if (aoc::DEBUG) {
             std::cerr << "\nstarting iteration " << es.iter << " with "
                       << es.iter * 4 << " tiles in edge set...\n";
