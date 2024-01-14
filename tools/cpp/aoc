@@ -165,7 +165,11 @@ else
   systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
   trap - INT
   if systemctl --quiet --user is-failed aoc.service; then
-    result=$(systemctl --user show aoc | sed -ne 's/^Result=//p')
+    result=$(systemctl --user show -p Result aoc | sed -ne 's/^Result=//p')
+    exit_code=$(systemctl --user show -p ExecMainStatus aoc | sed -ne 's/^ExecMainStatus=//p')
+    if [[ $result == core-dump ]]; then
+      (( exit_code += 128 ))
+    fi
     if [[ $result == oom-kill ]]; then
       >&2 echo "ERROR: ran out of memory (limited to $memory_limit)"
     fi
