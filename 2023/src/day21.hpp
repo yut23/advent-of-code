@@ -117,6 +117,7 @@ struct Garden {
 
         const auto get_neighbors = [this, &distances](const Key &key) {
             std::vector<Key> neighbors{};
+            neighbors.reserve(4);
             for (const AbsDirection &dir : aoc::DIRECTIONS) {
                 Pos pos = key + Delta(dir, true);
                 if (stones.in_bounds(pos) && stones[pos] &&
@@ -130,7 +131,9 @@ struct Garden {
             distances[key] = distance;
         };
 
-        aoc::graph::bfs(source, get_neighbors, visit);
+        // handled in get_neighbors
+        constexpr bool use_seen = false;
+        aoc::graph::bfs<use_seen>(source, get_neighbors, visit);
 
         return distances;
     }
@@ -287,8 +290,7 @@ struct EdgeSet {
 
     std::vector<std::unique_ptr<DistanceInfo>> dist_info_cache;
     std::vector<DistanceInfo *> dist_info_cache_lookup;
-    std::map<Entry, int> reachable_cache;
-    std::size_t reachable_cache_accesses = 0;
+    int dist_info_cache_accesses = 0;
     long reachable = 0;
     long tiles_visited = 0;
 
@@ -300,6 +302,7 @@ struct EdgeSet {
     Entry make_entry(const Pos &tile_pos) const;
 
     const DistanceInfo &get_info(const Pos &start) {
+        ++dist_info_cache_accesses;
         std::size_t idx = start.y * garden.stones.width + start.x;
         DistanceInfo *&ptr = dist_info_cache_lookup[idx];
         if (ptr == nullptr) {
@@ -311,7 +314,8 @@ struct EdgeSet {
         return *ptr;
     }
 
-    bool process_tile(const Pos &tile_pos, const DistanceInfo &info);
+    int get_reachable_for_tile(const Pos &tile_pos,
+                               const DistanceInfo &info) const;
     void expand(int max_iter = std::numeric_limits<int>::max());
 
     bool done() const { return !_made_progress; }
@@ -321,11 +325,9 @@ struct EdgeSet {
     void print_stats() const {
         std::cerr << "visited " << tiles_visited << " tiles\n"
                   << "took " << iter << " iterations\n"
-                  << "distance info cache size: " << dist_info_cache.size()
-                  << "\n"
-                  << "reachable cache misses/hits: " << reachable_cache.size()
-                  << "/" << reachable_cache_accesses - reachable_cache.size()
-                  << "\n";
+                  << "distance info cache misses/hits: "
+                  << dist_info_cache.size() << "/"
+                  << dist_info_cache_accesses - dist_info_cache.size() << "\n";
     }
 };
 
@@ -363,36 +365,26 @@ EdgeSet::Entry EdgeSet::make_entry(const Pos &tile_pos) const {
     return Entry{start, distance_left};
 }
 
-bool EdgeSet::process_tile(const Pos &tile_pos, const DistanceInfo &info) {
+int EdgeSet::get_reachable_for_tile(const Pos &tile_pos,
+                                    const DistanceInfo &info) const {
     const Entry entry = make_entry(tile_pos);
     if (entry.distance_left < 0) {
-        return false;
+        return 0;
     }
-    int prev_reachable = reachable;
+    int curr_reachable;
     if (entry.distance_left >= info.max_distance) {
         // tile is fully reachable; use pre-calculated values
-        reachable += info.total_reachable[entry.distance_left % 2];
+        curr_reachable = info.total_reachable[entry.distance_left % 2];
     } else {
         // only part of the tile is reachable, so count the spaces manually
-        const int curr_target_distance = entry.distance_left;
-        auto it = reachable_cache.find(entry);
-        ++reachable_cache_accesses;
-        if (it == reachable_cache.end()) [[unlikely]] {
-            int count =
-                count_reachable_plots(info.distances, curr_target_distance);
-            it = reachable_cache.emplace(entry, count).first;
-        }
-        reachable += it->second;
+        curr_reachable =
+            count_reachable_plots(info.distances, entry.distance_left);
     }
-    ++tiles_visited;
     if constexpr (aoc::DEBUG) {
         std::cerr << "processed " << entry << "@" << tile_pos << ": "
-                  << (reachable - prev_reachable)
-                  << " new reachable positions\n";
-    } else {
-        (void)prev_reachable;
+                  << curr_reachable << " new reachable positions\n";
     }
-    return true;
+    return curr_reachable;
 }
 
 void EdgeSet::expand(int max_iter) {
@@ -411,36 +403,42 @@ void EdgeSet::expand(int max_iter) {
     const DistanceInfo &south_west = get_info(Pos(garden.stones.width - 1, 0));
 
     for (; _made_progress && iter < max_iter; ++iter) {
-        _made_progress = false;
+        long prev_reachable = reachable;
         if constexpr (aoc::DEBUG) {
             std::cerr << "\nstarting iteration " << iter << " with " << iter * 4
                       << " tiles in edge set...\n";
         }
         if (iter == 0) {
-            _made_progress = process_tile(Pos(0, 0), get_info(garden.start));
-            continue;
+            reachable +=
+                get_reachable_for_tile(Pos(0, 0), get_info(garden.start));
+            ++tiles_visited;
+        } else {
+            // on-axis tiles
+            reachable += get_reachable_for_tile(Pos(0, iter), south);
+            reachable += get_reachable_for_tile(Pos(iter, 0), east);
+            reachable += get_reachable_for_tile(Pos(0, -iter), north);
+            reachable += get_reachable_for_tile(Pos(-iter, 0), west);
+            tiles_visited += 4;
+            // off-axis tiles
+            if (iter > 1) {
+                // The starting point is at the center of the tile and the tiles
+                // are square, so the distance to each off-axis tile will be the
+                // same and we only have to calculate the reachable tiles once
+                // for each direction.
+                const int x = 1;
+                const int y = iter - 1;
+                reachable +=
+                    (iter - 1) * get_reachable_for_tile(Pos(x, y), south_east);
+                reachable +=
+                    (iter - 1) * get_reachable_for_tile(Pos(y, -x), north_east);
+                reachable += (iter - 1) *
+                             get_reachable_for_tile(Pos(-x, -y), north_west);
+                reachable +=
+                    (iter - 1) * get_reachable_for_tile(Pos(-y, x), south_west);
+                tiles_visited += 4 * (iter - 1);
+            }
         }
-        // on-axis tiles
-        _made_progress |= process_tile(Pos(0, iter), south);
-        _made_progress |= process_tile(Pos(iter, 0), east);
-        _made_progress |= process_tile(Pos(0, -iter), north);
-        _made_progress |= process_tile(Pos(-iter, 0), west);
-        if (iter == 1) {
-            continue;
-        }
-        // off-axis tiles
-        for (int j = 1; j < iter; ++j) {
-            const int x = j;
-            const int y = iter - j;
-            _made_progress |= process_tile(Pos(x, y), south_east);
-            _made_progress |= process_tile(Pos(y, -x), north_east);
-            _made_progress |= process_tile(Pos(-x, -y), north_west);
-            _made_progress |= process_tile(Pos(-y, x), south_west);
-            //_made_progress |= process_tile(Pos(x, y));
-            //_made_progress |= process_tile(Pos(y, -x));
-            //_made_progress |= process_tile(Pos(-x, -y));
-            //_made_progress |= process_tile(Pos(-y, x));
-        }
+        _made_progress = reachable != prev_reachable;
     }
 }
 
