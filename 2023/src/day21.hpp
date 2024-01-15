@@ -17,9 +17,6 @@
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, noskipws, cerr
 #include <limits>           // for numeric_limits
-#include <map>              // for map
-#include <memory>           // for unique_ptr, make_unique
-#include <utility>          // for pair, move, swap
 #include <vector>           // for vector
 // IWYU pragma: no_include <algorithm>  // for copy, fill_n
 
@@ -217,7 +214,7 @@ bool Garden::check_part_2() const {
            open_edges;
 }
 
-struct EdgeSet {
+class EdgeSet {
     struct Entry {
         Pos start;
         int distance_left;
@@ -229,10 +226,6 @@ struct EdgeSet {
         int max_distance = 0;
         std::array<int, 2> total_reachable{0, 0};
 
-      private:
-        std::array<std::pair<Pos, int>, 4> edge_min_dist;
-
-      public:
         explicit DistanceInfo(const Grid<int> &distances_)
             : distances(distances_) {
             for (int distance : distances) {
@@ -244,41 +237,6 @@ struct EdgeSet {
                 }
                 ++total_reachable[distance % 2];
             }
-            // find the minimum distance position for each edge
-            for (AbsDirection dir : aoc::DIRECTIONS) {
-                auto dir_idx =
-                    static_cast<std::underlying_type_t<AbsDirection>>(dir);
-                assert(dir_idx >= 0 && dir_idx < 4);
-                Pos pos(0, 0);
-                int min_dist = std::numeric_limits<int>::max();
-                Pos min_pos;
-                if (dir == AbsDirection::north || dir == AbsDirection::south) {
-                    pos.y =
-                        dir == AbsDirection::north ? 0 : distances.height - 1;
-                    for (pos.x = 0; pos.x < distances.width; ++pos.x) {
-                        int dist = distances[pos];
-                        if (dist < min_dist) {
-                            min_dist = dist;
-                            min_pos = pos;
-                        }
-                    }
-                } else {
-                    pos.x = dir == AbsDirection::west ? 0 : distances.width - 1;
-                    for (pos.y = 0; pos.y < distances.height; ++pos.y) {
-                        int dist = distances[pos];
-                        if (dist < min_dist) {
-                            min_dist = dist;
-                            min_pos = pos;
-                        }
-                    }
-                }
-                edge_min_dist[dir_idx] = std::make_pair(min_pos, min_dist);
-            }
-        }
-
-        const std::pair<Pos, int> &get_edge_pos(AbsDirection dir) const {
-            return edge_min_dist
-                [static_cast<std::underlying_type_t<AbsDirection>>(dir)];
         }
     };
 
@@ -286,49 +244,38 @@ struct EdgeSet {
     const int target_distance;
 
     int iter = 0;
+    int last_full_iter = 0;
     bool _made_progress = true;
 
-    std::vector<std::unique_ptr<DistanceInfo>> dist_info_cache;
-    std::vector<DistanceInfo *> dist_info_cache_lookup;
-    int dist_info_cache_accesses = 0;
     long reachable = 0;
     long tiles_visited = 0;
 
-  public:
-    explicit EdgeSet(const Garden &garden_, int target_distance_)
-        : garden(garden_), target_distance(target_distance_),
-          dist_info_cache_lookup(garden.stones.height * garden.stones.width) {}
-
     Entry make_entry(const Pos &tile_pos) const;
 
-    const DistanceInfo &get_info(const Pos &start) {
-        ++dist_info_cache_accesses;
-        std::size_t idx = start.y * garden.stones.width + start.x;
-        DistanceInfo *&ptr = dist_info_cache_lookup[idx];
-        if (ptr == nullptr) {
-            // add to cache
-            dist_info_cache.emplace_back(
-                std::make_unique<DistanceInfo>(garden.get_distances(start)));
-            ptr = dist_info_cache.back().get();
-        }
-        return *ptr;
+    DistanceInfo get_info(const Pos &start) {
+        return DistanceInfo(garden.get_distances(start));
     }
 
     int get_reachable_for_tile(const Pos &tile_pos,
                                const DistanceInfo &info) const;
+
+  public:
+    explicit EdgeSet(const Garden &garden_, int target_distance_)
+        : garden(garden_), target_distance(target_distance_) {}
+
     void expand(int max_iter = std::numeric_limits<int>::max());
 
     bool done() const { return !_made_progress; }
 
     long get_reachable() const { return reachable; }
+    int get_iter() const { return iter; }
 
     void print_stats() const {
         std::cerr << "visited " << tiles_visited << " tiles\n"
-                  << "took " << iter << " iterations\n"
-                  << "distance info cache misses/hits: "
-                  << dist_info_cache.size() << "/"
-                  << dist_info_cache_accesses - dist_info_cache.size() << "\n";
+                  << "took " << iter << " iterations\n";
     }
+
+    friend std::ostream &operator<<(std::ostream &, const Entry &);
 };
 
 std::ostream &operator<<(std::ostream &os, const EdgeSet::Entry &entry) {
@@ -367,6 +314,13 @@ EdgeSet::Entry EdgeSet::make_entry(const Pos &tile_pos) const {
 
 int EdgeSet::get_reachable_for_tile(const Pos &tile_pos,
                                     const DistanceInfo &info) const {
+    if (iter < last_full_iter) {
+        int parity = (iter % 2) ^ (target_distance % 2);
+        if ((tile_pos.x == 0) ^ (tile_pos.y == 0)) {
+            parity ^= (garden.start.x & 1);
+        }
+        return info.total_reachable[parity];
+    }
     const Entry entry = make_entry(tile_pos);
     if (entry.distance_left < 0) {
         return 0;
@@ -381,7 +335,7 @@ int EdgeSet::get_reachable_for_tile(const Pos &tile_pos,
             count_reachable_plots(info.distances, entry.distance_left);
     }
     if constexpr (aoc::DEBUG) {
-        std::cerr << "processed " << entry << "@" << tile_pos << ": "
+        std::cerr << "processed " << entry << " @ " << tile_pos << ": "
                   << curr_reachable << " new reachable positions\n";
     }
     return curr_reachable;
@@ -402,11 +356,23 @@ void EdgeSet::expand(int max_iter) {
         get_info(Pos(garden.stones.width - 1, garden.stones.height - 1));
     const DistanceInfo &south_west = get_info(Pos(garden.stones.width - 1, 0));
 
+    // speed up get_reachable_for_tile() for iterations where all tiles are
+    // fully covered
+    int max_distance = std::max(
+        {south.max_distance, east.max_distance, north.max_distance,
+         west.max_distance, south_east.max_distance, north_east.max_distance,
+         north_west.max_distance, south_west.max_distance});
+    last_full_iter = (target_distance - garden.start.x - max_distance) /
+                         garden.stones.width -
+                     1;
+
     for (; _made_progress && iter < max_iter; ++iter) {
         long prev_reachable = reachable;
         if constexpr (aoc::DEBUG) {
-            std::cerr << "\nstarting iteration " << iter << " with " << iter * 4
-                      << " tiles in edge set...\n";
+            if (iter % 1000 == 1) {
+                std::cerr << "\nstarting iteration " << iter << " with "
+                          << iter * 4 << " tiles in edge set...\n";
+            }
         }
         if (iter == 0) {
             reachable +=
@@ -453,76 +419,28 @@ long Garden::part_2() const {
     }
 
     EdgeSet es(*this, target_distance);
-    // do the first three iterations to populate dist_info_cache
-    es.expand(3);
-    if (!es.done()) {
-        assert(es.dist_info_cache.size() == 9);
-        // get the largest of all the maximum_distance values in the cache
-        int max_distance = 0;
-        for (const auto &info : es.dist_info_cache) {
-            if (info->max_distance > max_distance) {
-                // this is faster under ASan
-                // cppcheck-suppress useStlAlgorithm
-                max_distance = info->max_distance;
-            }
-        }
+    es.expand();
 
-        // skip to the last fully covered iteration
-        int last_full_iter =
-            (target_distance - start.x - max_distance) / stones.width - 1;
-
-        std::vector<EdgeSet::DistanceInfo> midpoints;
-        midpoints.push_back(es.get_info(Pos(start.x, 0)));
-        midpoints.push_back(es.get_info(Pos(start.x, stones.height - 1)));
-        midpoints.push_back(es.get_info(Pos(0, start.y)));
-        midpoints.push_back(es.get_info(Pos(stones.width - 1, start.y)));
-
-        std::vector<EdgeSet::DistanceInfo> corners;
-        corners.push_back(es.get_info(Pos(0, 0)));
-        corners.push_back(es.get_info(Pos(0, stones.height - 1)));
-        corners.push_back(es.get_info(Pos(stones.width - 1, 0)));
-        corners.push_back(
-            es.get_info(Pos(stones.width - 1, stones.height - 1)));
-
-        for (; es.iter < last_full_iter; ++es.iter) {
-            if constexpr (aoc::DEBUG) {
-                if (es.iter % 1000 == 1) {
-                    std::cerr << "\nstarting iteration " << es.iter << " with "
-                              << es.iter * 4 << " tiles in edge set...\n";
-                }
-            }
-            int corner_parity = (es.iter % 2) ^ (target_distance % 2);
-            int midpoint_parity = corner_parity ^ (start.x & 1);
-            es.tiles_visited += 4 * es.iter;
-            for (const auto &info : midpoints) {
-                es.reachable += info.total_reachable[midpoint_parity];
-            }
-            for (const auto &info : corners) {
-                es.reachable += std::max(0, es.iter - 1) *
-                                info.total_reachable[corner_parity];
-            }
-        }
-        es.expand();
-    }
     if constexpr (aoc::DEBUG) {
         es.print_stats();
     }
     long reachable = es.get_reachable();
+    int i = es.get_iter();
     if (stones.width == 131) {
         if (target_distance == 2023 * 1 * stones.width + start.x) {
-            assert(es.iter >= 2025);
+            assert(i >= 2025);
             if (reachable != 59301643058) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
         } else if (target_distance == 2023 * 10 * stones.width + start.x) {
-            assert(es.iter >= 20232);
+            assert(i >= 20232);
             if (reachable != 5927505173072) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
         } else if (target_distance == 2023 * 100 * stones.width + start.x) {
-            assert(es.iter >= 202302);
+            assert(i >= 202302);
             if (reachable != 592723929260582) {
                 std::cerr << reachable << "\n";
                 assert(false);
@@ -531,25 +449,26 @@ long Garden::part_2() const {
     } else if (stones.width == 11) {
         // example3.txt
         if (target_distance == 2023 * 1 * stones.width + start.x) {
-            assert(es.iter >= 2025);
+            assert(i >= 2025);
             if (reachable != 356242232) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
         } else if (target_distance == 2023 * 10 * stones.width + start.x) {
-            assert(es.iter >= 20232);
+            assert(i >= 20232);
             if (reachable != 35606924174) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
         } else if (target_distance == 2023 * 100 * stones.width + start.x) {
-            assert(es.iter >= 202302);
+            assert(i >= 202302);
             if (reachable != 3560519448524) {
                 std::cerr << reachable << "\n";
                 assert(false);
             }
+            // cppcheck-suppress knownConditionTrueFalse
         } else if (target_distance == 26501365) {
-            assert(es.iter >= 2409216);
+            assert(i >= 2409216);
             if (reachable != 504975595803726) {
                 std::cerr << reachable << "\n";
                 assert(false);
@@ -557,8 +476,9 @@ long Garden::part_2() const {
         }
     } else if (stones.width == 33) {
         // example4.txt
+        // cppcheck-suppress knownConditionTrueFalse
         if (target_distance == 26501365) {
-            assert(es.iter >= 803073);
+            assert(i >= 803073);
             if (reachable != 504975595803726) {
                 std::cerr << reachable << "\n";
                 assert(false);
