@@ -120,12 +120,12 @@ template <bool use_seen = true, class Key,
           detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
 int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         Visit &&visit) {
-    int distance = 0;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
     detail::maybe_unordered_set<Key> seen{};
 
-    while (!queue.empty()) {
+    for (int distance = 0; !queue.empty();
+         ++distance, queue.clear(), std::swap(queue, next_queue)) {
         for (const Key &key : queue) {
             visit(key, distance);
             if (is_target(key)) {
@@ -143,9 +143,6 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
                 next_queue.insert(neighbor);
             }
         }
-        queue.clear();
-        std::swap(queue, next_queue);
-        ++distance;
     }
     return -1;
 }
@@ -414,13 +411,6 @@ dijkstra(const Key &source, GetNeighbors &&get_neighbors,
                                  std::forward<IsTarget>(is_target));
 }
 
-/**
- * Generic A* search on an arbitrary weighted graph.
- *
- * Returns the distance and path from the source to the first target found,
- * or -1 and an empty path if not found.
- */
-
 namespace detail {
 template <class Key>
 struct a_star_entry {
@@ -439,6 +429,12 @@ struct a_star_entry {
 };
 } // namespace detail
 
+/**
+ * Generic A* search on an arbitrary weighted graph.
+ *
+ * Returns the distance and path from the source to the first target found,
+ * or -1 and an empty path if not found.
+ */
 template <bool use_visited = false, class Key,
           detail::GetNeighbors<Key> GetNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
