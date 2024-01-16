@@ -2,19 +2,20 @@
 #define PRETTY_PRINT_HPP
 
 #include "util/concepts.hpp"
-#include <array>    // for array // IWYU pragma: keep
+#include <array>    // for array
 #include <compare>  // for strong_ordering
 #include <cstddef>  // for size_t
 #include <iomanip>  // for quoted
 #include <iostream> // for ostream, defaultfloat, hexfloat
 #include <iterator> // for begin, end
-#include <list>     // for list // IWYU pragma: keep
+#include <list>     // for list
+#include <map>      // for map
 #include <optional> // for optional
-#include <set>      // for set // IWYU pragma: keep
+#include <set>      // for set
 #include <string>   // for string
 #include <tuple>    // for tuple, get
 #include <utility>  // for pair
-#include <vector>   // for vector // IWYU pragma: keep
+#include <vector>   // for vector
 
 // Additional ostream formatters needed for printing arguments/return values
 // for failing test cases
@@ -130,5 +131,30 @@ std::ostream &write_repr(std::ostream &os, const T &val, const bool result) {
 }
 
 } // namespace pretty_print
+
+// instantiate templates in an anonymous namespace, so static analyzers will
+// check these functions
+namespace {
+template <class T>
+void _lint_helper_template(std::ostream &os, const T &t = T()) {
+    pretty_print::write_repr(os, t, true);
+    pretty_print::write_repr(os, t, false);
+}
+[[maybe_unused]] void _lint_helper(std::ostream &os) {
+    _lint_helper_template<int>(os);
+    _lint_helper_template<bool>(os);
+    _lint_helper_template<double>(os);
+    _lint_helper_template<std::string>(os);
+    _lint_helper_template<std::vector<int>>(os);
+    _lint_helper_template<std::list<std::string>>(os);
+    _lint_helper_template<std::set<long>>(os);
+    _lint_helper_template<std::array<short, 4>>(os);
+    _lint_helper_template<std::map<int, bool>>(os);
+    _lint_helper_template<std::pair<char, float>>(os);
+    _lint_helper_template<std::tuple<std::string, long, double>>(os);
+    _lint_helper_template<std::optional<int>>(os);
+    _lint_helper_template(os, std::strong_ordering::equal);
+}
+} // namespace
 
 #endif /* end of include guard: PRETTY_PRINT_HPP */
