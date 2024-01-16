@@ -12,10 +12,12 @@ ifeq ($(USE_LIBCXX),TRUE)
 	STDLIB_LDFLAGS = $(STDLIB_CXXFLAGS)
 endif
 
-LOCAL_CXXFLAGS = -Wall -Wextra -O3 -g -std=c++20 $(STDLIB_CXXFLAGS)
+INCLUDES = -Isrc
+
+LOCAL_CXXFLAGS = -Wall -Wextra -O3 -g -std=c++20 $(INCLUDES) $(STDLIB_CXXFLAGS)
 DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -O0 -DDEBUG_MODE
 LDFLAGS = -Wl,--as-needed $(STDLIB_LDFLAGS)
-FAST_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fno-omit-frame-pointer -DFAST_MODE $(STDLIB_CXXFLAGS)
+FAST_CXXFLAGS = -Wall -Wextra -O3 -std=c++20 -fno-omit-frame-pointer -DFAST_MODE $(INCLUDES) $(STDLIB_CXXFLAGS)
 PROFILE_CXXFLAGS = $(FAST_CXXFLAGS) -g
 FAST_LDFLAGS = -Wl,--as-needed -fno-omit-frame-pointer $(STDLIB_LDFLAGS)
 BEAR_ARGS = --config ../tools/cpp/bear_config.json

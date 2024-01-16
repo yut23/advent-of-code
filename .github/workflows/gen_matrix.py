@@ -14,24 +14,31 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 @functools.cache
-def get_includes(path: Path) -> frozenset[Path]:
+def get_includes(path: Path, *include_dirs: Path) -> frozenset[Path]:
     assert path.suffix in {".cpp", ".hpp", ".h"}
     include_pat = re.compile(r'#include\s+"(.*?)"')
     includes: set[Path] = set()
+    include_dirs = (path.parent, *include_dirs)
     with open(path, "r") as f:
         for line in f:
-            if (m := include_pat.search(line)) is not None:
-                includes.add(path.parent / m[1])
+            if (m := include_pat.search(line)) is None:
+                continue
+            for parent in include_dirs:
+                curr_path = parent / m[1]
+                if not curr_path.exists():
+                    continue
+                includes.add(curr_path)
+                break
     return frozenset(includes)
 
 
 @functools.cache
-def get_transitive_includes(path: Path) -> frozenset[Path]:
+def get_transitive_includes(path: Path, *include_dirs: Path) -> frozenset[Path]:
     # simple DFS on get_includes(), using functools.cache for memoization
     all_includes: set[Path] = set()
-    for p in get_includes(path):
+    for p in get_includes(path, *include_dirs):
         all_includes.add(p)
-        all_includes.update(get_transitive_includes(p))
+        all_includes.update(get_transitive_includes(p, *include_dirs))
     return frozenset(all_includes)
 
 
@@ -63,7 +70,7 @@ class Target:
         deps = set()
         src = self.base_dir / "src"
         deps.add(src / f"{self}.cpp")
-        for included_file in get_transitive_includes(src / f"{self}.cpp"):
+        for included_file in get_transitive_includes(src / f"{self}.cpp", src):
             deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
         if mode == "answer":

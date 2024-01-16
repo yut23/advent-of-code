@@ -22,7 +22,7 @@
 #include <utility>       // for index_sequence, move, index_sequence_for
 #include <vector>        // for vector
 
-#include "pretty_print.hpp" // for operator<<, write_repr
+#include "unit_test/pretty_print.hpp" // for operator<<, write_repr
 
 namespace unit_test {
 

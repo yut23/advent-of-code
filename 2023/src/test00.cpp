@@ -7,7 +7,7 @@
  *****************************************************************************/
 
 #include "unit_test/unit_test.hpp"
-#include "unit_test/util.hpp" // for demangle
+#include "util/util.hpp" // for demangle
 
 #include "lib.hpp"  // for expect_input, as_number
 #include <cstddef>  // for size_t
