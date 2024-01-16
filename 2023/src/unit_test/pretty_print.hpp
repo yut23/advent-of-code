@@ -1,13 +1,13 @@
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
+#include "util/concepts.hpp"
 #include <array>    // for array // IWYU pragma: keep
 #include <compare>  // for strong_ordering
-#include <concepts> // for same_as
 #include <cstddef>  // for size_t
 #include <iomanip>  // for quoted
 #include <iostream> // for ostream, defaultfloat, hexfloat
-#include <iterator> // for begin, end, forward_iterator
+#include <iterator> // for begin, end
 #include <list>     // for list // IWYU pragma: keep
 #include <optional> // for optional
 #include <set>      // for set // IWYU pragma: keep
@@ -22,37 +22,12 @@
 namespace pretty_print {
 template <class T>
 std::ostream &write_repr(std::ostream &, const T &, const bool result = false);
-
-namespace detail {
-template <typename C, typename T>
-// clang-format off
-concept any_iterable_collection =
-    std::same_as<typename C::value_type, T> &&
-    requires (C c) {
-        { c.begin() } -> std::forward_iterator;
-        { c.end() }   -> std::forward_iterator;
-        { const_cast<const C&>(c).begin() } -> std::forward_iterator;
-        { const_cast<const C&>(c).end() }   -> std::forward_iterator;
-    };
-// clang-format on
-
-template <typename M, typename K, typename V>
-concept any_iterable_mapping =
-    std::same_as<typename M::value_type, std::pair<const K, V>> &&
-    requires(M m) {
-        { m.begin() } -> std::forward_iterator;
-        { m.end() } -> std::forward_iterator;
-        { const_cast<const M &>(m).begin() } -> std::forward_iterator;
-        { const_cast<const M &>(m).end() } -> std::forward_iterator;
-    };
-} // namespace detail
-
 } // namespace pretty_print
 
 // iterable containers (vector, list, set, etc.)
 template <template <class, class...> class C, class T>
     requires(!std::is_same_v<C<T>, std::string> &&
-             pretty_print::detail::any_iterable_collection<C<T>, T>)
+             util::concepts::any_iterable_collection<C<T>, T>)
 std::ostream &operator<<(std::ostream &os, const C<T> &container) {
     os << "{";
     for (auto it = container.begin(); it != container.end(); ++it) {
@@ -81,7 +56,7 @@ std::ostream &operator<<(std::ostream &os, const std::array<T, N> &arr) {
 
 // mappings (map, unordered_map, multimap, etc.)
 template <template <class, class, class...> class M, class K, class V>
-    requires(pretty_print::detail::any_iterable_mapping<M<K, V>, K, V>)
+    requires util::concepts::any_iterable_mapping<M<K, V>, K, V>
 std::ostream &operator<<(std::ostream &os, const M<K, V> &mapping) {
     os << "{";
     for (auto it = mapping.begin(); it != mapping.end(); ++it) {

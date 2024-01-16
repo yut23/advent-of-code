@@ -10,11 +10,10 @@
 #ifndef GRAPH_TRAVERSAL_HPP_56T9ZURK
 #define GRAPH_TRAVERSAL_HPP_56T9ZURK
 
+#include "util/concepts.hpp"
 #include <algorithm>     // for reverse
-#include <concepts>      // for convertible_to, same_as, integral
-#include <cstddef>       // for size_t
-#include <functional>    // for function, greater, hash
-#include <iterator>      // for forward_iterator
+#include <concepts>      // for same_as, integral
+#include <functional>    // for function, greater
 #include <map>           // for map
 #include <queue>         // for priority_queue
 #include <set>           // for set
@@ -35,43 +34,22 @@
 namespace aoc::graph {
 
 namespace detail {
-// Declaration of the concept "Hashable", which is satisfied by any type 'T'
-// such that for values 'a' of type 'T', the expression std::hash<T>{}(a)
-// compiles and its result is convertible to std::size_t
-template <typename T>
-concept Hashable = requires(T a) {
-                       {
-                           std::hash<T>{}(a)
-                           } -> std::convertible_to<std::size_t>;
-                   };
 
 template <class Key>
 using maybe_unordered_set =
-    std::conditional_t<Hashable<Key>, std::unordered_set<Key>, std::set<Key>>;
+    std::conditional_t<util::concepts::Hashable<Key>, std::unordered_set<Key>,
+                       std::set<Key>>;
 
 template <class Key, class T>
 using maybe_unordered_map =
-    std::conditional_t<Hashable<Key>, std::unordered_map<Key, T>,
-                       std::map<Key, T>>;
-
-template <typename C, typename T>
-// clang-format off
-concept any_iterable_collection =
-    std::same_as<typename C::value_type, T> &&
-    requires (C c) {
-        { c.begin() } -> std::forward_iterator;
-        { c.end() }   -> std::forward_iterator;
-        { const_cast<const C&>(c).begin() } -> std::forward_iterator;
-        { const_cast<const C&>(c).end() }   -> std::forward_iterator;
-    };
-// clang-format on
+    std::conditional_t<util::concepts::Hashable<Key>,
+                       std::unordered_map<Key, T>, std::map<Key, T>>;
 
 template <class Func, class Key>
-concept GetNeighbors = requires(Func get_neighbors, const Key &key) {
-                           {
-                               get_neighbors(key)
-                               } -> any_iterable_collection<Key>;
-                       };
+concept GetNeighbors =
+    requires(Func get_neighbors, const Key &key) {
+        { get_neighbors(key) } -> util::concepts::any_iterable_collection<Key>;
+    };
 
 template <class Func, class Key>
 concept IsTarget = requires(Func is_target, const Key &key) {
