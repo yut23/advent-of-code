@@ -8,7 +8,8 @@
 #ifndef DAY21_HPP_2X5T9V1Y
 #define DAY21_HPP_2X5T9V1Y
 
-#include "graph_traversal.hpp"
+#include "data_structures.hpp" // for Grid
+#include "graph_traversal.hpp" // for bfs
 #include "lib.hpp"          // for AbsDirection, Pos, Delta, DIRECTIONS, DEBUG
 #include <array>            // for array
 #include <cassert>          // for assert
@@ -18,83 +19,11 @@
 #include <iostream>         // for istream, noskipws, cerr
 #include <limits>           // for numeric_limits
 #include <vector>           // for vector
-// IWYU pragma: no_include <algorithm>  // for copy, fill_n
+// IWYU pragma: no_include <algorithm>  // for copy
 
 namespace aoc::day21 {
 
-template <class T>
-struct Grid {
-    using value_type = T;
-    using size_type = int;
-
-    const size_type height;
-    const size_type width;
-    std::vector<value_type> data;
-
-    using reference = typename decltype(data)::reference;
-    using const_reference = typename decltype(data)::const_reference;
-
-    using iterator = typename decltype(data)::iterator;
-    using const_iterator = typename decltype(data)::const_iterator;
-
-    inline std::size_t get_index(size_type x, size_type y) const {
-        return y * width + x;
-    }
-
-    constexpr Grid(size_type height, size_type width, const T &value = T())
-        : height(height), width(width), data(height * width, value) {}
-    explicit constexpr Grid(const std::vector<std::vector<T>> &grid)
-        : height(grid.size()), width(grid.size() > 0 ? grid.front().size() : 0),
-          data(height * width) {
-        for (int y = 0; y < height; ++y) {
-            const std::vector<T> &row = grid[y];
-            assert(static_cast<size_type>(row.size()) == width);
-            for (int x = 0; x < width; ++x) {
-                data[get_index(x, y)] = row[x];
-            }
-        }
-    }
-
-    // constexpr Grid(const Grid &other) = default;
-    // constexpr Grid(Grid &&other) noexcept = default;
-
-    // constexpr Grid &operator=(const Grid &other) = default;
-    // constexpr Grid &operator=(Grid &&other) noexcept = default;
-
-    constexpr iterator begin() noexcept { return data.begin(); }
-    constexpr const_iterator begin() const noexcept { return data.begin(); }
-    constexpr const_iterator cbegin() const noexcept { return data.cbegin(); }
-
-    constexpr iterator end() noexcept { return data.end(); }
-    constexpr const_iterator end() const noexcept { return data.end(); }
-    constexpr const_iterator cend() const noexcept { return data.cend(); }
-
-    constexpr bool in_bounds(size_type x, size_type y) const noexcept {
-        return y >= 0 && x >= 0 && y < height && x < width;
-    }
-    constexpr bool in_bounds(const Pos &pos) const noexcept {
-        return in_bounds(pos.x, pos.y);
-    }
-
-    constexpr reference at(size_type x, size_type y) {
-        return data.at(get_index(x, y));
-    }
-    constexpr reference at(const Pos &pos) { return at(pos.x, pos.y); }
-
-    constexpr const_reference at(size_type x, size_type y) const {
-        return data[get_index(x, y)];
-    }
-    constexpr const_reference at(const Pos &pos) const {
-        return at(pos.x, pos.y);
-    }
-
-    constexpr reference operator[](const Pos &pos) {
-        return data[get_index(pos.x, pos.y)];
-    }
-    constexpr const_reference operator[](const Pos &pos) const {
-        return data[get_index(pos.x, pos.y)];
-    }
-};
+using aoc::ds::Grid;
 
 struct Garden {
     using Key = aoc::Pos;
@@ -108,7 +37,7 @@ struct Garden {
     }
 
     Grid<int> get_distances(const Key &source) const {
-        Grid<int> distances(stones.height, stones.width,
+        Grid<int> distances(stones.width, stones.height,
                             std::numeric_limits<int>::max());
         distances[source] = 0;
 

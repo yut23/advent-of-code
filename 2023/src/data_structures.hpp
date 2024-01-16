@@ -17,9 +17,11 @@
 #include <iterator>         // for next, advance
 #include <list>             // for list
 #include <memory> // for shared_ptr, weak_ptr, make_shared, enable_shared_from_this
-#include <string>      // for string
+#include <string>      // for string, string_literals
 #include <type_traits> // for is_invocable_r_v // IWYU pragma: keep
 #include <utility>     // for move, swap, forward, pair
+#include <vector>      // for vector
+// IWYU pragma: no_include <algorithm>  // for copy, fill_n
 
 namespace aoc::ds {
 
@@ -285,26 +287,157 @@ class pairing_heap {
     }
 };
 
+// template deduction guide (based on std::vector)
+template <class InputIt,
+          class Compare =
+              std::less<typename std::iterator_traits<InputIt>::value_type>>
+pairing_heap(InputIt, InputIt, const Compare & = Compare())
+    -> pairing_heap<typename std::iterator_traits<InputIt>::value_type,
+                    Compare>;
+
+/**
+ * Two-dimensional grid of values, indexable by aoc::Pos.
+ */
+template <class T>
+struct Grid {
+    using value_type = T;
+    using size_type = int;
+
+    const size_type height;
+    const size_type width;
+
+  protected:
+    using container_type = std::vector<value_type>;
+    container_type data;
+
+  public:
+    using reference = typename container_type::reference;
+    using const_reference = typename container_type::const_reference;
+
+    using iterator = typename container_type::iterator;
+    using const_iterator = typename container_type::const_iterator;
+
+    constexpr inline std::size_t get_index(size_type x, size_type y) const {
+        return y * width + x;
+    }
+
+    constexpr Grid(size_type width, size_type height,
+                   const value_type &value = value_type())
+        : height(height), width(width), data(height * width, value) {}
+    constexpr Grid(size_type width, size_type height,
+                   const std::vector<value_type> &data)
+        : height(height), width(width), data(data) {
+        assert(data.size() == height * width);
+    }
+    constexpr Grid(size_type width, size_type height,
+                   std::vector<value_type> &&data)
+        : height(height), width(width), data(std::move(data)) {
+        assert(data.size() == height * width);
+    }
+    explicit Grid(const std::vector<std::vector<T>> &grid)
+        : height(grid.size()), width(grid[0].size()), data(height * width) {
+        assert(!grid.empty());
+        for (int y = 0; y < height; ++y) {
+            const std::vector<T> &row = grid[y];
+            assert(static_cast<size_type>(row.size()) == width);
+            for (int x = 0; x < width; ++x) {
+                data[get_index(x, y)] = row[x];
+            }
+        }
+    }
+
+    constexpr Grid(const Grid &other) = default;
+    constexpr Grid(Grid &&other) noexcept = default;
+
+    constexpr Grid &operator=(const Grid &other) = default;
+    constexpr Grid &operator=(Grid &&other) noexcept = default;
+
+    constexpr iterator begin() noexcept { return data.begin(); }
+    constexpr const_iterator begin() const noexcept { return data.begin(); }
+    constexpr const_iterator cbegin() const noexcept { return data.cbegin(); }
+
+    constexpr iterator end() noexcept { return data.end(); }
+    constexpr const_iterator end() const noexcept { return data.end(); }
+    constexpr const_iterator cend() const noexcept { return data.cend(); }
+
+    constexpr bool in_bounds(size_type x, size_type y) const noexcept {
+        return y >= 0 && x >= 0 && y < height && x < width;
+    }
+    constexpr bool in_bounds(const Pos &pos) const noexcept {
+        return in_bounds(pos.x, pos.y);
+    }
+
+    constexpr reference at(size_type x, size_type y) {
+        return data.at(get_index(x, y));
+    }
+    constexpr reference at(const Pos &pos) { return at(pos.x, pos.y); }
+
+    constexpr const_reference at(size_type x, size_type y) const {
+        return data.at(get_index(x, y));
+    }
+    constexpr const_reference at(const Pos &pos) const {
+        return at(pos.x, pos.y);
+    }
+
+    constexpr reference operator[](const Pos &pos) {
+        return data[get_index(pos.x, pos.y)];
+    }
+    constexpr const_reference operator[](const Pos &pos) const {
+        return data[get_index(pos.x, pos.y)];
+    }
+};
+
+// instantiate templates in an anonymous namespace, so static analyzers will
+// check these functions
 namespace {
-[[maybe_unused]] void _lint_helper() {
-    pairing_heap<int> heap;
-    heap.push(1);
-    auto nh = heap.push(2);
-    heap.emplace(3);
-    assert(heap.top() == 3);
-    heap.update(nh, 4);
-    assert(heap.top() == 4);
-    heap.pop();
-    assert(heap.top() == 3);
-    assert(heap.size() == 2);
-    heap.pop();
-    assert(heap.top() == 1);
-    heap.pop();
-    assert(heap.size() == 0);
-    assert(heap.empty());
+[[maybe_unused]] void _pairing_heap_lint_helper() {
+    // default constructor
+    pairing_heap<int> h1a;
+    // initializer_list constructor
+    pairing_heap h1b({1, 2, 3, 4});
+    pairing_heap h1c{1, 2, 3, 4};
+    static_assert(std::is_same_v<decltype(h1a), decltype(h1b)>);
+    static_assert(std::is_same_v<decltype(h1a), decltype(h1c)>);
+
     pairing_heap<int, std::greater<int>> h2;
-    pairing_heap<std::pair<int, std::string>> h3;
+
+    pairing_heap<std::pair<int, std::string>> h3a;
+    // check template deduction guide
+    std::vector<std::pair<int, std::string>> vec(1);
+    pairing_heap h3b(vec.begin(), vec.end());
+    static_assert(std::is_same_v<decltype(h3a), decltype(h3b)>);
+
     pairing_heap<std::pair<int, int *>, std::greater<std::pair<int, int *>>> h4;
+}
+
+constexpr bool _grid_lint_helper_constexpr() {
+    Grid<int> grid1(5, 10, 0);
+    Grid<std::pair<int, bool>> grid2(3, 2);
+    Pos pos(2, 1);
+    grid2[pos] = {1, true};
+    return grid1.width == 5 && grid1.height == 10 && grid2.width == 3 &&
+           grid2.height == 2 && grid2.at(2, 1).first == 1 &&
+           grid2.at(2, 1).second == true;
+}
+[[maybe_unused]] void _grid_lint_helper() {
+    Grid<int> grid1a(10, 5);
+    Grid grid1b(10, 5, 10);
+    static_assert(std::is_same_v<decltype(grid1a), decltype(grid1b)>);
+
+    // cppcheck-suppress unreadVariable
+    Grid<std::pair<int, std::string>> grid2a(3, 2);
+    Grid grid2b(3, 2, std::make_pair(1, std::string{"a"}));
+    static_assert(std::is_same_v<decltype(grid2a), decltype(grid2b)>);
+
+    std::vector<std::vector<bool>> bool_vec{{true, false}, {true, false}};
+    // cppcheck-suppress unreadVariable
+    Grid<bool> grid3a(bool_vec);
+    Grid grid3b(bool_vec);
+    Grid grid3c(std::move(bool_vec));
+    static_assert(std::is_same_v<decltype(grid3a), decltype(grid3b)>);
+    static_assert(std::is_same_v<decltype(grid3a), decltype(grid3c)>);
+
+    static_assert(_grid_lint_helper_constexpr());
 }
 } // namespace
 
