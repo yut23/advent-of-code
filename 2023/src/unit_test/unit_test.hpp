@@ -17,6 +17,7 @@
 #include <string>      // for string, getline
 #include <tuple>       // for tuple, get, make_tuple, apply
 #include <type_traits> // for remove_const_t, remove_cvref_t, decay_t, is_same_v, is_const_v, is_assignable_v, is_arithmetic_v, is_floating_point_v
+#include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
 #include <utility>       // for index_sequence, move, index_sequence_for
 #include <vector>        // for vector
@@ -251,7 +252,15 @@ struct argument_traits<std::multiset<T>>
 template <class T>
 struct argument_traits<std::unordered_set<T>>
     : detail::base_argument_traits<std::unordered_set<T>> {
-    using input_type = const std::unordered_set<T>;
+    using input_type = const std::initializer_list<T>;
+};
+
+// unordered_map
+template <class K, class V>
+struct argument_traits<std::unordered_map<K, V>>
+    : detail::base_argument_traits<std::unordered_map<K, V>> {
+    using input_type = const std::initializer_list<
+        typename std::unordered_map<K, V>::value_type>;
 };
 
 // tuple

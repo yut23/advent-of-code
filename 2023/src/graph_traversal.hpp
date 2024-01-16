@@ -18,6 +18,7 @@
 #include <map>           // for map
 #include <queue>         // for priority_queue
 #include <set>           // for set
+#include <stack>         // for stack
 #include <stdexcept>     // for invalid_argument
 #include <type_traits>   // for conditional_t // IWYU pragma: export
 #include <unordered_map> // for unordered_map
@@ -269,6 +270,72 @@ std::vector<Key> topo_sort(const Key &source, GetNeighbors &&get_neighbors) {
     std::ranges::reverse(ordered);
 
     return ordered;
+}
+
+namespace detail {
+struct tarjan_entry {
+    int index = -1;
+    int lowlink = -1;
+    bool onStack = false;
+};
+} // namespace detail
+
+/**
+ * Find strongly connected components of a directed graph.
+ *
+ * Components are returned in topological order.
+ */
+template <class Key, detail::GetNeighbors<Key> GetNeighbors>
+std::vector<detail::maybe_unordered_set<Key>>
+tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
+    int index = 0;
+    std::stack<Key> S{};
+    std::vector<detail::maybe_unordered_set<Key>> components{};
+
+    detail::maybe_unordered_map<Key, detail::tarjan_entry> entries;
+
+    const auto strongconnect = [&](const Key &v, auto &rec) -> void {
+        detail::tarjan_entry &v_entry = entries[v];
+        v_entry.index = index;
+        v_entry.lowlink = index;
+        ++index;
+        S.push(v);
+        v_entry.onStack = true;
+
+        for (const Key &w : get_neighbors(v)) {
+            if (!entries.contains(w)) {
+                // Successor w has not yet been visited; recurse on it
+                rec(w, rec);
+                detail::tarjan_entry &w_entry = entries.at(w);
+                v_entry.lowlink = std::min(v_entry.lowlink, w_entry.lowlink);
+                continue;
+            }
+            detail::tarjan_entry &w_entry = entries.at(w);
+            if (w_entry.onStack) {
+                // Successor w is in stack S and hence in the current SCC
+                // If w is not on stack, then (v, w) is an edge pointing to an
+                // SCC already found and must be ignored
+
+                v_entry.lowlink = std::min(v_entry.lowlink, w_entry.index);
+            }
+        }
+        // If v is a root node, pop the stack and generate an SCC
+        if (v_entry.lowlink == v_entry.index) {
+            components.emplace_back();
+            Key w;
+            do {
+                w = S.top();
+                S.pop();
+                entries.at(w).onStack = false;
+                components.back().insert(w);
+            } while (w != v);
+        }
+    };
+
+    strongconnect(source, strongconnect);
+
+    std::ranges::reverse(components);
+    return components;
 }
 
 /**
@@ -579,6 +646,8 @@ using Key1 = std::pair<int, int>;
 
     topo_sort(source, get_neighbors);
 
+    tarjan_scc(source, get_neighbors);
+
     longest_path_dag(source, get_neighbors, get_distance, is_target);
 
     dijkstra<false>(source, get_neighbors, get_distance, is_target);
@@ -619,6 +688,8 @@ using Key2 = int;
     dfs<false>(source, get_neighbors, is_target, visit_with_parent);
 
     topo_sort(source, get_neighbors);
+
+    tarjan_scc(source, get_neighbors);
 
     longest_path_dag(source, get_neighbors, get_distance, is_target);
 
