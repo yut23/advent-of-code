@@ -26,6 +26,7 @@
 #include <utility>       // for move, pair, make_pair, swap, forward
 #include <vector>        // for vector
 // IWYU pragma: no_include <compare>  // for operator==
+// IWYU pragma: no_include <string>  // for operator==
 
 // the export above avoids having to include type_traits in all source files
 // for invoke_result_t
