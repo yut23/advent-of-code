@@ -16,16 +16,18 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    auto grid = aoc::day10::read_pipes(infile);
+    using namespace aoc::day10;
+    using aoc::Pos;
+    PipeGrid grid = read_pipes(infile);
 
     int perimeter = 0;
     int twice_area = 0;
-    auto it = grid.begin();
+    PipeIterator it = grid.pipe_iterator();
     do {
-        aoc::Pos prev_pos = *it;
+        Pos prev_pos = *it;
         ++it;
         ++perimeter;
-        aoc::Pos curr_pos = *it;
+        Pos curr_pos = *it;
         // shoelace formula for area of an arbitrary polygon
         twice_area += (prev_pos.y + curr_pos.y) * (prev_pos.x - curr_pos.x);
     } while (*it != grid.start_pos);
@@ -39,10 +41,10 @@ int main(int argc, char **argv) {
 
     int part_1 = perimeter / 2;
     // Pick's theorem: A = i + b/2 - 1
-    //                 i = A - b/2 + 1
-    // where A is the exact area (accounting for partial grid squares), i is
-    // the number of grid points on the interior of the curve, and b is the
-    // number of grid points on the boundary of the curve.
+    //                 i = A - b/2 + 1, where
+    // * A is the exact area (accounting for partial grid squares)
+    // * i is the number of grid points on the interior of the curve
+    // * b is the number of grid points on the boundary of the curve
     int part_2 = area - part_1 + 1;
 
     std::cout << part_1 << "\n";

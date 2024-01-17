@@ -8,16 +8,18 @@
 #ifndef DAY10_HPP_CJA1L45J
 #define DAY10_HPP_CJA1L45J
 
-#include "lib.hpp"          // for AbsDirection, Pos, Delta, DEBUG
-#include <algorithm>        // for transform
+#include "data_structures.hpp" // for Grid
+#include "lib.hpp"           // for AbsDirection, Pos, Delta, DEBUG, DIRECTIONS
+#include "util/concepts.hpp" // for const_or_rvalue_ref
+
+#include <algorithm>        // for transform, find
 #include <cassert>          // for assert
-#include <cstddef>          // for size_t
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cerr, istream
-#include <iterator>         // for back_inserter
+#include <iterator>         // for back_inserter, distance
 #include <optional>         // for optional
 #include <string>           // for string, getline
-#include <utility>          // for move
+#include <utility>          // for move, forward
 #include <vector>           // for vector
 // IWYU pragma: no_include <functional>  // for identity (ranges::transform)
 
@@ -88,44 +90,17 @@ std::optional<AbsDirection> get_out_dir(Pipe pipe, AbsDirection in_dir) {
 
 struct PipeIterator;
 
-struct PipeGrid {
-    std::vector<std::vector<Pipe>> pipes;
+struct PipeGrid : public aoc::ds::Grid<Pipe> {
     Pos start_pos{-1, -1};
 
-    void find_start() {
-        for (std::size_t y = 0; y < pipes.size(); ++y) {
-            for (std::size_t x = 0; x < pipes[y].size(); ++x) {
-                Pos pos{int(x), int(y)};
-                if (at(pos) == Pipe::start) {
-                    start_pos = pos;
-                    return;
-                }
-            }
-        }
+    template <
+        util::concepts::const_or_rvalue_ref<std::vector<std::vector<Pipe>>> V>
+    explicit PipeGrid(V &&pipes) : Grid(std::forward<V>(pipes)) {
+        start_pos = index_to_pos(
+            std::distance(cbegin(), std::find(cbegin(), cend(), Pipe::start)));
     }
 
-    bool in_bounds(const Pos &pos) const {
-        return pos.x >= 0 && pos.y >= 0 &&
-               static_cast<std::size_t>(pos.y) < pipes.size() &&
-               static_cast<std::size_t>(pos.x) < pipes[pos.y].size();
-    }
-
-  public:
-    explicit PipeGrid(const std::vector<std::vector<Pipe>> &pipes)
-        : pipes(pipes) {
-        find_start();
-    }
-    explicit PipeGrid(std::vector<std::vector<Pipe>> &&pipes)
-        : pipes(std::move(pipes)) {
-        find_start();
-    }
-
-    Pipe operator[](const Pos &pos) const { return pipes[pos.y][pos.x]; }
-    Pipe at(const Pos &pos) const { return pipes.at(pos.y).at(pos.x); }
-
-    PipeIterator begin() const;
-
-    bool operator==(const PipeGrid &) const = default;
+    PipeIterator pipe_iterator() const;
 };
 
 struct PipeIterator {
@@ -166,7 +141,7 @@ struct PipeIterator {
     friend PipeGrid;
 };
 
-PipeIterator PipeGrid::begin() const {
+PipeIterator PipeGrid::pipe_iterator() const {
     for (AbsDirection dir : aoc::DIRECTIONS) {
         Pos pos = start_pos + Delta(dir, true);
         if (!in_bounds(pos)) {
@@ -190,7 +165,7 @@ PipeGrid read_pipes(std::istream &is) {
                                [](const char &ch) { return Pipe{ch}; });
         pipes.push_back(std::move(pipe_line));
     }
-    return PipeGrid(std::move(pipes));
+    return PipeGrid{std::move(pipes)};
 }
 
 } // namespace aoc::day10

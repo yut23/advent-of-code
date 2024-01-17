@@ -9,7 +9,10 @@
 #ifndef DATA_STRUCTURES_HPP_KBRH53YC
 #define DATA_STRUCTURES_HPP_KBRH53YC
 
-#include "lib.hpp"          // for DEBUG
+#include "lib.hpp"           // for DEBUG
+#include "util/concepts.hpp" // for const_or_rvalue_ref
+
+#include <algorithm>        // for copy, move
 #include <cassert>          // for assert
 #include <cstddef>          // for size_t
 #include <functional>       // for less, greater
@@ -17,11 +20,10 @@
 #include <iterator>         // for next, advance
 #include <list>             // for list
 #include <memory> // for shared_ptr, weak_ptr, make_shared, enable_shared_from_this
-#include <string>      // for string, string_literals
+#include <string>      // for string
 #include <type_traits> // for is_invocable_r_v // IWYU pragma: keep
 #include <utility>     // for move, swap, forward, pair
 #include <vector>      // for vector
-// IWYU pragma: no_include <algorithm>  // for copy, fill_n
 
 namespace aoc::ds {
 
@@ -322,10 +324,15 @@ struct Grid {
     using iterator = typename container_type::iterator;
     using const_iterator = typename container_type::const_iterator;
 
+  protected:
     constexpr inline std::size_t get_index(size_type x, size_type y) const {
         return y * width + x;
     }
+    constexpr Pos index_to_pos(std::size_t index) const {
+        return Pos(index % width, index / width);
+    }
 
+  public:
     constexpr Grid(size_type width, size_type height,
                    const value_type &value = value_type())
         : height(height), width(width), data(height * width, value) {}
@@ -339,14 +346,20 @@ struct Grid {
         : height(height), width(width), data(std::move(data)) {
         assert(data.size() == height * width);
     }
-    explicit Grid(const std::vector<std::vector<T>> &grid)
-        : height(grid.size()), width(grid[0].size()), data(height * width) {
+    template <util::concepts::const_or_rvalue_ref<
+        std::vector<std::vector<value_type>>>
+                  V>
+    explicit Grid(V &&grid)
+        : height(grid.size()), width(grid[0].size()), data() {
         assert(!grid.empty());
-        for (int y = 0; y < height; ++y) {
-            const std::vector<T> &row = grid[y];
+        data.reserve(height * width);
+        auto data_it = std::back_inserter(data);
+        for (auto &&row : grid) {
             assert(static_cast<size_type>(row.size()) == width);
-            for (int x = 0; x < width; ++x) {
-                data[get_index(x, y)] = row[x];
+            if constexpr (std::is_rvalue_reference_v<V>) {
+                data_it = std::move(row.begin(), row.end(), data_it);
+            } else {
+                data_it = std::copy(row.begin(), row.end(), data_it);
             }
         }
     }
@@ -392,6 +405,11 @@ struct Grid {
     }
 };
 
+template <class T>
+Grid(const std::vector<std::vector<T>> &) -> Grid<T>;
+template <class T>
+Grid(std::vector<std::vector<T>> &&) -> Grid<T>;
+
 // instantiate templates in an anonymous namespace, so static analyzers will
 // check these functions
 namespace {
@@ -431,13 +449,11 @@ constexpr bool _grid_lint_helper_constexpr() {
     Grid grid1b(10, 5, 10);
     static_assert(std::is_same_v<decltype(grid1a), decltype(grid1b)>);
 
-    // cppcheck-suppress unreadVariable
     Grid<std::pair<int, std::string>> grid2a(3, 2);
     Grid grid2b(3, 2, std::make_pair(1, std::string{"a"}));
     static_assert(std::is_same_v<decltype(grid2a), decltype(grid2b)>);
 
     std::vector<std::vector<bool>> bool_vec{{true, false}, {true, false}};
-    // cppcheck-suppress unreadVariable
     Grid<bool> grid3a(bool_vec);
     Grid grid3b(bool_vec);
     Grid grid3c(std::move(bool_vec));

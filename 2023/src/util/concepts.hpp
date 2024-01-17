@@ -51,6 +51,10 @@ concept any_iterable_mapping =
         { const_cast<const M &>(m).end() } -> std::forward_iterator;
     };
 
+template <typename U, typename T>
+concept const_or_rvalue_ref =
+    std::convertible_to<U, const T &> || std::convertible_to<U, T &&>;
+
 } // namespace util::concepts
 
 #endif /* end of include guard: CONCEPTS_HPP_0EY957BS */
