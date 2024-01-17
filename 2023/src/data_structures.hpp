@@ -410,6 +410,7 @@ namespace {
     pairing_heap<std::pair<int, int *>, std::greater<std::pair<int, int *>>> h4;
 }
 
+#if __cpp_lib_constexpr_vector
 constexpr bool _grid_lint_helper_constexpr() {
     Grid<int> grid1(5, 10, 0);
     Grid<std::pair<int, bool>> grid2(3, 2);
@@ -419,6 +420,7 @@ constexpr bool _grid_lint_helper_constexpr() {
            grid2.height == 2 && grid2.at(2, 1).first == 1 &&
            grid2.at(2, 1).second == true;
 }
+#endif
 [[maybe_unused]] void _grid_lint_helper() {
     Grid<int> grid1a(10, 5);
     Grid grid1b(10, 5, 10);
@@ -437,7 +439,9 @@ constexpr bool _grid_lint_helper_constexpr() {
     static_assert(std::is_same_v<decltype(grid3a), decltype(grid3b)>);
     static_assert(std::is_same_v<decltype(grid3a), decltype(grid3c)>);
 
+#if __cpp_lib_constexpr_vector
     static_assert(_grid_lint_helper_constexpr());
+#endif
 }
 } // namespace
 
