@@ -37,6 +37,9 @@ if [[ ${#days[@]} -eq 0 ]]; then
   for src_file in src/day*.cpp; do
     day=${src_file#src/day}
     day=${day%.cpp}
+    if [[ $day = *_* ]]; then
+      continue;
+    fi
     days+=("${day#0}")
   done
 fi

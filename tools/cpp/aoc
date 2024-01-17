@@ -20,6 +20,7 @@ make_args=()
 write_answer=n
 skip_make=n
 use_gdb=n
+suffix=
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
@@ -61,6 +62,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     -w|--write-answer)
       write_answer=y
+      shift
+      ;;
+    -s|--suffix)
+      if [[ $2 == _* ]]; then
+        suffix=$2
+      else
+        suffix=_$2
+      fi
+      shift
       shift
       ;;
     --gdb)
@@ -126,7 +136,7 @@ if [[ $use_gdb == y ]]; then
   fi
 fi
 
-binary=$bin_dir/day$day
+binary=$bin_dir/day$day$suffix
 
 if [[ $skip_make != y ]]; then
   # rebuild if make says it's necessary
@@ -134,7 +144,7 @@ if [[ $skip_make != y ]]; then
 fi
 
 if [[ $write_answer != y ]]; then
-  echo "Day ${day#0}:"
+  echo "Day ${day#0}$suffix:"
 fi
 args=("${prefix_args[@]}" "$binary" "$input_path")
 
