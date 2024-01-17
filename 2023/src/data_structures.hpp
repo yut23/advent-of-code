@@ -190,7 +190,12 @@ class pairing_heap {
     /// Constructs a heap with the contents of the range [`first`, `last`).
     template <class InputIt>
     pairing_heap(InputIt first, InputIt last,
-                 const value_compare &compare = value_compare());
+                 const value_compare &compare = value_compare())
+        : pairing_heap(compare) {
+        for (; first != last; ++first) {
+            emplace(*first);
+        }
+    }
 
     /// Constructs a heap from an initializer list.
     pairing_heap(std::initializer_list<value_type> init,
