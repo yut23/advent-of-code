@@ -451,10 +451,10 @@ template <bool use_visited = false, class Key,
 std::pair<int, std::vector<Key>>
 dijkstra(const Key &source, GetNeighbors &&get_neighbors,
          GetDistance &&get_distance, IsTarget &&is_target) {
-    return dijkstra<use_visited>(source,
-                                 std::forward<GetNeighbors>(get_neighbors),
-                                 std::forward<GetDistance>(get_distance),
-                                 std::forward<IsTarget>(is_target));
+    return dijkstra<use_visited>(
+        source, std::forward<GetNeighbors>(get_neighbors),
+        std::forward<GetDistance>(get_distance),
+        std::forward<IsTarget>(is_target), [](const Key &, int) {});
 }
 
 namespace detail {
