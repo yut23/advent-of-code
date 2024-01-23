@@ -25,52 +25,37 @@ jobs:
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
     container: ${{ needs.docker-build.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ matrix.TARGET.directory }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Mark git checkout as safe
+        shell: bash
+        working-directory: ${{ matrix.TARGET.directory }}
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Run answer tests (clang++)
         timeout-minutes: 2
-        run: |
-          export CXX=clang++ USE_LIBCXX=FALSE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/release/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          ./run_answer_tests.sh ${{ matrix.TARGET.name }}
+        id: clang
+        uses: ./.github/actions/answer-test-action
+        with:
+          compiler: clang++
 
       - name: Run answer tests (g++)
         timeout-minutes: 2
-        if: always()
-        run: |
-          export CXX=g++ USE_LIBCXX=FALSE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/release/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          ./run_answer_tests.sh ${{ matrix.TARGET.name }}
+        id: gcc
+        # ignore failures in the previous step
+        if: success() || steps.clang.conclusion == 'failure'
+        uses: ./.github/actions/answer-test-action
+        with:
+          compiler: g++
 
       - name: Run answer tests (clang++-17, libc++)
         timeout-minutes: 2
-        if: always()
-        run: |
-          export CXX=clang++-17 USE_LIBCXX=TRUE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/release/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          ./run_answer_tests.sh ${{ matrix.TARGET.name }}
+        # ignore failures in the previous two steps
+        if: success() || steps.clang.conclusion == 'failure' || steps.gcc.conclusion == 'failure'
+        uses: ./.github/actions/answer-test-action
+        with:
+          compiler: clang++-17
+          stdlib: libc++

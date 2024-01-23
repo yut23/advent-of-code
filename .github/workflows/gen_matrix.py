@@ -9,36 +9,63 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Generator
 
 ROOT = Path(__file__).resolve().parents[2]
+WORKFLOWS_DIR = ROOT / ".github/workflows"
 
 
 @functools.cache
-def get_includes(path: Path, *include_dirs: Path) -> frozenset[Path]:
-    assert path.suffix in {".cpp", ".hpp", ".h"}
-    include_pat = re.compile(r'#include\s+"(.*?)"')
-    includes: set[Path] = set()
-    include_dirs = (path.parent, *include_dirs)
-    with open(path, "r") as f:
-        for line in f:
-            if (m := include_pat.search(line)) is None:
-                continue
+def get_dependencies(path: Path, *include_dirs: Path) -> frozenset[Path]:
+    if path.suffix in {".cpp", ".hpp", ".h"}:
+        include_dirs = (path.parent, *include_dirs)
+        include_pat = re.compile(r'\s*#include\s+"(.*?)"')
+
+        def find_include_paths(line: str) -> Generator[Path, None, None]:
+            if (m := include_pat.match(line)) is None:
+                return
             for parent in include_dirs:
                 curr_path = parent / m[1]
-                if not curr_path.exists():
-                    continue
-                includes.add(curr_path)
-                break
+                if curr_path.exists():
+                    yield parent / m[1]
+                    break
+
+    elif path.parent == WORKFLOWS_DIR and path.suffix in {".yml", ".yaml"}:
+        workflow_pat = re.compile(r"uses: \./(\.github/workflows/.*\.ya?ml)")
+        action_pat = re.compile(r"uses: \./(\.github/actions/[^/]+)\b")
+        python_pat = re.compile(
+            r"\s(?:\.|\$GITHUB_WORKSPACE)/(\.github/(?:workflows|actions/[^/]+)/[^/]+\.py)"
+        )
+
+        def find_include_paths(line: str) -> Generator[Path, None, None]:
+            if (m := workflow_pat.search(line)) is not None:
+                yield ROOT / m[1]
+            if (m := python_pat.search(line)) is not None:
+                yield ROOT / m[1]
+            if (m := action_pat.search(line)) is not None:
+                for name in ("action.yml", "action.yaml"):
+                    curr_path = ROOT / m[1] / name
+                    if curr_path.exists():
+                        yield curr_path
+                        break
+
+    else:
+        return frozenset()
+
+    includes: set[Path] = set()
+    with open(path, "r") as f:
+        for line in f:
+            includes.update(find_include_paths(line.rstrip("\n")))
     return frozenset(includes)
 
 
 @functools.cache
-def get_transitive_includes(path: Path, *include_dirs: Path) -> frozenset[Path]:
-    # simple DFS on get_includes(), using functools.cache for memoization
+def get_transitive_dependencies(path: Path, *include_dirs: Path) -> frozenset[Path]:
+    # simple DFS on get_dependencies(), using functools.cache for memoization
     all_includes: set[Path] = set()
-    for p in get_includes(path, *include_dirs):
+    for p in get_dependencies(path, *include_dirs):
         all_includes.add(p)
-        all_includes.update(get_transitive_includes(p, *include_dirs))
+        all_includes.update(get_transitive_dependencies(p, *include_dirs))
     return frozenset(all_includes)
 
 
@@ -70,7 +97,7 @@ class Target:
         deps = set()
         src = self.base_dir / "src"
         deps.add(src / f"{self}.cpp")
-        for included_file in get_transitive_includes(src / f"{self}.cpp", src):
+        for included_file in get_transitive_dependencies(src / f"{self}.cpp", src):
             deps.add(included_file)
         deps.add(self.base_dir / "Makefile")
         if mode == "answer":
@@ -121,12 +148,15 @@ def validate_path(path: Path) -> None:
 
 class Matrix:
     def __init__(self, mode: str) -> None:
-        if mode == "unit":
-            target_pat = re.compile("test")
-        elif mode == "build":
+        if mode == "build":
             target_pat = re.compile("day|test")
+            workflow_path = WORKFLOWS_DIR / "test-build.yml"
         elif mode == "answer":
             target_pat = re.compile("day")
+            workflow_path = WORKFLOWS_DIR / "answer-tests.yml"
+        elif mode == "unit":
+            target_pat = re.compile("test")
+            workflow_path = WORKFLOWS_DIR / "unit-tests.yml"
         self.targets: set[Target] = set()
 
         all_targets: list[Target] = []
@@ -143,17 +173,13 @@ class Matrix:
             for dep in target.get_deps(mode):
                 self.file_lookup[dep].append(target)
 
-        self.file_lookup[ROOT / ".github/workflows/gen_matrix.py"] = all_targets
-        for file in ROOT.glob(".github/workflows/*.yml"):
-            with open(file, "r") as f:
-                contents = f.read()
-                if mode in file.name and (
-                    "gen_matrix.py" in contents or "generate-matrix.yml" in contents
-                ):
-                    self.file_lookup[file] = all_targets
+        self.file_lookup[workflow_path] = all_targets
+        for dep in get_transitive_dependencies(workflow_path):
+            self.file_lookup[dep] = all_targets
 
         for file in self.file_lookup:
             validate_path(file)
+        self.all_targets = all_targets
 
     def process_changed_file(self, file: Path) -> None:
         validate_path(file)

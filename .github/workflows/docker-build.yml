@@ -21,11 +21,13 @@ on:
       ubuntu-version:
         required: true
         type: string
+        default: 22.04
       llvm-version:
         required: true
         type: string
+        default: 17
       rebuild:
-        required: false
+        required: true
         type: boolean
         default: true
 

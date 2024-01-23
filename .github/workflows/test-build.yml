@@ -25,34 +25,29 @@ jobs:
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
     container: ${{ needs.docker-build.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ matrix.TARGET.directory }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Build target (clang++)
-        run: |
-          export CXX=clang++ USE_LIBCXX=FALSE
-          $CXX --version
-          make --silent clean
-          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+        id: clang
+        uses: ./.github/actions/build-action
+        with:
+          compiler: clang++
 
       - name: Build target (g++)
-        if: always()
-        run: |
-          export CXX=g++ USE_LIBCXX=FALSE
-          $CXX --version
-          make --silent clean
-          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+        id: gcc
+        # ignore failures in the previous step
+        if: success() || steps.clang.conclusion == 'failure'
+        uses: ./.github/actions/build-action
+        with:
+          compiler: g++
 
       - name: Build target (clang++-17, libc++)
-        if: always()
-        run: |
-          export CXX=clang++-17 USE_LIBCXX=TRUE
-          $CXX --version
-          make --silent clean
-          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+        # ignore failures in the previous two steps
+        if: success() || steps.clang.conclusion == 'failure' || steps.gcc.conclusion == 'failure'
+        uses: ./.github/actions/build-action
+        with:
+          compiler: clang++-17
+          stdlib: libc++
