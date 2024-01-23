@@ -24,7 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
-        BUILD_CONFIG: ${{ fromJson(needs.setup-matrix.outputs.build-configs) }}
     container: ${{ needs.docker-build.outputs.image }}
     defaults:
       run:
@@ -35,17 +34,43 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build targets
-        run: |
-          if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
-            export USE_LIBCXX=TRUE
-          fi
-          ${{ matrix.BUILD_CONFIG.compiler }} --version
-          make CXX=${{ matrix.BUILD_CONFIG.compiler }} build/release/${{ matrix.TARGET.name }}
+      - name: Mark git checkout as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Run answer tests
+      - name: Run answer tests (clang++)
         timeout-minutes: 2
         run: |
-          # mark git checkout as safe
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export CXX=clang++ USE_LIBCXX=FALSE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/release/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
+
+          ./run_answer_tests.sh ${{ matrix.TARGET.name }}
+
+      - name: Run answer tests (g++)
+        timeout-minutes: 2
+        if: always()
+        run: |
+          export CXX=g++ USE_LIBCXX=FALSE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/release/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
+
+          ./run_answer_tests.sh ${{ matrix.TARGET.name }}
+
+      - name: Run answer tests (clang++-17, libc++)
+        timeout-minutes: 2
+        if: always()
+        run: |
+          export CXX=clang++-17 USE_LIBCXX=TRUE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/release/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
+
           ./run_answer_tests.sh ${{ matrix.TARGET.name }}

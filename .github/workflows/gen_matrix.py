@@ -128,11 +128,6 @@ class Matrix:
         elif mode == "answer":
             target_pat = re.compile("day")
         self.targets: set[Target] = set()
-        self.build_configs = [
-            BuildConfig(compiler="clang++"),
-            BuildConfig(compiler="g++"),
-            BuildConfig(compiler="clang++-17", stdlib="libc++"),
-        ]
 
         all_targets: list[Target] = []
         for base_dir in find_base_dirs():
@@ -167,22 +162,14 @@ class Matrix:
 
     def write_combinations(self, output_file: str) -> None:
         target_dicts = []
-        config_dicts = []
         if self.targets:
             print("\ntargets:")
             for target in sorted(self.targets):
                 target_dicts.append(target.to_dict())
                 print(f"  {target_dicts[-1]}")
-            print("\nbuild configurations:")
-            for config in self.build_configs:
-                config_dicts.append(config.to_dict())
-                print(f"  {config_dicts[-1]}")
         with open(output_file, "a") as f:
             f.write("matrix-targets=")
             json.dump(target_dicts, f, indent=None, separators=(",", ":"))
-            f.write("\n")
-            f.write("matrix-build-configs=")
-            json.dump(config_dicts, f, indent=None, separators=(",", ":"))
             f.write("\n")
 
 
