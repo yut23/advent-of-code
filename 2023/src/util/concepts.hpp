@@ -12,6 +12,7 @@
 #include <concepts>   // for convertible_to, same_as
 #include <cstddef>    // for size_t
 #include <functional> // for hash
+#include <iostream>   // for ostream
 #include <iterator>   // for forward_iterator
 #include <utility>    // for pair
 

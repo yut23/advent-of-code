@@ -2,21 +2,22 @@
 #define PRETTY_PRINT_HPP
 
 #include "util/concepts.hpp"
-#include <array>    // for array
-#include <compare>  // for strong_ordering
-#include <concepts> // for same_as, floating_point
-#include <cstddef>  // for size_t
-#include <iomanip>  // for quoted
-#include <iostream> // for ostream, defaultfloat, hexfloat
-#include <iterator> // for begin, end
-#include <list>     // for list
-#include <map>      // for map
-#include <optional> // for optional
-#include <set>      // for set
-#include <string>   // for string
-#include <tuple>    // for tuple, get
-#include <utility>  // for pair
-#include <vector>   // for vector
+#include <array>       // for array
+#include <compare>     // for strong_ordering
+#include <concepts>    // for same_as, floating_point
+#include <cstddef>     // for size_t
+#include <iomanip>     // for quoted
+#include <iostream>    // for ostream, defaultfloat, hexfloat
+#include <iterator>    // for begin, end
+#include <list>        // for list
+#include <map>         // for map
+#include <optional>    // for optional
+#include <set>         // for set
+#include <string>      // for string
+#include <tuple>       // for tuple, get
+#include <type_traits> // for true_type, false_type
+#include <utility>     // for pair
+#include <vector>      // for vector
 
 // Additional ostream formatters needed for printing arguments/return values
 // for failing test cases
