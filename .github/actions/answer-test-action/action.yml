@@ -1,0 +1,31 @@
+name: 'Run answer tests'
+description: 'Helper for workflows/answer-tests.yml'
+inputs:
+  compiler:
+    description: 'C++ compiler executable'
+    required: true
+  stdlib:
+    description: 'C++ standard library to use (libstdc++ or libc++)'
+    required: false
+    default: libstdc++
+
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      working-directory: ${{ matrix.TARGET.directory }}
+      env:
+        CXX: ${{ inputs.compiler }}
+        USE_LIBCXX: ${{ inputs.stdlib == 'libc++' && 'TRUE' || 'FALSE' }}
+      run: |
+        echo
+        echo '::group::Compiler version'
+        $CXX --version
+        echo '::endgroup::'
+        echo '::group::Build target'
+        make --silent clean
+        make build/release/${{ matrix.TARGET.name }}
+        echo '::endgroup::'
+        echo
+
+        ./run_answer_tests.sh ${{ matrix.TARGET.name }}

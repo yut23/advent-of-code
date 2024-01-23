@@ -25,46 +25,29 @@ jobs:
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
     container: ${{ needs.docker-build.outputs.image }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ matrix.TARGET.directory }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Run unit tests (clang++)
-        run: |
-          export CXX=clang++ USE_LIBCXX=FALSE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/debug/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          make ${{ matrix.TARGET.name }}
+        id: clang
+        uses: ./.github/actions/unit-test-action
+        with:
+          compiler: clang++
 
       - name: Run unit tests (g++)
-        if: always()
-        run: |
-          export CXX=g++ USE_LIBCXX=FALSE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/debug/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          make ${{ matrix.TARGET.name }}
+        id: gcc
+        # ignore failures in the previous step
+        if: success() || steps.clang.conclusion == 'failure'
+        uses: ./.github/actions/unit-test-action
+        with:
+          compiler: g++
 
       - name: Run unit tests (clang++-17, libc++)
-        if: always()
-        run: |
-          export CXX=clang++-17 USE_LIBCXX=TRUE
-          echo '::group::make output'
-          $CXX --version
-          make --silent clean
-          make build/debug/${{ matrix.TARGET.name }}
-          echo '::endgroup::'
-
-          make ${{ matrix.TARGET.name }}
+        # ignore failures in the previous two steps
+        if: success() || steps.clang.conclusion == 'failure' || steps.gcc.conclusion == 'failure'
+        uses: ./.github/actions/unit-test-action
+        with:
+          compiler: clang++-17
+          stdlib: libc++
