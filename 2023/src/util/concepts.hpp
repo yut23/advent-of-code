@@ -55,6 +55,12 @@ template <typename U, typename T>
 concept const_or_rvalue_ref =
     std::convertible_to<U, const T &> || std::convertible_to<U, T &&>;
 
+template <class T>
+concept stream_insertable = requires(std::ostream &os, const T &t) { os << t; };
+
+template <class T, class... Matches>
+concept same_as_any = (... || std::same_as<T, Matches>);
+
 } // namespace util::concepts
 
 #endif /* end of include guard: CONCEPTS_HPP_0EY957BS */

@@ -476,13 +476,13 @@ struct TestRunner {
         auto expected_comp = detail::convert<R, Input, Compare>(expected);
         if (!test_equality(result_comp, expected_comp, float_ulps)) {
             std::ostringstream args_ss, expected_ss, actual_ss, output_ss;
-            args_ss << get_args_for_printing();
+            args_ss << pretty_print::repr(get_args_for_printing(), false);
             // add indents to each line of the output
             for (std::string line; std::getline(captured_cout, line);) {
                 output_ss << "  # " << line << '\n';
             }
-            pretty_print::write_repr(expected_ss, expected_comp, true);
-            pretty_print::write_repr(actual_ss, result_comp, true);
+            expected_ss << pretty_print::repr(expected_comp, true);
+            actual_ss << pretty_print::repr(result_comp, true);
             return {false,           sizeof...(Args),
                     args_ss.str(),   expected_ss.str(),
                     actual_ss.str(), output_ss.str()};
