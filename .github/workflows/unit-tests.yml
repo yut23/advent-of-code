@@ -24,7 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
-        BUILD_CONFIG: ${{ fromJson(needs.setup-matrix.outputs.build-configs) }}
     container: ${{ needs.docker-build.outputs.image }}
     defaults:
       run:
@@ -35,13 +34,37 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build test
+      - name: Run unit tests (clang++)
         run: |
-          if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
-            export USE_LIBCXX=TRUE
-          fi
-          ${{ matrix.BUILD_CONFIG.compiler }} --version
-          make CXX=${{ matrix.BUILD_CONFIG.compiler }} build/debug/${{ matrix.TARGET.name }}
+          export CXX=clang++ USE_LIBCXX=FALSE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/debug/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
 
-      - name: Run test
-        run: make CXX=${{ matrix.BUILD_CONFIG.compiler }} ${{ matrix.TARGET.name }}
+          make ${{ matrix.TARGET.name }}
+
+      - name: Run unit tests (g++)
+        if: always()
+        run: |
+          export CXX=g++ USE_LIBCXX=FALSE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/debug/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
+
+          make ${{ matrix.TARGET.name }}
+
+      - name: Run unit tests (clang++-17, libc++)
+        if: always()
+        run: |
+          export CXX=clang++-17 USE_LIBCXX=TRUE
+          echo '::group::make output'
+          $CXX --version
+          make --silent clean
+          make build/debug/${{ matrix.TARGET.name }}
+          echo '::endgroup::'
+
+          make ${{ matrix.TARGET.name }}

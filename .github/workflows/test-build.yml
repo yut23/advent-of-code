@@ -24,7 +24,6 @@ jobs:
       fail-fast: false
       matrix:
         TARGET: ${{ fromJson(needs.setup-matrix.outputs.targets) }}
-        BUILD_CONFIG: ${{ fromJson(needs.setup-matrix.outputs.build-configs) }}
     container: ${{ needs.docker-build.outputs.image }}
     defaults:
       run:
@@ -35,10 +34,25 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build targets
+      - name: Build target (clang++)
         run: |
-          if [[ ${{ matrix.BUILD_CONFIG.stdlib }} == libc++ ]]; then
-            export USE_LIBCXX=TRUE
-          fi
-          ${{ matrix.BUILD_CONFIG.compiler }} --version
-          make -j2 CXX=${{ matrix.BUILD_CONFIG.compiler }} DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+          export CXX=clang++ USE_LIBCXX=FALSE
+          $CXX --version
+          make --silent clean
+          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+
+      - name: Build target (g++)
+        if: always()
+        run: |
+          export CXX=g++ USE_LIBCXX=FALSE
+          $CXX --version
+          make --silent clean
+          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}
+
+      - name: Build target (clang++-17, libc++)
+        if: always()
+        run: |
+          export CXX=clang++-17 USE_LIBCXX=TRUE
+          $CXX --version
+          make --silent clean
+          make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}

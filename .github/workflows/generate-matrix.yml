@@ -9,8 +9,6 @@ on:
     outputs:
       targets:
         value: ${{ jobs.setup-matrix.outputs.targets }}
-      build-configs:
-        value: ${{ jobs.setup-matrix.outputs.build-configs }}
 
 jobs:
   setup-matrix:
@@ -34,4 +32,3 @@ jobs:
 
     outputs:
       targets: ${{ steps.setup-matrix-combinations.outputs.matrix-targets }}
-      build-configs: ${{ steps.setup-matrix-combinations.outputs.matrix-build-configs }}
