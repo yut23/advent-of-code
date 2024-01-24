@@ -436,7 +436,8 @@ struct TestRunner {
         : function_under_test(func), float_ulps(float_ulps) {}
 
     TestResult run_on_inputs(arg_lookup_t<Args, Input>... raw_inputs,
-                             arg_lookup_t<R, Input> expected) {
+                             arg_lookup_t<R, Input> expected,
+                             const std::string &note = "") {
         auto inputs = std::make_tuple(raw_inputs...);
         std::remove_const_t<arg_lookup_t<R, Compare>> result_comp =
             [this, &inputs]() {
@@ -451,28 +452,36 @@ struct TestRunner {
                 stop_capturing_cout();
                 return detail::convert<R, Argument, Compare>(result);
             }();
-        return check_result(result_comp, expected, [&inputs]() {
-            return detail::convert<args_tuple, Input, Compare>(inputs);
-        });
+        return check_result(
+            result_comp, expected,
+            [&inputs]() {
+                return detail::convert<args_tuple, Input, Compare>(inputs);
+            },
+            note);
     }
 
     TestResult run_on_args(arg_lookup_t<Args, PassedArgument>... raw_args,
-                           arg_lookup_t<R, Input> expected) {
+                           arg_lookup_t<R, Input> expected,
+                           const std::string &note = "") {
         auto args = std::make_tuple(raw_args...);
         start_capturing_cout();
         auto result = std::apply(function_under_test, args);
         stop_capturing_cout();
         auto result_comp = detail::convert<R, Argument, Compare>(result);
-        return check_result(result_comp, expected, [&args]() {
-            return detail::convert<args_tuple, Argument, Compare>(args);
-        });
+        return check_result(
+            result_comp, expected,
+            [&args]() {
+                return detail::convert<args_tuple, Argument, Compare>(args);
+            },
+            note);
     }
 
   private:
     TestResult check_result(const arg_lookup_t<R, Compare> &result_comp,
                             const arg_lookup_t<R, Input> &expected,
                             std::function<arg_lookup_t<args_tuple, Compare>()>
-                                get_args_for_printing) {
+                                get_args_for_printing,
+                            const std::string &note) {
         auto expected_comp = detail::convert<R, Input, Compare>(expected);
         if (!test_equality(result_comp, expected_comp, float_ulps)) {
             std::ostringstream args_ss, expected_ss, actual_ss, output_ss;
@@ -483,9 +492,15 @@ struct TestRunner {
             }
             expected_ss << pretty_print::repr(expected_comp, true);
             actual_ss << pretty_print::repr(result_comp, true);
-            return {false,           sizeof...(Args),
-                    args_ss.str(),   expected_ss.str(),
-                    actual_ss.str(), output_ss.str()};
+            return {
+                .passed = false,
+                .num_args = sizeof...(Args),
+                .arguments = args_ss.str(),
+                .expected = expected_ss.str(),
+                .actual = actual_ss.str(),
+                .output = output_ss.str(),
+                .note = note,
+            };
         } else {
             return {true};
         }
@@ -559,17 +574,19 @@ struct MethodTest : public BaseTest {
           runner(_wrap_test_function(this, func), float_ulps) {}
 
     void operator()(arg_lookup_t<Args, Input>... raw_inputs,
-                    arg_lookup_t<R, Input> expected) {
+                    arg_lookup_t<R, Input> expected,
+                    const std::string &note = "") {
         ++test_num;
-        record_result(runner.run_on_inputs(raw_inputs..., expected));
+        record_result(runner.run_on_inputs(raw_inputs..., expected, note));
     }
 
     /// Use this when programmatically generating tests, since
     /// std::initializer_lists can't be constructed at runtime.
     void run_on_args(arg_lookup_t<Args, PassedArgument>... raw_args,
-                     arg_lookup_t<R, Input> expected) {
+                     arg_lookup_t<R, Input> expected,
+                     const std::string &note = "") {
         ++test_num;
-        record_result(runner.run_on_args(raw_args..., expected));
+        record_result(runner.run_on_args(raw_args..., expected, note));
     }
 };
 
@@ -596,17 +613,19 @@ struct PureTest : public BaseTest {
         : BaseTest(filename, float_ulps), runner(func, float_ulps) {}
 
     void operator()(arg_lookup_t<Args, Input>... raw_inputs,
-                    arg_lookup_t<R, Input> expected) {
+                    arg_lookup_t<R, Input> expected,
+                    const std::string &note = "") {
         ++test_num;
-        record_result(runner.run_on_inputs(raw_inputs..., expected));
+        record_result(runner.run_on_inputs(raw_inputs..., expected, note));
     }
 
     /// Use this when programmatically generating tests, since
     /// std::initializer_lists can't be constructed at runtime.
     void run_on_args(arg_lookup_t<Args, PassedArgument>... raw_args,
-                     arg_lookup_t<R, Input> expected) {
+                     arg_lookup_t<R, Input> expected,
+                     const std::string &note = "") {
         ++test_num;
-        record_result(runner.run_on_args(raw_args..., expected));
+        record_result(runner.run_on_args(raw_args..., expected, note));
     }
 };
 
@@ -645,7 +664,7 @@ namespace {
             -> std::strong_ordering { return vec1 <=> vec2; });
     test({1, 2}, {1, 2}, std::strong_ordering::equal);
     test({1, 2, 3}, {1, 2}, std::strong_ordering::greater);
-    test({2, 2, 3}, {1, 2}, std::strong_ordering::less);
+    test({2, 2, 3}, {1, 2}, std::strong_ordering::less, "note");
     test.done();
 }
 } // namespace
