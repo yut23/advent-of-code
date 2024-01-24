@@ -8,16 +8,16 @@
 #ifndef DAY16_HPP_80LYO54U
 #define DAY16_HPP_80LYO54U
 
-#include "lib.hpp"   // for Pos, AbsDirection, Delta
-#include <algorithm> // for count_if
-#include <cassert>   // for assert
-#include <cstddef>   // for size_t
-#include <iostream>  // for istream, ostream
-#include <set>       // for set
-#include <string>    // for string, getline
-#include <utility>   // for pair, make_pair
-#include <vector>    // for vector
-// IWYU pragma: no_include <functional>  // for identity (ranges::count_if)
+#include "ds/grid.hpp" // for Grid
+#include "lib.hpp"     // for Pos, AbsDirection, Delta
+#include <algorithm>   // for count_if
+#include <cassert>     // for assert
+#include <cstddef>     // for size_t
+#include <iostream>    // for istream, ostream
+#include <set>         // for set
+#include <string>      // for string, getline
+#include <utility>     // for pair, make_pair
+#include <vector>      // for vector
 
 namespace aoc::day16 {
 
@@ -87,44 +87,38 @@ std::vector<AbsDirection> Tile::get_out_dir(AbsDirection in_dir) const {
     return {out_dir};
 }
 
-class Grid {
+class LaserGrid : public aoc::ds::Grid<Tile> {
     using visit_cache_t = std::set<std::pair<Pos, AbsDirection>>;
-    std::vector<std::vector<Tile>> tiles;
 
-    bool in_bounds(const Pos &pos) const {
-        return pos.y >= 0 && pos.x >= 0 &&
-               pos.y < static_cast<int>(tiles.size()) &&
-               pos.x < static_cast<int>(tiles[pos.y].size());
-    }
     void send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen);
 
   public:
+    explicit LaserGrid(std::vector<std::vector<Tile>> &&tiles)
+        : Grid<Tile>(std::move(tiles)) {}
     void send_beam(Pos pos, AbsDirection dir);
     void clear_energized();
     int count_energized() const;
 
-    int width() const { return tiles[0].size(); }
-    int height() const { return tiles.size(); }
-
-    static Grid read(std::istream &);
+    static LaserGrid read(std::istream &);
 
     void print_energized(std::ostream &os) const;
-    friend std::ostream &operator<<(std::ostream &, const Grid &);
+    friend std::ostream &operator<<(std::ostream &, const LaserGrid &);
 };
 
-void Grid::send_beam(Pos pos, AbsDirection dir) {
+void LaserGrid::send_beam(Pos pos, AbsDirection dir) {
     visit_cache_t seen;
     send_beam_helper(pos, dir, seen);
 }
 
-void Grid::send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen) {
+void LaserGrid::send_beam_helper(Pos pos, AbsDirection dir,
+                                 visit_cache_t &seen) {
     while (in_bounds(pos)) {
         auto key = std::make_pair(pos, dir);
         if (seen.contains(key)) {
             return;
         }
         seen.insert(key);
-        Tile &tile = tiles[pos.y][pos.x];
+        Tile &tile = (*this)[pos];
         tile.energized = true;
         std::vector<AbsDirection> new_dirs = tile.get_out_dir(dir);
         assert(new_dirs.size() > 0);
@@ -137,37 +131,31 @@ void Grid::send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen) {
     }
 }
 
-void Grid::clear_energized() {
-    for (auto &row : tiles) {
-        for (auto &tile : row) {
-            tile.energized = false;
-        }
+void LaserGrid::clear_energized() {
+    for (auto &tile : data()) {
+        tile.energized = false;
     }
 }
 
-int Grid::count_energized() const {
-    int count = 0;
-    for (const auto &row : tiles) {
-        count += std::ranges::count_if(
-            row, [](const Tile &tile) { return tile.energized; });
-    }
-    return count;
+int LaserGrid::count_energized() const {
+    return std::count_if(m_data.begin(), m_data.end(),
+                         [](const Tile &tile) { return tile.energized; });
 }
 
-Grid Grid::read(std::istream &is) {
-    Grid grid;
+LaserGrid LaserGrid::read(std::istream &is) {
+    std::vector<std::vector<Tile>> tiles;
     std::string line;
     while (std::getline(is, line)) {
-        grid.tiles.emplace_back();
+        tiles.emplace_back();
         for (char ch : line) {
-            grid.tiles.back().push_back(Tile{static_cast<TileType>(ch), false});
+            tiles.back().push_back(Tile{static_cast<TileType>(ch), false});
         }
     }
-    return grid;
+    return LaserGrid{std::move(tiles)};
 }
 
-void Grid::print_energized(std::ostream &os) const {
-    for (const auto &row : tiles) {
+void LaserGrid::print_energized(std::ostream &os) const {
+    for (const auto &row : *this) {
         for (const auto &tile : row) {
             os << (tile.energized ? '#' : '.');
         }
@@ -175,8 +163,8 @@ void Grid::print_energized(std::ostream &os) const {
     }
 }
 
-std::ostream &operator<<(std::ostream &os, const Grid &grid) {
-    for (const auto &row : grid.tiles) {
+std::ostream &operator<<(std::ostream &os, const LaserGrid &laser_grid) {
+    for (const auto &row : laser_grid) {
         for (const auto &tile : row) {
             os << static_cast<char>(tile.type);
         }
