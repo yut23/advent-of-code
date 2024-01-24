@@ -49,6 +49,10 @@ if [[ ${#events[@]} -gt 0 ]]; then
   cat "${events[@]}" > events.json
   rm "${events[@]}"
   $BEAR_PREFIX citnames --append --config ../tools/cpp/bear_config.json
+  if command -v jq &> /dev/null && command -v sponge &> /dev/null; then
+    # sort with jq
+    jq 'sort_by(.file, .output)' compile_commands.json | sponge compile_commands.json
+  fi
   rm events.json
 fi
 
