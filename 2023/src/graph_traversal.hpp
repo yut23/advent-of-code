@@ -466,10 +466,6 @@ struct a_star_entry {
 
     a_star_entry(int estimate, int dist, const Key &key)
         : estimate(estimate), dist(dist), key(key) {}
-    a_star_entry(int estimate, int dist, Key &&key)
-        : estimate(estimate), dist(dist), key(std::move(key)) {}
-    // a_star_entry(const a_star_entry &) = default;
-    // a_star_entry(a_star_entry &&) = default;
 
     auto operator<=>(const a_star_entry &) const = default;
 };

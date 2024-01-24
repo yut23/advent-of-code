@@ -8,7 +8,8 @@
 #ifndef DAY17_HPP_3D5Q7QMY
 #define DAY17_HPP_3D5Q7QMY
 
-#include "graph_traversal.hpp" // for dijkstra
+#include "ds/grid.hpp"         // for Grid
+#include "graph_traversal.hpp" // for dijkstra, a_star
 #include "lib.hpp" // for Pos, AbsDirection, Delta, opposite, DEBUG, DIRECTIONS, as_number
 
 #include <algorithm>        // for transform
@@ -33,20 +34,14 @@ class CityMap {
         std::strong_ordering operator<=>(const Key &) const = default;
     };
 
-    std::vector<std::vector<unsigned char>> block_costs;
+    aoc::ds::Grid<unsigned char> block_costs;
 
     std::vector<Key> get_neighbors(bool ultra, const Key &key) const;
     int get_distance(const Key &from, const Key &to) const;
-    int height() const { return block_costs.size(); }
-    int width() const { return block_costs[0].size(); }
-
-    bool in_bounds(const Pos &pos) const {
-        return pos.y >= 0 && pos.x >= 0 &&
-               pos.y < static_cast<int>(block_costs.size()) &&
-               pos.x < static_cast<int>(block_costs[pos.y].size());
-    }
 
   public:
+    explicit CityMap(std::vector<std::vector<unsigned char>> &&block_costs)
+        : block_costs(std::move(block_costs)) {}
     int find_shortest_path(bool ultra = false) const;
     void print(std::ostream &, const std::vector<Key> &path = {}) const;
     static CityMap read(std::istream &is);
@@ -69,7 +64,7 @@ std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
             continue;
         }
         Key neighbor{key.pos + Delta(dir, true), dir, 1};
-        if (!in_bounds(neighbor.pos)) {
+        if (!block_costs.in_bounds(neighbor.pos)) {
             continue;
         }
         if (dir == key.dir) {
@@ -93,12 +88,12 @@ std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
 
 int CityMap::get_distance([[maybe_unused]] const Key &from,
                           const Key &to) const {
-    return block_costs[to.pos.y][to.pos.x];
+    return block_costs[to.pos];
 }
 
 int CityMap::find_shortest_path(bool ultra) const {
     Key source{Pos(0, 0), AbsDirection::east, 0};
-    Pos target(width() - 1, height() - 1);
+    Pos target(block_costs.width - 1, block_costs.height - 1);
     std::function<void(const Key &, int)> visit = [](const Key &, int) {};
 #if 0
     if (aoc::DEBUG && ultra) {
@@ -113,21 +108,17 @@ int CityMap::find_shortest_path(bool ultra) const {
         };
     }
 #endif
+    const auto is_target = [&target, ultra](const Key &key) -> bool {
+        return key.pos == target && (!ultra || key.move_count >= 4);
+    };
 #if 0
     const auto &[distance, path] = aoc::graph::dijkstra(
         source, std::bind_front(&CityMap::get_neighbors, this, ultra),
-        std::bind_front(&CityMap::get_distance, this),
-        [&target, ultra](const Key &key) -> bool {
-            return key.pos == target && (!ultra || key.move_count >= 4);
-        },
-        visit);
+        std::bind_front(&CityMap::get_distance, this), is_target, visit);
 #else
     const auto &[distance, path] = aoc::graph::a_star(
         source, std::bind_front(&CityMap::get_neighbors, this, ultra),
-        std::bind_front(&CityMap::get_distance, this),
-        [&target, ultra](const Key &key) -> bool {
-            return key.pos == target && (!ultra || key.move_count >= 4);
-        },
+        std::bind_front(&CityMap::get_distance, this), is_target,
         [&target](const Key &key) -> int {
             return (key.pos - target).manhattan_distance();
         },
@@ -157,9 +148,9 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
         path_lookup[key.pos] = &key;
     }
 
-    Pos pos(0, 0);
-    for (pos.y = 0; pos.y < height(); ++pos.y) {
-        for (pos.x = 0; pos.x < width(); ++pos.x) {
+    Pos pos;
+    for (pos.y = 0; pos.y < block_costs.height; ++pos.y) {
+        for (pos.x = 0; pos.x < block_costs.width; ++pos.x) {
             auto it = path_lookup.find(pos);
             if (it != path_lookup.end() && it->second->move_count > 0) {
                 switch (it->second->dir) {
@@ -177,7 +168,7 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
                     break;
                 }
             } else {
-                os << as_number{block_costs[pos.y][pos.x]};
+                os << as_number{block_costs[pos]};
             }
         }
         os << '\n';
@@ -185,15 +176,15 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
 }
 
 CityMap CityMap::read(std::istream &is) {
-    CityMap city_map;
+    std::vector<std::vector<unsigned char>> block_costs;
     std::string line;
     while (std::getline(is, line)) {
         std::vector<unsigned char> costs;
         std::transform(line.begin(), line.end(), std::back_inserter(costs),
                        [](char ch) { return ch - '0'; });
-        city_map.block_costs.push_back(std::move(costs));
+        block_costs.push_back(std::move(costs));
     }
-    return city_map;
+    return CityMap{std::move(block_costs)};
 }
 
 } // namespace aoc::day17
