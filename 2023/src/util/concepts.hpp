@@ -14,6 +14,7 @@
 #include <functional> // for hash
 #include <iostream>   // for ostream
 #include <iterator>   // for forward_iterator
+#include <ranges>     // for range, range_value_t
 #include <utility>    // for pair
 
 namespace util::concepts {
@@ -35,21 +36,26 @@ template <typename C, typename T>
 concept any_iterable_collection =
     std::same_as<typename C::value_type, T> &&
     requires (C c) {
-        { c.begin() } -> std::forward_iterator;
-        { c.end() }   -> std::forward_iterator;
-        { const_cast<const C&>(c).begin() } -> std::forward_iterator;
-        { const_cast<const C&>(c).end() }   -> std::forward_iterator;
+        { std::begin(c) } -> std::forward_iterator;
+        { std::end(c) }   -> std::forward_iterator;
+        { std::begin(const_cast<const C &>(c)) } -> std::forward_iterator;
+        { std::end(const_cast<const C &>(c)) }   -> std::forward_iterator;
     };
 // clang-format on
+
+template <typename R, typename T>
+concept any_convertible_range =
+    std::ranges::range<R> &&
+    std::convertible_to<std::ranges::range_value_t<R>, T>;
 
 template <typename M, typename K, typename V>
 concept any_iterable_mapping =
     std::same_as<typename M::value_type, std::pair<const K, V>> &&
     requires(M m) {
-        { m.begin() } -> std::forward_iterator;
-        { m.end() } -> std::forward_iterator;
-        { const_cast<const M &>(m).begin() } -> std::forward_iterator;
-        { const_cast<const M &>(m).end() } -> std::forward_iterator;
+        { std::begin(m) } -> std::forward_iterator;
+        { std::end(m) } -> std::forward_iterator;
+        { std::begin(const_cast<const M &>(m)) } -> std::forward_iterator;
+        { std::end(const_cast<const M &>(m)) } -> std::forward_iterator;
     };
 
 template <typename U, typename T>

@@ -76,7 +76,7 @@ long count_reachable_plots(const Grid<int> &distances,
                            const int target_distance) {
     const int parity = target_distance % 2;
     long count = 0;
-    for (const int distance : distances) {
+    for (const int distance : distances.data()) {
         if (distance <= target_distance && distance % 2 == parity) {
             // this is faster under ASan
             // cppcheck-suppress useStlAlgorithm
@@ -157,7 +157,7 @@ class EdgeSet {
 
         explicit DistanceInfo(const Grid<int> &distances_)
             : distances(distances_) {
-            for (int distance : distances) {
+            for (int distance : distances.data()) {
                 if (distance == std::numeric_limits<int>::max()) {
                     continue;
                 }

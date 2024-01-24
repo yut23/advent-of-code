@@ -9,8 +9,7 @@
 #define DAY10_HPP_CJA1L45J
 
 #include "data_structures.hpp" // for Grid
-#include "lib.hpp"           // for AbsDirection, Pos, Delta, DEBUG, DIRECTIONS
-#include "util/concepts.hpp" // for const_or_rvalue_ref
+#include "lib.hpp" // for AbsDirection, Pos, Delta, DEBUG, DIRECTIONS
 
 #include <algorithm>        // for transform, find
 #include <cassert>          // for assert
@@ -93,11 +92,11 @@ struct PipeIterator;
 struct PipeGrid : public aoc::ds::Grid<Pipe> {
     Pos start_pos{-1, -1};
 
-    template <
-        util::concepts::const_or_rvalue_ref<std::vector<std::vector<Pipe>>> V>
-    explicit PipeGrid(V &&pipes) : Grid(std::forward<V>(pipes)) {
-        start_pos = index_to_pos(
-            std::distance(cbegin(), std::find(cbegin(), cend(), Pipe::start)));
+    explicit PipeGrid(const std::vector<std::vector<Pipe>> &pipes)
+        : Grid(pipes) {
+        start_pos = index_to_pos(std::distance(
+            m_data.begin(),
+            std::find(m_data.begin(), m_data.end(), Pipe::start)));
     }
 
     PipeIterator pipe_iterator() const;
@@ -165,7 +164,7 @@ PipeGrid read_pipes(std::istream &is) {
                                [](const char &ch) { return Pipe{ch}; });
         pipes.push_back(std::move(pipe_line));
     }
-    return PipeGrid{std::move(pipes)};
+    return PipeGrid{pipes};
 }
 
 } // namespace aoc::day10
