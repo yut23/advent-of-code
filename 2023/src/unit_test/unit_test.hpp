@@ -4,6 +4,7 @@
 #include <algorithm>        // for transform, min
 #include <cassert>          // for assert
 #include <compare>          // for strong_ordering
+#include <concepts>         // for predicate
 #include <cstddef>          // for size_t
 #include <cstdlib>          // for abs
 #include <filesystem>       // for path
@@ -641,11 +642,23 @@ PureTest(const std::string &, std::function<R(Args...)>, int)
     -> PureTest<R, Args...>;
 
 struct ManualTest : public BaseTest {
+    using runner_type = TestRunner<bool>;
+
     explicit ManualTest(const std::string &name) : BaseTest(name) {}
 
     template <class T>
     bool operator()(T &&passed, const std::string &note = "") {
-        return (*this)(bool(std::forward<T>(passed)), note);
+        if constexpr (std::predicate<T>) {
+            // passed is a function that takes no arguments and returns a
+            // boolean-testable result
+            ++test_num;
+            TestRunner<bool> runner(passed, 0);
+            TestResult result = runner.run_on_args(true, note);
+            record_result(result);
+            return result.passed;
+        } else {
+            return (*this)(bool(std::forward<T>(passed)), note);
+        }
     }
     bool operator()(bool passed, const std::string &note = "") {
         ++test_num;
@@ -658,14 +671,32 @@ struct ManualTest : public BaseTest {
 
 namespace {
 [[maybe_unused]] void _lint_helper() {
-    unit_test::PureTest test(
-        "foobar",
-        +[](const std::vector<int> &vec1, const std::vector<int> &vec2)
-            -> std::strong_ordering { return vec1 <=> vec2; });
-    test({1, 2}, {1, 2}, std::strong_ordering::equal);
-    test({1, 2, 3}, {1, 2}, std::strong_ordering::greater);
-    test({2, 2, 3}, {1, 2}, std::strong_ordering::less, "note");
-    test.done();
+    {
+        unit_test::PureTest test(
+            "foobar",
+            +[](const std::vector<int> &vec1, const std::vector<int> &vec2)
+                -> std::strong_ordering { return vec1 <=> vec2; });
+        test({1, 2}, {1, 2}, std::strong_ordering::equal);
+        test({1, 1}, {1, 2}, std::strong_ordering::less);
+        test({2, 2}, {1, 2}, std::strong_ordering::greater);
+        test({1, 2, 3}, {1, 2}, std::strong_ordering::greater);
+        test({1, 1, 3}, {1, 2}, std::strong_ordering::less, "note");
+        test.done();
+    }
+    {
+        const auto count_chars =
+            +[](const std::string &s) -> std::unordered_map<char, int> {
+            std::unordered_map<char, int> counts;
+            for (char ch : s) {
+                ++counts[ch];
+            }
+            return counts;
+        };
+        unit_test::PureTest test("count_chars", count_chars);
+        test("abc", {{'a', 1}, {'b', 1}, {'c', 1}});
+        test("banana", {{'a', 3}, {'b', 1}, {'n', 2}});
+        test.done();
+    }
 }
 } // namespace
 
