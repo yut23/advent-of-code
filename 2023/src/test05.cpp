@@ -12,13 +12,6 @@
 #include <numeric>  // for iota
 #include <vector>   // for vector
 
-// IWYU pragma: no_forward_declare unit_test::argument_traits
-namespace unit_test {
-template <>
-struct argument_traits<aoc::day05::ConversionMap>
-    : detail::base_argument_traits<aoc::day05::ConversionMap> {};
-} // namespace unit_test
-
 namespace aoc::day05::test {
 
 std::size_t test_mapping() {

@@ -11,13 +11,6 @@
 #include <sstream> // for istringstream, ostringstream
 #include <string>  // for string
 
-// IWYU pragma: no_forward_declare unit_test::argument_traits
-namespace unit_test {
-template <>
-struct argument_traits<aoc::day19::Condition>
-    : detail::base_argument_traits<aoc::day19::Condition> {};
-} // namespace unit_test
-
 namespace aoc::day19::test {
 
 std::string invert_condition_helper(const std::string &s) {

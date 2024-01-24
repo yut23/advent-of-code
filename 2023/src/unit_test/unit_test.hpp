@@ -13,283 +13,282 @@
 #include <iostream> // for cout, cerr, istream, ostream, endl, streambuf, rdbuf, clear
 #include <iterator>    // for back_inserter
 #include <limits>      // for numeric_limits
-#include <set>         // for multiset
 #include <sstream>     // for ostringstream, stringstream
 #include <string>      // for string, getline
 #include <tuple>       // for tuple, get, make_tuple, apply
-#include <type_traits> // for remove_const_t, remove_cvref_t, decay_t, is_same_v, is_const_v, is_assignable_v, is_arithmetic_v, is_floating_point_v
-#include <unordered_map> // for unordered_map
-#include <unordered_set> // for unordered_set
+#include <type_traits> // for remove_const_t, remove_cvref_t, decay_t, is_same_v, is_assignable_v, is_floating_point_v, is_convertible_v
+#include <unordered_map> // for unordered_map, operator==
 #include <utility>       // for index_sequence, move, index_sequence_for
 #include <vector>        // for vector
 
-#include "unit_test/pretty_print.hpp" // for operator<<, write_repr
+#include "unit_test/pretty_print.hpp" // for repr
 
 namespace unit_test {
 
-template <typename T>
-struct argument_traits;
+/**
+ * Type trait class for function argument/return type conversion.
+ *
+ * Should only be accessed through the `arg_lookup_t` helper template and the
+ * `convert()` helper function, which sanitize the argument type.
+ *
+ * If a specific form is not defined, a default will be used. These are defined
+ * in detail::defaulted_argument_type_traits.
+ */
+template <class T>
+struct argument_type_traits;
+
+namespace detail {
+template <class T>
+struct defaulted_argument_type_traits;
+}
+
 // Unified interface for looking up converted argument types
 template <class T>
-using arg_traits = argument_traits<std::remove_cvref_t<T>>;
+using arg_traits =
+    detail::defaulted_argument_type_traits<std::remove_cvref_t<T>>;
 
-/// Same as orig_arg_type, but with a const qualifier.
+/**
+ * The type defined by the function under test (with an added const qualifier).
+ */
 struct Argument {};
-/// The argument type with cv- and reference-qualifiers stripped.
+/**
+ * The argument type with cv- and reference-qualifiers stripped.
+ */
 struct PassedArgument {};
-/// The type the user passes to UnitTest::operator().
+/**
+ * The type the user passes to UnitTest::operator().
+ */
 struct Input {};
-/// Stored for the duration of the test; only needed if the argument type
-/// requires external memory management.
+/**
+ * Stored for the duration of the test; only needed if the argument type
+ * requires external memory management.
+ */
 struct Storage {};
-/// Used to compare the actual result of a unit test against the expected
-/// result, and to print information about failed tests.
+/**
+ * Used to compare the actual result of a unit test against the expected result,
+ * and to print information about failed tests.
+ */
 struct Compare {};
+
+template <typename FromSelector, typename ToSelector>
+struct convert_tag {};
 
 template <class T, typename Selector>
 struct arg_lookup;
 
 template <class T>
 struct arg_lookup<T, Argument> {
-    typedef typename arg_traits<T>::arg_type type;
+    using type = typename arg_traits<T>::arg_type;
 };
 template <class T>
 struct arg_lookup<T, PassedArgument> {
-    typedef typename arg_traits<T>::passed_arg_type type;
+    using type = typename arg_traits<T>::passed_arg_type;
 };
 template <class T>
 struct arg_lookup<T, Input> {
-    typedef const typename arg_traits<T>::input_type type;
+    using type = typename arg_traits<T>::input_type;
 };
 template <class T>
 struct arg_lookup<T, Storage> {
-    typedef typename arg_traits<T>::storage_type type;
+    using type = typename arg_traits<T>::storage_type;
 };
 template <class T>
 struct arg_lookup<T, Compare> {
-    typedef typename arg_traits<T>::compare_type type;
+    using type = typename arg_traits<T>::compare_type;
 };
 
 template <class T, typename Selector>
 using arg_lookup_t = typename arg_lookup<T, Selector>::type;
 
-namespace detail {
 /**
- * A class template for adapting function argument/return types between their
- * input, storage, argument, and comparison forms.
+ * Main type conversion entry point.
+ * convert<T, FromSelector, ToSelector>(From &)
  */
-template <class T>
-struct base_argument_traits {
+template <class T, typename FromSelector, typename ToSelector>
+arg_lookup_t<T, ToSelector> convert(arg_lookup_t<T, FromSelector> &x) {
+    return arg_traits<T>::convert(convert_tag<FromSelector, ToSelector>{}, x);
+}
+
+namespace detail {
+
+template <class T, typename FromSelector, typename ToSelector>
+concept has_convert_implementation =
+    requires(arg_lookup_t<T, FromSelector> x) {
+        argument_type_traits<T>::convert(
+            convert_tag<FromSelector, ToSelector>{}, x);
+    };
+
+/**
+ * A struct that effectively wraps argument_type_traits and provides defaults
+ * for any missing type definitions or convert() overloads.
+ */
+template <typename T>
+struct defaulted_argument_type_traits {
+  private:
+    // additional traits for selecting the overridden type or a default
+    template <class U>
+    struct arg_type_traits {
+        using type = const U;
+    };
+    template <class U>
+        requires requires { typename argument_type_traits<U>::arg_type; }
+    struct arg_type_traits<U> {
+        using type = typename argument_type_traits<U>::arg_type;
+    };
+
+    template <class U>
+    struct passed_arg_type_traits {
+        using type = std::decay_t<U>;
+    };
+    template <class U>
+        requires requires { typename argument_type_traits<U>::passed_arg_type; }
+    struct passed_arg_type_traits<U> {
+        using type = typename argument_type_traits<U>::passed_arg_type;
+    };
+
+    template <class U>
+    struct input_type_traits {
+        using type = const U;
+    };
+    template <class U>
+        requires requires { typename argument_type_traits<U>::input_type; }
+    struct input_type_traits<U> {
+        using type = typename argument_type_traits<U>::input_type;
+    };
+
+    template <class U>
+    struct storage_type_traits {
+        using type = U;
+    };
+    template <class U>
+        requires requires { typename argument_type_traits<U>::storage_type; }
+    struct storage_type_traits<U> {
+        using type = typename argument_type_traits<U>::storage_type;
+    };
+
+    template <class U>
+    struct compare_type_traits {
+        using type = U;
+    };
+    template <class U>
+        requires requires { typename argument_type_traits<U>::compare_type; }
+    struct compare_type_traits<U> {
+        using type = typename argument_type_traits<U>::compare_type;
+    };
+
+  public:
     /**
-     * The type defined by the function under test.
+     * The type defined by the function under test (with an added const
+     * qualifier).
      */
-    using orig_arg_type = T;
-    /**
-     * Same as orig_arg_type, but with a const qualifier.
-     */
-    using arg_type = const T;
+    using arg_type = typename arg_type_traits<T>::type;
     /**
      * The argument type with cv- and reference-qualifiers stripped.
      */
-    using passed_arg_type = std::decay_t<T>;
+    using passed_arg_type = typename passed_arg_type_traits<T>::type;
     /**
      * The type the user passes to UnitTest::operator().
      *
      * Must be convertible to `storage_type` and `compare_type`.
      * Must be const-qualified.
      */
-    using input_type = const T;
+    using input_type = typename input_type_traits<T>::type;
     /**
      * Stored for the duration of the test; only needed if the argument type
      * requires external memory management.
      *
      * Must be convertible from `input_type` and to `passed_arg_type`.
      */
-    using storage_type = T;
+    using storage_type = typename storage_type_traits<T>::type;
     /**
      * Used to compare the actual result of a unit test against the expected
      * result, and to print information about failed tests.
      *
+     * Must be printable with the stream insertion operator (e.g. `os <<
+     * compare_type(...)`).
      * Must be convertible from `arg_type` and `input_type`.
      */
-    using compare_type = T;
+    using compare_type = typename compare_type_traits<T>::type;
 
-    static storage_type input_to_storage(const input_type &input) {
-        return input;
-    }
-    static passed_arg_type storage_to_arg(const storage_type &storage) {
-        return storage;
-    }
-    /**
-     * Convert an argument type to a comparison type.
-     *
-     * Only used on the actual result of the unit test.
-     */
-    static compare_type arg_to_compare(const arg_type &arg) { return arg; }
-    /**
-     * Convert an input type to a comparison type.
-     *
-     * Used on the expected result passed by the user and on the input arguments
-     * if a test fails.
-     */
-    static compare_type input_to_compare(const input_type &input) {
-        return input;
-    }
-};
-
-// Conversion dispatchers
-template <typename...>
-inline constexpr bool always_false = false;
-
-/// convert<T, FromSelector, ToSelector>(From &)
-template <class T, typename FromSelector, typename ToSelector>
-arg_lookup_t<T, ToSelector> convert(arg_lookup_t<T, FromSelector> &x) {
-    if constexpr (std::is_same_v<FromSelector, Input> &&
-                  std::is_same_v<ToSelector, Storage>) {
-        return arg_traits<T>::input_to_storage(x);
-    } else if constexpr (std::is_same_v<FromSelector, Storage> &&
-                         std::is_same_v<ToSelector, PassedArgument>) {
-        return arg_traits<T>::storage_to_arg(x);
-    } else if constexpr (std::is_same_v<FromSelector, Argument> &&
-                         std::is_same_v<ToSelector, Compare>) {
-        return arg_traits<T>::arg_to_compare(x);
-    } else if constexpr (std::is_same_v<FromSelector, Input> &&
-                         std::is_same_v<ToSelector, Compare>) {
-        return arg_traits<T>::input_to_compare(x);
-    } else {
-        static_assert(always_false<FromSelector, ToSelector>,
-                      "invalid conversion");
-    }
-}
-
-// convert vectors
-template <class T, typename FromSelector, typename ToSelector, class Arg,
-          class FromT = arg_lookup_t<T, FromSelector>,
-          class ToT = std::remove_const_t<arg_lookup_t<T, ToSelector>>>
-    requires std::is_same_v<std::remove_const_t<Arg>,
-                            std::vector<std::remove_const_t<FromT>>> ||
-             std::is_same_v<std::remove_const_t<Arg>,
-                            std::initializer_list<FromT>>
-std::vector<ToT> transform_vector(Arg &from) {
-    std::vector<ToT> result;
-    if constexpr (std::is_const_v<Arg>) {
-        std::transform(std::begin(from), std::end(from),
-                       std::back_inserter(result),
-                       convert<T, FromSelector, ToSelector>);
-    } else {
-        for (auto &element : from) {
-            // can't use std::transform here since it doesn't allow mutating the
-            // values pointed to by the input iterator
-            // cppcheck-suppress useStlAlgorithm
-            result.push_back(convert<T, FromSelector, ToSelector>(element));
+    template <typename FromSelector, typename ToSelector>
+    static arg_lookup_t<T, ToSelector>
+    convert(convert_tag<FromSelector, ToSelector> tag,
+            arg_lookup_t<T, FromSelector> &x) {
+        if constexpr (has_convert_implementation<T, FromSelector, ToSelector>) {
+            return argument_type_traits<T>::convert(tag, x);
+        } else {
+            static_assert(
+                std::is_convertible_v<
+                    std::remove_cvref_t<arg_lookup_t<T, FromSelector>>,
+                    std::remove_cvref_t<arg_lookup_t<T, ToSelector>>>,
+                "missing argument_type_traits::convert() specialization");
+            return x;
         }
     }
-    return result;
-}
-
-// convert tuples
-template <
-    typename FromSelector, typename ToSelector, class... Ts, class Arg,
-    class From = std::tuple<arg_lookup_t<Ts, FromSelector>...>,
-    class FromNoConst =
-        std::tuple<std::remove_const_t<arg_lookup_t<Ts, FromSelector>>...>,
-    class To = std::tuple<std::remove_const_t<arg_lookup_t<Ts, ToSelector>>...>>
-    requires std::is_same_v<std::remove_const_t<Arg>, From> ||
-             std::is_same_v<std::remove_const_t<Arg>, FromNoConst>
-To transform_tuple(Arg &from) {
-    return []<std::size_t... I>(Arg & from, std::index_sequence<I...>) {
-        return std::make_tuple(
-            convert<Ts, FromSelector, ToSelector>(std::get<I>(from))...);
-    }
-    (from, std::index_sequence_for<Ts...>{});
-}
+};
 
 } // namespace detail
 
 /**********************************************************************
- *                  argument_traits specializations                   *
+ *                argument_type_traits specializations                *
  **********************************************************************/
-
-// these types don't need any special handling
-template <class T>
-    requires std::is_arithmetic_v<T> || std::is_same_v<T, std::string> ||
-             std::is_same_v<T, std::strong_ordering>
-struct argument_traits<T> : detail::base_argument_traits<T> {};
 
 // vector
 template <class T>
-struct argument_traits<std::vector<T>>
-    : detail::base_argument_traits<std::vector<T>> {
+struct argument_type_traits<std::vector<T>> {
     using input_type = const std::initializer_list<arg_lookup_t<T, Input>>;
     using storage_type = std::vector<arg_lookup_t<T, Storage>>;
     using compare_type =
         const std::vector<std::remove_const_t<arg_lookup_t<T, Compare>>>;
 
-    static storage_type input_to_storage(const input_type &input) {
-        return detail::transform_vector<T, Input, Storage>(input);
-    }
-    static typename argument_traits::passed_arg_type
-    storage_to_arg(storage_type &storage) {
-        return detail::transform_vector<T, Storage, PassedArgument>(storage);
-    }
-
-    static compare_type
-    arg_to_compare(const typename argument_traits::arg_type &arg) {
-        return detail::transform_vector<T, Argument, Compare>(arg);
-    }
-    static compare_type input_to_compare(const input_type &input) {
-        return detail::transform_vector<T, Input, Compare>(input);
+    template <typename FromSelector, typename ToSelector>
+    static arg_lookup_t<std::vector<T>, ToSelector>
+    convert(convert_tag<FromSelector, ToSelector>,
+            arg_lookup_t<std::vector<T>, FromSelector> &x) {
+        std::vector<std::remove_const_t<arg_lookup_t<T, ToSelector>>> result;
+        result.reserve(x.size());
+        std::transform(
+            std::begin(x), std::end(x), std::back_inserter(result),
+            [](auto &element) {
+                return unit_test::convert<T, FromSelector, ToSelector>(element);
+            });
+        return result;
     }
 };
 
-// multiset
-template <class T>
-struct argument_traits<std::multiset<T>>
-    : detail::base_argument_traits<std::multiset<T>> {
-    using input_type = const std::initializer_list<T>;
-};
+// tuple-like
+namespace detail {
+template <template <class...> class TupleLike, class... Ts>
+struct tuple_like_arg_traits {
+    using input_type = const TupleLike<arg_lookup_t<Ts, Input>...>;
+    using storage_type = TupleLike<arg_lookup_t<Ts, Storage>...>;
+    using compare_type =
+        const TupleLike<std::remove_const_t<arg_lookup_t<Ts, Compare>>...>;
 
-// unordered_set
-template <class T>
-struct argument_traits<std::unordered_set<T>>
-    : detail::base_argument_traits<std::unordered_set<T>> {
-    using input_type = const std::initializer_list<T>;
+    template <typename FromSelector, typename ToSelector>
+    static arg_lookup_t<TupleLike<Ts...>, ToSelector>
+    convert(convert_tag<FromSelector, ToSelector>,
+            arg_lookup_t<TupleLike<Ts...>, FromSelector> &x) {
+        return [&x]<std::size_t... I>(std::index_sequence<I...>)
+            ->arg_lookup_t<TupleLike<Ts...>, ToSelector> {
+            return {unit_test::convert<Ts, FromSelector, ToSelector>(
+                std::get<I>(x))...};
+        }
+        (std::index_sequence_for<Ts...>{});
+    }
 };
-
-// unordered_map
-template <class K, class V>
-struct argument_traits<std::unordered_map<K, V>>
-    : detail::base_argument_traits<std::unordered_map<K, V>> {
-    using input_type = const std::initializer_list<
-        typename std::unordered_map<K, V>::value_type>;
-};
+} // namespace detail
 
 // tuple
 template <class... Ts>
-struct argument_traits<std::tuple<Ts...>>
-    : detail::base_argument_traits<std::tuple<Ts...>> {
-    using input_type = const std::tuple<arg_lookup_t<Ts, Input>...>;
-    using storage_type = std::tuple<arg_lookup_t<Ts, Storage>...>;
-    using compare_type =
-        const std::tuple<std::remove_const_t<arg_lookup_t<Ts, Compare>>...>;
+struct argument_type_traits<std::tuple<Ts...>>
+    : public detail::tuple_like_arg_traits<std::tuple, Ts...> {};
 
-    static storage_type input_to_storage(const input_type &input) {
-        return detail::transform_tuple<Input, Storage, Ts...>(input);
-    }
-    static typename argument_traits::passed_arg_type
-    storage_to_arg(storage_type &storage) {
-        return detail::transform_tuple<Storage, PassedArgument, Ts...>(storage);
-    }
-
-    static compare_type
-    arg_to_compare(const typename argument_traits::arg_type &arg) {
-        return detail::transform_tuple<Argument, Compare, Ts...>(arg);
-    }
-    static compare_type input_to_compare(const input_type &input) {
-        return detail::transform_tuple<Input, Compare, Ts...>(input);
-    }
-};
-// TODO: I think this should be generalizable to std::pair somehow
+// pair
+template <class... Ts>
+    requires(sizeof...(Ts) == 2)
+struct argument_type_traits<std::pair<Ts...>>
+    : public detail::tuple_like_arg_traits<std::pair, Ts...> {};
 
 template <class T>
 bool test_equality(const T &actual, const T &expected, const int float_ulps) {
@@ -442,22 +441,18 @@ struct TestRunner {
         auto inputs = std::make_tuple(raw_inputs...);
         std::remove_const_t<arg_lookup_t<R, Compare>> result_comp =
             [this, &inputs]() {
-                auto storages =
-                    detail::convert<args_tuple, Input, Storage>(inputs);
+                auto storages = convert<args_tuple, Input, Storage>(inputs);
                 auto args =
-                    detail::convert<args_tuple, Storage, PassedArgument>(
-                        storages);
+                    convert<args_tuple, Storage, PassedArgument>(storages);
 
                 start_capturing_cout();
                 auto result = std::apply(function_under_test, args);
                 stop_capturing_cout();
-                return detail::convert<R, Argument, Compare>(result);
+                return convert<R, Argument, Compare>(result);
             }();
         return check_result(
             result_comp, expected,
-            [&inputs]() {
-                return detail::convert<args_tuple, Input, Compare>(inputs);
-            },
+            [&inputs]() { return convert<args_tuple, Input, Compare>(inputs); },
             note);
     }
 
@@ -468,12 +463,10 @@ struct TestRunner {
         start_capturing_cout();
         auto result = std::apply(function_under_test, args);
         stop_capturing_cout();
-        auto result_comp = detail::convert<R, Argument, Compare>(result);
+        auto result_comp = convert<R, Argument, Compare>(result);
         return check_result(
             result_comp, expected,
-            [&args]() {
-                return detail::convert<args_tuple, Argument, Compare>(args);
-            },
+            [&args]() { return convert<args_tuple, Argument, Compare>(args); },
             note);
     }
 
@@ -483,7 +476,7 @@ struct TestRunner {
                             std::function<arg_lookup_t<args_tuple, Compare>()>
                                 get_args_for_printing,
                             const std::string &note) {
-        auto expected_comp = detail::convert<R, Input, Compare>(expected);
+        auto expected_comp = convert<R, Input, Compare>(expected);
         if (!test_equality(result_comp, expected_comp, float_ulps)) {
             std::ostringstream args_ss, expected_ss, actual_ss, output_ss;
             args_ss << pretty_print::repr(get_args_for_printing(), false);

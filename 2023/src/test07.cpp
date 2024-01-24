@@ -13,13 +13,6 @@
 #include <string>  // for string
 #include <vector>  // for vector
 
-// IWYU pragma: no_forward_declare unit_test::argument_traits
-namespace unit_test {
-template <>
-struct argument_traits<aoc::day07::Hand>
-    : detail::base_argument_traits<aoc::day07::Hand> {};
-} // namespace unit_test
-
 namespace aoc::day07::test {
 
 std::vector<Hand> read_hands_helper(const std::string &text) {
