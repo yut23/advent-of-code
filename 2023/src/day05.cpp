@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
         std::size_t N = map.entries.size();
         long curr = 0;
         for (std::size_t i = 0; i < N; ++i) {
+            // make a copy here, as emplace_back can invalidate a reference
             const auto entry = map.entries[i];
             if (curr < entry.start) {
                 map.entries.emplace_back(curr, curr, entry.start - curr);
