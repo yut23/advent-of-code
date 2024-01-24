@@ -6,7 +6,9 @@
  * Description: Unit tests for data structures.
  *****************************************************************************/
 
-#include "data_structures.hpp"        // IWYU pragma: associated
+#include "ds/grid.hpp"         // IWYU pragma: associated
+#include "ds/pairing_heap.hpp" // IWYU pragma: associated
+
 #include "unit_test/pretty_print.hpp" // for repr
 #include "unit_test/unit_test.hpp"    // for ManualTest, fix_exit_code
 #include "util/util.hpp"              // for demangle

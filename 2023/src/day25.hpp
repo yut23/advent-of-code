@@ -8,7 +8,7 @@
 #ifndef DAY25_HPP_PXSWLG7Y
 #define DAY25_HPP_PXSWLG7Y
 
-#include "data_structures.hpp" // for pairing_heap
+#include "ds/pairing_heap.hpp" // for pairing_heap
 
 #include <cassert>       // for assert
 #include <cstddef>       // for size_t

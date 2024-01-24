@@ -8,7 +8,7 @@
 #ifndef DAY21_HPP_2X5T9V1Y
 #define DAY21_HPP_2X5T9V1Y
 
-#include "data_structures.hpp" // for Grid
+#include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for bfs
 #include "lib.hpp"          // for AbsDirection, Pos, Delta, DIRECTIONS, DEBUG
 #include <array>            // for array

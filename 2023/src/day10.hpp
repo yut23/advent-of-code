@@ -8,9 +8,8 @@
 #ifndef DAY10_HPP_CJA1L45J
 #define DAY10_HPP_CJA1L45J
 
-#include "data_structures.hpp" // for Grid
-#include "lib.hpp" // for AbsDirection, Pos, Delta, DEBUG, DIRECTIONS
-
+#include "ds/grid.hpp"      // for Grid
+#include "lib.hpp"          // for AbsDirection, Pos, Delta, DEBUG, DIRECTIONS
 #include <algorithm>        // for transform, find
 #include <cassert>          // for assert
 #include <initializer_list> // for initializer_list
