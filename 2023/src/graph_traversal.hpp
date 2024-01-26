@@ -11,7 +11,7 @@
 #define GRAPH_TRAVERSAL_HPP_56T9ZURK
 
 #include "util/concepts.hpp"
-#include <algorithm>     // for reverse
+#include <algorithm>     // for min, reverse
 #include <concepts>      // for same_as, integral
 #include <functional>    // for function, greater
 #include <map>           // for map
@@ -19,6 +19,7 @@
 #include <set>           // for set
 #include <stack>         // for stack
 #include <stdexcept>     // for invalid_argument
+#include <tuple>         // for tuple
 #include <type_traits>   // for conditional_t // IWYU pragma: export
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
@@ -165,20 +166,19 @@ template <bool use_seen = true, class Key,
           detail::VisitWithParent<Key> VisitWithParent>
 int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         VisitWithParent &&visit_with_parent) {
+    std::stack<std::tuple<Key, Key, int>> stack{};
+    stack.emplace(source, source, 0);
     detail::maybe_unordered_set<Key> seen{};
 
-    auto helper = [&seen, &get_neighbors, &is_target,
-                   &visit_with_parent](const Key &key, int depth,
-                                       const Key &parent, const auto &rec) {
+    while (!stack.empty()) {
+        const auto [key, parent, depth] = std::move(stack.top());
+        stack.pop();
         visit_with_parent(key, parent, depth);
         if (is_target(key)) {
-            return depth;
+            return stack.size() - 1;
         }
         if constexpr (use_seen) {
             seen.insert(key);
-        } else {
-            // suppress unused lambda capture warning
-            (void)seen;
         }
         for (const Key &neighbor : get_neighbors(key)) {
             if constexpr (use_seen) {
@@ -186,15 +186,10 @@ int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
                     continue;
                 }
             }
-            int result = rec(neighbor, depth + 1, key, rec);
-            if (result != -1) {
-                return result;
-            }
+            stack.emplace(neighbor, key, depth + 1);
         }
-        return -1;
-    };
-
-    return helper(source, 0, source, helper);
+    }
+    return -1;
 }
 
 template <bool use_seen = true, class Key,
