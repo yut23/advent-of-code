@@ -9,13 +9,14 @@
 #ifndef CONCEPTS_HPP_0EY957BS
 #define CONCEPTS_HPP_0EY957BS
 
-#include <concepts>   // for convertible_to, same_as
-#include <cstddef>    // for size_t
-#include <functional> // for hash
-#include <iostream>   // for ostream
-#include <iterator>   // for forward_iterator
-#include <ranges>     // for range, range_value_t
-#include <utility>    // for pair
+#include <concepts>    // for convertible_to, same_as
+#include <cstddef>     // for size_t
+#include <functional>  // for hash
+#include <iostream>    // for ostream
+#include <iterator>    // for forward_iterator
+#include <ranges>      // for range, range_value_t
+#include <type_traits> // for remove_reference_t
+#include <utility>     // for pair
 
 namespace util::concepts {
 
@@ -34,7 +35,7 @@ concept Hashable =
 template <typename C, typename T>
 // clang-format off
 concept any_iterable_collection =
-    std::same_as<typename C::value_type, T> &&
+    std::same_as<typename std::remove_reference_t<C>::value_type, T> &&
     requires (C c) {
         { std::begin(c) } -> std::forward_iterator;
         { std::end(c) }   -> std::forward_iterator;

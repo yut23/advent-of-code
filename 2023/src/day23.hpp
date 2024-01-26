@@ -10,32 +10,20 @@
 
 #include "ds/grid.hpp"      // for Grid
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
+#include <algorithm>        // for minmax
 #include <cassert>          // for assert
 #include <functional>       // for bind_front
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream
-#include <map>              // for map, multimap
+#include <map>              // for map
 #include <set>              // for set
 #include <string>           // for string, getline
 #include <utility>          // for move
 #include <vector>           // for vector
-// IWYU pragma: no_include <unordered_set>  // no clue why it wants this
 
 #include "graph_traversal.hpp"
 
 namespace aoc::day23 {
-
-struct Trail {
-    Pos start;
-    Pos end;
-    unsigned int length;
-};
-
-std::ostream &operator<<(std::ostream &os, const Trail &trail) {
-    os << "Trail from " << trail.start << " to " << trail.end
-       << ", length=" << trail.length;
-    return os;
-}
 
 const std::map<char, AbsDirection> allowed_directions{
     {'>', AbsDirection::east},
@@ -47,13 +35,21 @@ class TrailMap {
     aoc::ds::Grid<char> grid;
     std::map<Pos, std::set<Pos>> grid_path;
     std::map<Pos, std::set<Pos>> grid_prev;
-
-    std::map<Pos, Trail> trails;
-    std::multimap<Pos, Pos> connections;
+    std::map<std::pair<Pos, Pos>, int> distances;
 
     std::vector<Pos> get_grid_neighbors(const Pos &pos) const;
 
-    Pos reconstruct_trails(Pos pos, const Pos &target);
+    void add_edge(const Pos &from, const Pos &to, int distance = 1);
+    void remove_edge(const Pos &from, const Pos &to);
+    void collapse_node(const Pos &pos);
+    void simplify_trails();
+
+    std::pair<Pos, Pos> dist_key(const Pos &from, const Pos &to) const {
+        return std::minmax(from, to);
+    }
+    int get_distance(const Pos &from, const Pos &to) const {
+        return distances.at(dist_key(from, to));
+    }
 
   public:
     explicit TrailMap(const std::vector<std::string> &grid) : grid(grid) {}
@@ -73,9 +69,6 @@ TrailMap TrailMap::read(std::istream &is) {
 
 std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
     std::vector<Pos> neighbors;
-    if (!grid.in_bounds(pos)) {
-        return {};
-    }
 
     char terrain = grid[pos];
     switch (terrain) {
@@ -105,18 +98,30 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
             }
             auto it = grid_path.find(new_pos);
             if (it != grid_path.end() && it->second.contains(pos)) {
+                // don't go backwards through edges we've already seen
                 continue;
             }
-            // it = grid_path.find(pos);
-            // if (it != grid_path.end() && it->second.contains(new_pos)) {
-            //     continue;
-            // }
             neighbors.push_back(new_pos);
         }
         assert(neighbors.size() <= 2);
         break;
     }
     return neighbors;
+}
+
+void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
+    grid_path[from].emplace(to);
+    grid_prev[to].emplace(from);
+    distances[dist_key(from, to)] = distance;
+}
+
+void TrailMap::remove_edge(const Pos &from, const Pos &to) {
+    assert(distances.erase(dist_key(from, to)) == 1);
+    // avoid UAF in case from and to are references into grid_path and grid_prev
+    auto &fwd = grid_path.at(from);
+    auto &rev = grid_prev.at(to);
+    assert(fwd.erase(to) == 1);
+    assert(rev.erase(from) == 1);
 }
 
 void TrailMap::parse_grid() {
@@ -129,130 +134,80 @@ void TrailMap::parse_grid() {
 
     auto visit_with_parent = [this](const Pos &pos, const Pos &parent, int) {
         if (parent != pos) {
-            grid_path[parent].emplace(pos);
-            grid_prev[pos].emplace(parent);
+            add_edge(parent, pos);
         }
     };
     aoc::graph::dfs<false>(start,
                            std::bind_front(&TrailMap::get_grid_neighbors, this),
                            visit_with_parent);
 
-    if constexpr (aoc::DEBUG && false) {
-        for (const auto &[parent, children] : grid_path) {
-            std::cerr << parent << " -> {";
-            for (auto it = children.begin(); it != children.end(); ++it) {
-                if (it != children.begin()) {
-                    std::cerr << ", ";
-                }
-                std::cerr << *it;
-            }
-            std::cerr << "}\n";
-        }
+    simplify_trails();
+}
+
+void TrailMap::simplify_trails() {
+    // iterate through all nodes and collapse those that have a single
+    // predecessor and successor
+    std::vector<Pos> nodes;
+    for (const auto &[key, _] : grid_path) {
+        nodes.push_back(key);
     }
-
-    Pos after_target = target + Delta(0, 1);
-    trails.try_emplace(after_target, Trail{after_target, after_target, 0});
-    reconstruct_trails(start, target);
-    --trails.at(start).length;
-
-    if constexpr (aoc::DEBUG) {
-        std::cerr << "\n";
-        Delta delta{1, 1};
-        for (const auto &[_, trail] : trails) {
-            std::cerr << trail << ": connected to {";
-            auto range = connections.equal_range(trail.start);
-            for (auto it = range.first; it != range.second; ++it) {
-                if (it != range.first) {
-                    std::cerr << ", ";
-                }
-                std::cerr << it->second + delta;
-            }
-            std::cerr << "}\n";
-            if (grid.in_bounds(trail.start)) {
-                grid[trail.start] = 'O';
-            }
-            if (grid.in_bounds(trail.end)) {
-                grid[trail.end] = '*';
-            }
-        }
-
-        std::cerr << "\n";
-        for (const auto &row : grid) {
-            for (const char &ch : row) {
-                std::cerr << ch;
-            }
-            std::cerr << "\n";
+    for (const Pos &pos : nodes) {
+        const auto succ_it = grid_path.find(pos);
+        const auto pred_it = grid_prev.find(pos);
+        if (succ_it != grid_path.end() && succ_it->second.size() == 1 &&
+            pred_it != grid_prev.end() && pred_it->second.size() == 1) {
+            collapse_node(pos);
         }
     }
 }
 
-// reconstruct graph from path pointers
-Pos TrailMap::reconstruct_trails(Pos pos, const Pos &target) {
-    bool inserted = trails.try_emplace(pos, Trail{pos, pos, 1}).second;
-    if (!inserted) {
-        return pos;
-    }
-    Trail &trail = trails.at(pos);
-    while (pos != target) {
-        auto path_it = grid_path.find(pos);
-        if (path_it == grid_path.end() || path_it->second.empty()) {
-            break;
-        }
-        auto prev_it = grid_prev.find(pos);
-        if (path_it->second.size() > 1 ||
-            (prev_it != grid_prev.end() && prev_it->second.size() > 1)) {
-            // multiple paths, recurse down each
-            for (const Pos &next_pos : path_it->second) {
-                Pos next_start = reconstruct_trails(next_pos, target);
-                connections.emplace(trail.start, next_start);
-            }
-            break;
-        }
-        pos = *(path_it->second.begin());
-        ++trail.length;
-        trail.end = pos;
-    }
-    if (pos == target) {
-        connections.emplace(trail.start, target + Delta(0, 1));
-    }
-    return trail.start;
+void TrailMap::collapse_node(const Pos &pos) {
+    const Pos &before = *grid_prev.at(pos).begin();
+    const Pos &after = *grid_path.at(pos).begin();
+    int new_distance = get_distance(before, pos) + get_distance(pos, after);
+    // add link between before and after
+    add_edge(before, after, new_distance);
+    // remove links to pos
+    remove_edge(before, pos);
+    remove_edge(pos, after);
 }
 
 int TrailMap::part_1() const {
     // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
         std::cerr << "digraph G {\n";
-        for (const auto &[p1, p2] : connections) {
-            std::cerr << "  pos_" << p1.x << "_" << p1.y << " -> pos_" << p2.x
-                      << "_" << p2.y << " [label=" << trails.at(p1).length
-                      << "];\n";
+        for (const auto &[from, neighbors] : grid_path) {
+            for (const Pos &to : neighbors) {
+                std::cerr << "  pos_" << from.x << "_" << from.y << " -> pos_"
+                          << to.x << "_" << to.y
+                          << " [label=" << get_distance(from, to) << "];\n";
+            }
         }
         std::cerr << "}\n";
     }
 
     Pos start{1, 0};
-    Pos after_target{grid.width - 2, grid.height};
-    auto get_neighbors = [this](const Pos &pos) -> std::vector<Pos> {
-        const auto range = connections.equal_range(pos);
-        std::vector<Pos> neighbors;
-        for (auto it = range.first; it != range.second; ++it) {
-            neighbors.emplace_back(it->second);
+    Pos target{grid.width - 2, grid.height - 1};
+    const std::set<Pos> empty_set{};
+    auto get_neighbors = [this,
+                          &empty_set](const Pos &pos) -> const std::set<Pos> & {
+        auto it = grid_path.find(pos);
+        if (it == grid_path.end()) {
+            return empty_set;
         }
-        return neighbors;
+        return it->second;
     };
-    auto get_distance = [this](const Pos &from, const Pos &) {
-        return trails.at(from).length;
-    };
-    auto is_target = [&after_target](const Pos &pos) {
-        return pos == after_target;
+    auto is_target = [&target](const Pos &pos) -> bool {
+        return pos == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
-        start, get_neighbors, get_distance, is_target);
+        start, get_neighbors, std::bind_front(&TrailMap::get_distance, this),
+        is_target);
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "longest path:\n";
         for (const auto &pos : path) {
-            std::cerr << trails.at(pos) << "\n";
+            std::cerr << pos << "\n";
         }
     }
     return distance;
