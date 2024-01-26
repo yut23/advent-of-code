@@ -8,6 +8,7 @@
 #ifndef DAY23_HPP_VAEIOPZT
 #define DAY23_HPP_VAEIOPZT
 
+#include "ds/grid.hpp"      // for Grid
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
 #include <cassert>          // for assert
 #include <functional>       // for bind_front
@@ -43,45 +44,40 @@ const std::map<char, AbsDirection> allowed_directions{
     {'v', AbsDirection::south}};
 
 class TrailMap {
-    std::vector<std::string> grid;
+    aoc::ds::Grid<char> grid;
     std::map<Pos, std::set<Pos>> grid_path;
     std::map<Pos, std::set<Pos>> grid_prev;
 
     std::map<Pos, Trail> trails;
     std::multimap<Pos, Pos> connections;
 
-    bool in_bounds(const Pos &pos) const {
-        return pos.y >= 0 && pos.x >= 0 &&
-               pos.y < static_cast<int>(grid.size()) &&
-               pos.x < static_cast<int>(grid[pos.y].size());
-    }
-
     std::vector<Pos> get_grid_neighbors(const Pos &pos) const;
 
     Pos reconstruct_trails(Pos pos, const Pos &target);
 
   public:
+    explicit TrailMap(const std::vector<std::string> &grid) : grid(grid) {}
     static TrailMap read(std::istream &);
     void parse_grid();
     int part_1() const;
 };
 
 TrailMap TrailMap::read(std::istream &is) {
-    TrailMap map;
+    std::vector<std::string> grid;
     std::string line;
     while (std::getline(is, line)) {
-        map.grid.push_back(std::move(line));
+        grid.push_back(std::move(line));
     }
-    return map;
+    return TrailMap{grid};
 }
 
 std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
     std::vector<Pos> neighbors;
-    if (!in_bounds(pos)) {
+    if (!grid.in_bounds(pos)) {
         return {};
     }
 
-    char terrain = grid[pos.y][pos.x];
+    char terrain = grid[pos];
     switch (terrain) {
     case '#':
         return {};
@@ -96,10 +92,10 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
     case '.':
         for (const auto dir : aoc::DIRECTIONS) {
             Pos new_pos = pos + Delta(dir, true);
-            if (!in_bounds(new_pos)) {
+            if (!grid.in_bounds(new_pos)) {
                 continue;
             }
-            char new_terrain = grid[new_pos.y][new_pos.x];
+            char new_terrain = grid[new_pos];
             if (new_terrain == '#') {
                 continue;
             }
@@ -124,13 +120,12 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
 }
 
 void TrailMap::parse_grid() {
-    assert(grid.size() > 2 && grid[0].size() > 2);
+    assert(grid.height > 2 && grid.width > 2);
     // starting point
     Pos start{1, 0};
-    assert(grid[start.y][start.x] == '.');
-    Pos target{static_cast<int>(grid[0].size()) - 2,
-               static_cast<int>(grid.size()) - 1};
-    assert(grid[target.y][target.x] == '.');
+    assert(grid[start] == '.');
+    Pos target{grid.width - 2, grid.height - 1};
+    assert(grid[target] == '.');
 
     auto visit_with_parent = [this](const Pos &pos, const Pos &parent, int) {
         if (parent != pos) {
@@ -173,17 +168,20 @@ void TrailMap::parse_grid() {
                 std::cerr << it->second + delta;
             }
             std::cerr << "}\n";
-            if (in_bounds(trail.start)) {
-                grid[trail.start.y][trail.start.x] = 'O';
+            if (grid.in_bounds(trail.start)) {
+                grid[trail.start] = 'O';
             }
-            if (in_bounds(trail.end)) {
-                grid[trail.end.y][trail.end.x] = '*';
+            if (grid.in_bounds(trail.end)) {
+                grid[trail.end] = '*';
             }
         }
 
         std::cerr << "\n";
-        for (const auto &l : grid) {
-            std::cerr << l << "\n";
+        for (const auto &row : grid) {
+            for (const char &ch : row) {
+                std::cerr << ch;
+            }
+            std::cerr << "\n";
         }
     }
 }
@@ -221,7 +219,7 @@ Pos TrailMap::reconstruct_trails(Pos pos, const Pos &target) {
 }
 
 int TrailMap::part_1() const {
-    // find longest path via shortest path on graph with negated weights
+    // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
         std::cerr << "digraph G {\n";
         for (const auto &[p1, p2] : connections) {
@@ -233,8 +231,7 @@ int TrailMap::part_1() const {
     }
 
     Pos start{1, 0};
-    Pos after_target{static_cast<int>(grid[0].size()) - 2,
-                     static_cast<int>(grid.size())};
+    Pos after_target{grid.width - 2, grid.height};
     auto get_neighbors = [this](const Pos &pos) -> std::vector<Pos> {
         const auto range = connections.equal_range(pos);
         std::vector<Pos> neighbors;
