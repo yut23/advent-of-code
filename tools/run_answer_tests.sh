@@ -51,13 +51,27 @@ done
 
 # try building everything first
 targets=()
+target_days=()
 for day in "${padded_days[@]}"; do
   target=build/release/day$day
-  make -q "$target" 2>/dev/null || targets+=("$target")
+  if ! make -q "$target" 2>/dev/null; then
+    targets+=("$target")
+    target_days+=("$day")
+  fi
 done
 if [[ ${#targets[@]} -gt 0 ]]; then
   make -j8 "${targets[@]}" || printf '\n'
 fi
+# check for compilation errors here rather than inside the loop, as I was
+# getting spurious failures if I touched the source files while this script was
+# running
+compile_failed=()
+for day in "${target_days[@]}"; do
+  if ! make -q "build/release/day$day" 2>/dev/null; then
+    compile_failed+=("$day")
+  fi
+done
+
 
 fail_count=0
 for day in "${padded_days[@]}"; do
@@ -65,7 +79,7 @@ for day in "${padded_days[@]}"; do
   if [[ ${#outputs[@]} -eq 0 ]]; then
     continue
   fi
-  if ! make -q "build/release/day$day"; then
+  if [[ " ${compile_failed[*]} " =~ \ $day\  ]]; then
     printf 'Day %2d: \033[31mcompilation error\033[m\n' "${day#0}"
     (( fail_count += ${#outputs[@]} ))
     continue
