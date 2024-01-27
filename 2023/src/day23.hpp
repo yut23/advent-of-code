@@ -41,7 +41,7 @@ class TrailMap {
     get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const;
 
     void add_edge(const Pos &from, const Pos &to, int distance);
-    void construct_trails(const Pos start, const Pos next);
+    void construct_trails(Pos start);
 
     std::pair<Pos, Pos> dist_key(const Pos &from, const Pos &to) const {
         return std::minmax(from, to);
@@ -70,7 +70,7 @@ TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     // starting point
     Pos start{1, 0};
     assert(grid[start] == '.');
-    construct_trails(start, start);
+    construct_trails(start);
 }
 
 std::pair<std::vector<Pos>, bool>
@@ -123,28 +123,33 @@ void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
     distances[dist_key(from, to)] = distance;
 }
 
-void TrailMap::construct_trails(const Pos start, const Pos next) {
-    Pos prev_pos = start;
-    Pos curr_pos = next;
-    int length = start == next ? 0 : 1;
-    while (true) {
-        const auto [neighbors, is_junction] =
-            get_grid_neighbors(curr_pos, prev_pos);
-        if (!is_junction && neighbors.size() == 1) {
-            ++length;
-            prev_pos = curr_pos;
-            curr_pos = neighbors.front();
-        } else {
-            // recurse on each of the outgoing paths (if any)
-            for (const Pos &neighbor : neighbors) {
-                construct_trails(curr_pos, neighbor);
+void TrailMap::construct_trails(Pos start) {
+    std::queue<std::pair<Pos, Pos>> pending;
+    pending.emplace(start, start);
+    while (!pending.empty()) {
+        auto [prev_pos, curr_pos] = pending.front();
+        start = prev_pos;
+        pending.pop();
+        int length = prev_pos == curr_pos ? 0 : 1;
+        while (true) {
+            const auto [neighbors, is_junction] =
+                get_grid_neighbors(curr_pos, prev_pos);
+            if (!is_junction && neighbors.size() == 1) {
+                ++length;
+                prev_pos = curr_pos;
+                curr_pos = neighbors.front();
+            } else {
+                // recurse on each of the outgoing paths (if any)
+                for (const Pos &neighbor : neighbors) {
+                    pending.emplace(curr_pos, neighbor);
+                }
+                break;
             }
-            break;
         }
-    }
-    if (length > 0) {
-        // add a path from start to pos
-        add_edge(start, curr_pos, length);
+        if (length > 0) {
+            // add a path from start to pos
+            add_edge(start, curr_pos, length);
+        }
     }
 }
 
