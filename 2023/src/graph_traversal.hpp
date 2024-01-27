@@ -332,7 +332,9 @@ longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
     dfs<use_seen>(
         source, get_neighbors,
         [&incoming_neighbors](const Key &node, const Key &parent, int) {
-            incoming_neighbors[node].emplace(parent);
+            if (node != parent) {
+                incoming_neighbors[node].emplace(parent);
+            }
         });
 
     // find longest path from source to each node
