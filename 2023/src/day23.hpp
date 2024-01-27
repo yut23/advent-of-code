@@ -37,8 +37,8 @@ class TrailMap {
     std::map<Pos, std::set<Pos>> grid_prev;
     std::map<std::pair<Pos, Pos>, int> distances;
 
-    std::pair<std::vector<Pos>, bool>
-    get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const;
+    bool get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
+                            std::vector<Pos> &neighbors) const;
 
     void add_edge(const Pos &from, const Pos &to, int distance);
     void construct_trails(Pos start);
@@ -73,23 +73,25 @@ TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     construct_trails(start);
 }
 
-std::pair<std::vector<Pos>, bool>
-TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const {
-    std::vector<Pos> neighbors;
-
+bool TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
+                                  std::vector<Pos> &neighbors) const {
     char terrain = grid[pos];
     int neighbor_count = 0;
     switch (terrain) {
     case '#':
-        return {{}, false};
+        break;
     case '>':
-        return {{pos + Delta(AbsDirection::east, true)}, false};
+        neighbors.push_back(pos + Delta(AbsDirection::east, true));
+        break;
     case '<':
-        return {{pos + Delta(AbsDirection::west, true)}, false};
+        neighbors.push_back(pos + Delta(AbsDirection::west, true));
+        break;
     case '^':
-        return {{pos + Delta(AbsDirection::north, true)}, false};
+        neighbors.push_back(pos + Delta(AbsDirection::north, true));
+        break;
     case 'v':
-        return {{pos + Delta(AbsDirection::south, true)}, false};
+        neighbors.push_back(pos + Delta(AbsDirection::south, true));
+        break;
     case '.':
         for (const auto dir : aoc::DIRECTIONS) {
             Pos new_pos = pos + Delta(dir, true);
@@ -114,7 +116,7 @@ TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const {
         assert(neighbors.size() <= 2);
         break;
     }
-    return {neighbors, neighbor_count > 2};
+    return neighbor_count > 2;
 }
 
 void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
@@ -126,23 +128,28 @@ void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
 void TrailMap::construct_trails(Pos start) {
     std::queue<std::pair<Pos, Pos>> pending;
     pending.emplace(start, start);
+    // allocate this once and reuse it, instead of allocating and deallocating
+    // inside the loop
+    std::vector<Pos> neighbors;
     while (!pending.empty()) {
         auto [prev_pos, curr_pos] = pending.front();
         start = prev_pos;
         pending.pop();
         int length = prev_pos == curr_pos ? 0 : 1;
         while (true) {
-            const auto [neighbors, is_junction] =
-                get_grid_neighbors(curr_pos, prev_pos);
+            const bool is_junction =
+                get_grid_neighbors(curr_pos, prev_pos, neighbors);
             if (!is_junction && neighbors.size() == 1) {
                 ++length;
                 prev_pos = curr_pos;
                 curr_pos = neighbors.front();
+                neighbors.clear();
             } else {
                 // recurse on each of the outgoing paths (if any)
                 for (const Pos &neighbor : neighbors) {
                     pending.emplace(curr_pos, neighbor);
                 }
+                neighbors.clear();
                 break;
             }
         }
