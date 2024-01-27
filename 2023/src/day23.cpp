@@ -9,14 +9,21 @@
 #include "lib.hpp"
 #include <iostream> // for cout
 
-int main(int argc, char **argv) {
+void solve(int argc, char **argv, bool print) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
     auto trail_map = aoc::day23::TrailMap::read(infile);
 
-    trail_map.parse_grid();
+    int part_1 = trail_map.part_1();
+    if (print) {
+        std::cout << part_1 << "\n";
+    }
+}
 
-    std::cout << trail_map.part_1() << "\n";
-
+int main(int argc, char **argv) {
+    constexpr int N = aoc::FAST ? 1000 : 1;
+    for (int i = 0; i < N; ++i) {
+        solve(argc, argv, i == 0);
+    }
     return 0;
 }

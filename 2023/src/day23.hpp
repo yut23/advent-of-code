@@ -37,12 +37,11 @@ class TrailMap {
     std::map<Pos, std::set<Pos>> grid_prev;
     std::map<std::pair<Pos, Pos>, int> distances;
 
-    std::vector<Pos> get_grid_neighbors(const Pos &pos) const;
+    std::pair<std::vector<Pos>, bool>
+    get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const;
 
-    void add_edge(const Pos &from, const Pos &to, int distance = 1);
-    void remove_edge(const Pos &from, const Pos &to);
-    void collapse_node(const Pos &pos);
-    void simplify_trails();
+    void add_edge(const Pos &from, const Pos &to, int distance);
+    void construct_trails(const Pos start, const Pos next);
 
     std::pair<Pos, Pos> dist_key(const Pos &from, const Pos &to) const {
         return std::minmax(from, to);
@@ -52,9 +51,8 @@ class TrailMap {
     }
 
   public:
-    explicit TrailMap(const std::vector<std::string> &grid) : grid(grid) {}
+    explicit TrailMap(const std::vector<std::string> &grid_);
     static TrailMap read(std::istream &);
-    void parse_grid();
     int part_1() const;
 };
 
@@ -67,21 +65,31 @@ TrailMap TrailMap::read(std::istream &is) {
     return TrailMap{grid};
 }
 
-std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
+TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
+    assert(grid.height > 2 && grid.width > 2);
+    // starting point
+    Pos start{1, 0};
+    assert(grid[start] == '.');
+    construct_trails(start, start);
+}
+
+std::pair<std::vector<Pos>, bool>
+TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos) const {
     std::vector<Pos> neighbors;
 
     char terrain = grid[pos];
+    int neighbor_count = 0;
     switch (terrain) {
     case '#':
-        return {};
+        return {{}, false};
     case '>':
-        return {pos + Delta(AbsDirection::east, true)};
+        return {{pos + Delta(AbsDirection::east, true)}, false};
     case '<':
-        return {pos + Delta(AbsDirection::west, true)};
+        return {{pos + Delta(AbsDirection::west, true)}, false};
     case '^':
-        return {pos + Delta(AbsDirection::north, true)};
+        return {{pos + Delta(AbsDirection::north, true)}, false};
     case 'v':
-        return {pos + Delta(AbsDirection::south, true)};
+        return {{pos + Delta(AbsDirection::south, true)}, false};
     case '.':
         for (const auto dir : aoc::DIRECTIONS) {
             Pos new_pos = pos + Delta(dir, true);
@@ -92,13 +100,13 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
             if (new_terrain == '#') {
                 continue;
             }
-            if (new_terrain != '.' &&
-                dir != allowed_directions.at(new_terrain)) {
+            ++neighbor_count;
+            if (new_pos == prev_pos) {
+                // don't go backward
                 continue;
             }
-            auto it = grid_path.find(new_pos);
-            if (it != grid_path.end() && it->second.contains(pos)) {
-                // don't go backwards through edges we've already seen
+            if (new_terrain != '.' &&
+                dir != allowed_directions.at(new_terrain)) {
                 continue;
             }
             neighbors.push_back(new_pos);
@@ -106,7 +114,7 @@ std::vector<Pos> TrailMap::get_grid_neighbors(const Pos &pos) const {
         assert(neighbors.size() <= 2);
         break;
     }
-    return neighbors;
+    return {neighbors, neighbor_count > 2};
 }
 
 void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
@@ -115,61 +123,29 @@ void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
     distances[dist_key(from, to)] = distance;
 }
 
-void TrailMap::remove_edge(const Pos &from, const Pos &to) {
-    assert(distances.erase(dist_key(from, to)) == 1);
-    // avoid UAF in case from and to are references into grid_path and grid_prev
-    auto &fwd = grid_path.at(from);
-    auto &rev = grid_prev.at(to);
-    assert(fwd.erase(to) == 1);
-    assert(rev.erase(from) == 1);
-}
-
-void TrailMap::parse_grid() {
-    assert(grid.height > 2 && grid.width > 2);
-    // starting point
-    Pos start{1, 0};
-    assert(grid[start] == '.');
-    Pos target{grid.width - 2, grid.height - 1};
-    assert(grid[target] == '.');
-
-    auto visit_with_parent = [this](const Pos &pos, const Pos &parent, int) {
-        if (parent != pos) {
-            add_edge(parent, pos);
-        }
-    };
-    aoc::graph::dfs<false>(start,
-                           std::bind_front(&TrailMap::get_grid_neighbors, this),
-                           visit_with_parent);
-
-    simplify_trails();
-}
-
-void TrailMap::simplify_trails() {
-    // iterate through all nodes and collapse those that have a single
-    // predecessor and successor
-    std::vector<Pos> nodes;
-    for (const auto &[key, _] : grid_path) {
-        nodes.push_back(key);
-    }
-    for (const Pos &pos : nodes) {
-        const auto succ_it = grid_path.find(pos);
-        const auto pred_it = grid_prev.find(pos);
-        if (succ_it != grid_path.end() && succ_it->second.size() == 1 &&
-            pred_it != grid_prev.end() && pred_it->second.size() == 1) {
-            collapse_node(pos);
+void TrailMap::construct_trails(const Pos start, const Pos next) {
+    Pos prev_pos = start;
+    Pos curr_pos = next;
+    int length = start == next ? 0 : 1;
+    while (true) {
+        const auto [neighbors, is_junction] =
+            get_grid_neighbors(curr_pos, prev_pos);
+        if (!is_junction && neighbors.size() == 1) {
+            ++length;
+            prev_pos = curr_pos;
+            curr_pos = neighbors.front();
+        } else {
+            // recurse on each of the outgoing paths (if any)
+            for (const Pos &neighbor : neighbors) {
+                construct_trails(curr_pos, neighbor);
+            }
+            break;
         }
     }
-}
-
-void TrailMap::collapse_node(const Pos &pos) {
-    const Pos &before = *grid_prev.at(pos).begin();
-    const Pos &after = *grid_path.at(pos).begin();
-    int new_distance = get_distance(before, pos) + get_distance(pos, after);
-    // add link between before and after
-    add_edge(before, after, new_distance);
-    // remove links to pos
-    remove_edge(before, pos);
-    remove_edge(pos, after);
+    if (length > 0) {
+        // add a path from start to pos
+        add_edge(start, curr_pos, length);
+    }
 }
 
 int TrailMap::part_1() const {
