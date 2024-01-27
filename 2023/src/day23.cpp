@@ -18,10 +18,16 @@ void solve(int argc, char **argv, bool print) {
     if (print) {
         std::cout << part_1 << "\n";
     }
+
+    int part_2 = trail_map.part_2();
+    if (print) {
+        std::cout << part_2 << "\n";
+    }
 }
 
 int main(int argc, char **argv) {
-    constexpr int N = aoc::FAST ? 1000 : 1;
+    // constexpr int N = aoc::FAST ? 1000 : 1;
+    constexpr int N = 1;
     for (int i = 0; i < N; ++i) {
         solve(argc, argv, i == 0);
     }

@@ -33,8 +33,8 @@ const std::map<char, AbsDirection> allowed_directions{
 
 class TrailMap {
     aoc::ds::Grid<char> grid;
-    std::map<Pos, std::set<Pos>> grid_path;
-    std::map<Pos, std::set<Pos>> grid_prev;
+    std::map<Pos, std::set<Pos>> fwd_edges;
+    std::map<Pos, std::set<Pos>> undirected_edges;
     std::map<std::pair<Pos, Pos>, int> distances;
 
     bool get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
@@ -54,6 +54,7 @@ class TrailMap {
     explicit TrailMap(const std::vector<std::string> &grid_);
     static TrailMap read(std::istream &);
     int part_1() const;
+    int part_2() const;
 };
 
 TrailMap TrailMap::read(std::istream &is) {
@@ -120,8 +121,9 @@ bool TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
 }
 
 void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
-    grid_path[from].emplace(to);
-    grid_prev[to].emplace(from);
+    fwd_edges[from].emplace(to);
+    undirected_edges[from].emplace(to);
+    undirected_edges[to].emplace(from);
     distances[dist_key(from, to)] = distance;
 }
 
@@ -164,7 +166,7 @@ int TrailMap::part_1() const {
     // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
         std::cerr << "digraph G {\n";
-        for (const auto &[from, neighbors] : grid_path) {
+        for (const auto &[from, neighbors] : fwd_edges) {
             for (const Pos &to : neighbors) {
                 std::cerr << "  pos_" << from.x << "_" << from.y << " -> pos_"
                           << to.x << "_" << to.y
@@ -179,8 +181,8 @@ int TrailMap::part_1() const {
     const std::set<Pos> empty_set{};
     auto get_neighbors = [this,
                           &empty_set](const Pos &pos) -> const std::set<Pos> & {
-        auto it = grid_path.find(pos);
-        if (it == grid_path.end()) {
+        auto it = fwd_edges.find(pos);
+        if (it == fwd_edges.end()) {
             return empty_set;
         }
         return it->second;
@@ -201,6 +203,54 @@ int TrailMap::part_1() const {
     return distance;
 }
 
+int TrailMap::part_2() const {
+    // try brute-force DFS?
+    // it runs in just over 1s on xrb in fast mode
+    Pos start{1, 0};
+    Pos target{grid.width - 2, grid.height - 1};
+
+    const std::set<Pos> empty_set{};
+    const auto get_neighbors =
+        [this, &empty_set](const Pos &pos) -> const std::set<Pos> & {
+        auto it = undirected_edges.find(pos);
+        if (it == undirected_edges.end()) {
+            return empty_set;
+        }
+        return it->second;
+    };
+
+    aoc::ds::Grid<bool> seen(grid.width, grid.height, false);
+    int max_distance = 0;
+    const auto dfs = [this, &get_neighbors, &target, &seen,
+                      &max_distance](auto &&rec, const Pos pos, int distance,
+                                     int depth = 0) -> void {
+        if (pos == target) {
+            if (distance > max_distance) {
+                max_distance = distance;
+            }
+            return;
+        }
+        seen[pos] = true;
+        if constexpr (aoc::DEBUG) {
+            std::cerr << std::string(depth, ' ') << "entering " << pos << "\n";
+        }
+        for (const Pos &neighbor : get_neighbors(pos)) {
+            if (seen[neighbor]) {
+                continue;
+            }
+            rec(rec, neighbor, distance + get_distance(pos, neighbor),
+                depth + 1);
+        }
+        if constexpr (aoc::DEBUG) {
+            std::cerr << std::string(depth, ' ') << "exiting  " << pos << "\n";
+        }
+        seen[pos] = false;
+    };
+
+    dfs(dfs, start, 0);
+
+    return max_distance;
+}
 } // namespace aoc::day23
 
 #endif /* end of include guard: DAY23_HPP_VAEIOPZT */
