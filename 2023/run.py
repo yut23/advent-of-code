@@ -30,16 +30,15 @@ def main() -> None:
     input_group.add_argument(
         "-e",
         "--example",
-        action="store_const",
-        dest="input_name",
-        const="example1.txt",
-        default="input.txt",
+        nargs=argparse.OPTIONAL,
+        default=argparse.SUPPRESS,
         help="use the example input from the instructions",
     )
     input_group.add_argument(
         "-i",
         "--input",
         dest="input_name",
+        default="input.txt",
         help="override the input file",
     )
     parser.add_argument("-t", "--timeit", action="store_true", help="time each part")
@@ -50,15 +49,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    if hasattr(args, "example"):
+        # --example was passed
+        if args.example is None:
+            # no number, default to 1
+            args.example = 1
+        args.input_name = f"example{args.example}.txt"
+
     if args.all:
         days = list(map(str, range(1, TODAY + 1)))
     elif args.day:
         days = args.day
     else:
         days = [str(TODAY)]
-
-    if len(days) > 1 and args.input is not None:
-        parser.error("-i/--input cannot be used if multiple days are specified")
 
     for i, day_arg in enumerate(days):
         day_num = day_arg.partition("_")[0]
