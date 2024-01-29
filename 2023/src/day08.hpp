@@ -8,15 +8,16 @@
 #ifndef DAY08_HPP_XKQTIHLN
 #define DAY08_HPP_XKQTIHLN
 
-#include "lib.hpp"   // for skip
-#include <algorithm> // for sort
-#include <compare>   // for strong_ordering
-#include <iostream>  // for istream, ostream
-#include <map>       // for map
-#include <memory>    // for unique_ptr, make_unique
-#include <string>    // for string
-#include <utility>   // for pair, make_pair, move
-#include <vector>    // for vector
+#include "lib.hpp"       // for skip
+#include <algorithm>     // for sort
+#include <compare>       // for strong_ordering
+#include <iostream>      // for istream, ostream
+#include <map>           // for map
+#include <memory>        // for unique_ptr, make_unique
+#include <string>        // for string
+#include <unordered_map> // for unordered_map
+#include <utility>       // for pair, make_pair, move
+#include <vector>        // for vector
 // IWYU pragma: no_include <functional>  // for identity, less (ranges::sort)
 
 namespace aoc::day08 {
@@ -32,7 +33,7 @@ struct Node {
 };
 
 struct Network {
-    std::map<std::string, std::unique_ptr<Node>> nodes;
+    std::unordered_map<std::string, std::unique_ptr<Node>> nodes;
 
     void add_node(const std::string &id, const std::string &left,
                   const std::string &right) {
