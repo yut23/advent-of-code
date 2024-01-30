@@ -10,6 +10,7 @@
 
 #include "ds/pairing_heap.hpp" // for pairing_heap
 
+#include "lib.hpp"       // for DEBUG
 #include <cassert>       // for assert
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream, cerr
@@ -24,34 +25,38 @@
 
 namespace aoc::day25 {
 
-using vertex_t = std::string;
+using vertex_t = std::size_t;
 using weight_t = unsigned int;
-using cut_t = std::pair<weight_t, std::unordered_set<vertex_t>>;
+using cut_t = std::pair<weight_t, std::size_t>;
 
 class Graph {
     std::unordered_map<vertex_t, std::unordered_map<vertex_t, weight_t>> edges;
+    std::unordered_map<vertex_t, std::size_t> merged_counts;
 
   public:
     std::size_t num_vertices() const { return edges.size(); }
-    void add_edge(const vertex_t &u, const vertex_t &v, weight_t weight = 1);
+    void add_edge(vertex_t u, vertex_t v, weight_t weight = 1);
 
   private:
-    void remove_vertex(const vertex_t &u);
+    void remove_vertex(vertex_t u);
 
-    void merge_vertices(const vertex_t &u, const vertex_t &v);
+    void merge_vertices(vertex_t u, vertex_t v);
 
   public:
     vertex_t get_arbitrary_vertex() const { return edges.begin()->first; }
-    cut_t MinimumCutPhase(const vertex_t &a);
+    cut_t MinimumCutPhase(vertex_t a);
 };
 
-void Graph::add_edge(const vertex_t &u, const vertex_t &v, weight_t weight) {
+void Graph::add_edge(vertex_t u, vertex_t v, weight_t weight) {
     assert(u != v);
-    assert(edges[u].emplace(v, weight).second);
-    assert(edges[v].emplace(u, weight).second);
+    bool inserted;
+    inserted = edges[u].emplace(v, weight).second;
+    assert(inserted);
+    inserted = edges[v].emplace(u, weight).second;
+    assert(inserted);
 }
 
-void Graph::remove_vertex(const vertex_t &u) {
+void Graph::remove_vertex(vertex_t u) {
     const auto &neighbors = edges.at(u);
     // remove incoming edges
     for (const auto &[v, _] : neighbors) {
@@ -59,38 +64,34 @@ void Graph::remove_vertex(const vertex_t &u) {
     }
     // remove outgoing edges
     edges.erase(u);
+
+    merged_counts.erase(u);
 }
 
-void Graph::merge_vertices(const vertex_t &s, const vertex_t &t) {
-    const auto &s_neighbors = edges.at(s);
-    const auto &t_neighbors = edges.at(t);
-    vertex_t new_vertex = s + " " + t;
+void Graph::merge_vertices(vertex_t s, vertex_t t) {
+    // merge vertex t into s
+    auto &s_neighbors = edges.at(s);
+    auto &t_neighbors = edges.at(t);
 
-    // add edges between new_vertex and all neighbors of s and t, excluding s
-    // and t themselves
-    for (const auto &[v, w] : s_neighbors) {
-        if (v == t) {
+    for (const auto &[v, w] : t_neighbors) {
+        if (v == s) {
             continue;
         }
-        weight_t weight = w;
-        auto t_it = t_neighbors.find(v);
-        if (t_it != t_neighbors.end()) {
-            weight += t_it->second;
-        }
-        add_edge(new_vertex, v, weight);
-    }
-    for (const auto &[v, w] : t_neighbors) {
-        if (!s_neighbors.contains(v)) {
-            add_edge(new_vertex, v, w);
+        auto it = s_neighbors.find(v);
+        if (it != s_neighbors.end()) {
+            it->second += w;
+            edges.at(v).at(s) += w;
+        } else {
+            add_edge(s, v, w);
         }
     }
-    remove_vertex(s);
+    merged_counts[s] = (merged_counts[s] + 1) + (merged_counts[t] + 1) - 1;
     remove_vertex(t);
 }
 
 // Stoer-Wagner minimum cut algorithm
 
-cut_t Graph::MinimumCutPhase(const vertex_t &a) {
+cut_t Graph::MinimumCutPhase(vertex_t a) {
     std::unordered_set<vertex_t> A = {a};
     vertex_t s = a, t = a;
     weight_t cut_value = 0;
@@ -101,6 +102,10 @@ cut_t Graph::MinimumCutPhase(const vertex_t &a) {
     }
     while (A.size() != num_vertices()) {
         // add to A the most tightly connected vertex
+        if constexpr (aoc::DEBUG) {
+            std::cerr << "A: " << A.size() << "; pq: " << pq.size()
+                      << "; handle_map: " << handle_map.size() << "\n";
+        }
         const auto tmp = pq.top();
         pq.pop();
         handle_map.erase(tmp.second);
@@ -122,17 +127,12 @@ cut_t Graph::MinimumCutPhase(const vertex_t &a) {
             }
         }
     }
-    cut_t cut_of_the_phase{cut_value, {}};
-    std::istringstream ss{t};
-    std::string tmp;
-    while (std::getline(ss, tmp, ' ')) {
-        cut_of_the_phase.second.emplace(std::move(tmp));
-    }
+    cut_t cut_of_the_phase{cut_value, merged_counts[t] + 1};
     merge_vertices(s, t);
     return cut_of_the_phase;
 }
 
-cut_t MinimumCut(Graph G, const std::string &a) {
+cut_t MinimumCut(Graph G, vertex_t a) {
     cut_t min_cut = {std::numeric_limits<weight_t>::max(), {}};
     std::size_t total_iters = G.num_vertices() - 1;
     for (std::size_t i = 1; i <= total_iters; ++i) {
@@ -148,6 +148,17 @@ cut_t MinimumCut(Graph G, const std::string &a) {
 Graph read_input(std::istream &is) {
     Graph G;
     std::string line;
+    std::unordered_map<std::string, vertex_t> vertex_names;
+    const auto get_vertex =
+        [&vertex_names](const std::string &name) -> vertex_t {
+        const auto it = vertex_names.find(name);
+        if (it == vertex_names.end()) {
+            vertex_t id = vertex_names.size();
+            vertex_names.emplace(name, id);
+            return id;
+        }
+        return it->second;
+    };
     while (std::getline(is, line)) {
         std::istringstream ss{line};
         std::string u;
@@ -155,9 +166,10 @@ Graph read_input(std::istream &is) {
         ss >> u;
         // strip trailing colon
         u.pop_back();
+        vertex_t u_id = get_vertex(u);
         std::string v;
         while (ss >> v) {
-            G.add_edge(u, v);
+            G.add_edge(u_id, get_vertex(v));
         }
     }
     return G;

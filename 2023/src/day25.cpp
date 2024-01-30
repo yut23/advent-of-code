@@ -16,11 +16,10 @@ int main(int argc, char **argv) {
     using namespace aoc::day25;
     Graph G = read_input(infile);
 
-    const auto &[wire_count, cut_group] =
+    const auto &[wire_count, cut_group_size] =
         MinimumCut(G, G.get_arbitrary_vertex());
     assert(wire_count == 3);
-    std::size_t part_1 =
-        cut_group.size() * (G.num_vertices() - cut_group.size());
+    std::size_t part_1 = cut_group_size * (G.num_vertices() - cut_group_size);
     std::cout << part_1 << "\n";
 
     return 0;
