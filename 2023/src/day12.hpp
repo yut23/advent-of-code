@@ -8,18 +8,18 @@
 #ifndef DAY12_HPP_5NZ0FAOX
 #define DAY12_HPP_5NZ0FAOX
 
-#include "lib.hpp"   // for skip, DEBUG
-#include <algorithm> // for copy, find, transform
-#include <cstddef>   // for size_t
-#include <iostream>  // for cerr, ostream, istream
-#include <iterator>  // for back_inserter, distance
-#include <map>       // for map
-#include <sstream>   // for istringstream
-#include <string>    // for string, getline
-#include <utility>   // for move, pair, make_pair
-#include <vector>    // for vector
+#include "lib.hpp"       // for skip, DEBUG
+#include <algorithm>     // for copy, find, transform
+#include <cstddef>       // for size_t
+#include <iostream>      // for cerr, ostream, istream
+#include <iterator>      // for back_inserter, distance
+#include <sstream>       // for istringstream
+#include <string>        // for string, getline
+#include <unordered_map> // for unordered_map
+#include <utility>       // for move, pair, make_pair
+#include <vector>        // for vector
 
-// Nonograms!
+// Nonograms! (sort of...)
 
 namespace aoc::day12 {
 
@@ -56,7 +56,7 @@ struct ConditionRecord {
     ConditionRecord repeat(int count) const;
 
   private:
-    mutable std::map<std::pair<std::size_t, std::size_t>, long> memo{};
+    mutable std::unordered_map<std::size_t, long> memo{};
 };
 
 long ConditionRecord::count_arrangements(std::size_t spring_idx,
@@ -67,7 +67,10 @@ long ConditionRecord::count_arrangements(std::size_t spring_idx,
                   << "entering count_arrangements(" << spring_idx << ", "
                   << group_idx << ")\n";
     }
-    std::string pad((depth + 1) * 2, ' ');
+    [[maybe_unused]] std::string pad;
+    if constexpr (aoc::DEBUG) {
+        pad.resize((depth + 1) * 2, ' ');
+    }
     if (group_idx == groups.size()) {
         auto it = springs.end();
         if (spring_idx < springs.size()) {
@@ -98,7 +101,7 @@ long ConditionRecord::count_arrangements(std::size_t spring_idx,
         return 0;
     }
 
-    auto key = std::make_pair(spring_idx, group_idx);
+    auto key = spring_idx * groups.size() + group_idx;
     auto it = memo.find(key);
     if (it != memo.end()) {
         if constexpr (aoc::DEBUG) {
@@ -156,7 +159,7 @@ long ConditionRecord::count_arrangements(std::size_t spring_idx,
     if constexpr (aoc::DEBUG) {
         std::cerr << pad << "got count = " << count << "\n";
     }
-    memo.try_emplace(std::move(key), count);
+    memo.try_emplace(key, count);
 
     return count;
 }
