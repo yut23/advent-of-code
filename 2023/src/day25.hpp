@@ -8,14 +8,13 @@
 #ifndef DAY25_HPP_PXSWLG7Y
 #define DAY25_HPP_PXSWLG7Y
 
-#include "ds/pairing_heap.hpp" // for pairing_heap
-
 #include "lib.hpp"       // for DEBUG
 #include <cassert>       // for assert
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream, cerr
 #include <limits>        // for numeric_limits
 #include <memory>        // for shared_ptr (pairing_heap)
+#include <queue>         // for priority_queue
 #include <sstream>       // for istringstream
 #include <string>        // for string, getline
 #include <unordered_map> // for unordered_map
@@ -95,20 +94,23 @@ cut_t Graph::MinimumCutPhase(vertex_t a) {
     std::unordered_set<vertex_t> A = {a};
     vertex_t s = a, t = a;
     weight_t cut_value = 0;
-    aoc::ds::pairing_heap<std::pair<weight_t, vertex_t>> pq;
-    std::unordered_map<vertex_t, decltype(pq)::handle_type> handle_map;
+    std::priority_queue<std::pair<weight_t, vertex_t>> pq;
+    std::unordered_map<vertex_t, weight_t> weight_sum;
     for (const auto &[v, w] : edges.at(a)) {
-        handle_map.emplace(v, pq.emplace(w, v));
+        pq.emplace(w, v);
+        weight_sum.emplace(v, w);
     }
     while (A.size() != num_vertices()) {
         // add to A the most tightly connected vertex
         if constexpr (aoc::DEBUG) {
             std::cerr << "A: " << A.size() << "; pq: " << pq.size()
-                      << "; handle_map: " << handle_map.size() << "\n";
+                      << "; total_weights: " << weight_sum.size() << "\n";
         }
         const auto tmp = pq.top();
         pq.pop();
-        handle_map.erase(tmp.second);
+        if (A.contains(tmp.second)) {
+            continue;
+        }
         s = t;
         t = tmp.second;
         cut_value = tmp.first;
@@ -118,13 +120,9 @@ cut_t Graph::MinimumCutPhase(vertex_t a) {
             if (A.contains(v)) {
                 continue;
             }
-            auto it = handle_map.find(v);
-            if (it != handle_map.end()) {
-                weight_t prev_weight = it->second->value().first;
-                pq.update(it->second, std::make_pair(prev_weight + w, v));
-            } else {
-                handle_map.emplace(v, pq.emplace(w, v));
-            }
+            auto &weight = weight_sum[v];
+            weight += w;
+            pq.emplace(weight, v);
         }
     }
     cut_t cut_of_the_phase{cut_value, merged_counts[t] + 1};
