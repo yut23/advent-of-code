@@ -24,35 +24,45 @@ namespace aoc::day08 {
 
 struct Node {
     std::string id;
-    std::string left;
-    std::string right;
+    const Node *left;
+    const Node *right;
 
-    Node(const std::string &id, const std::string &left,
-         const std::string &right)
+    Node(const std::string &id, const Node *left, const Node *right)
         : id(id), left(left), right(right) {}
 };
 
 struct Network {
     std::unordered_map<std::string, std::unique_ptr<Node>> nodes;
 
-    void add_node(const std::string &id, const std::string &left,
-                  const std::string &right) {
-        nodes.try_emplace(id, std::make_unique<Node>(id, left, right));
+    Node *add_node(const std::string &id, const Node *left, const Node *right) {
+        return nodes.try_emplace(id, std::make_unique<Node>(id, left, right))
+            .first->second.get();
     }
 
     const Node *follow(const Node *node, char direction) const {
-        return nodes.at(direction == 'L' ? node->left : node->right).get();
+        return direction == 'L' ? node->left : node->right;
     }
     const Node *get(const std::string &id) const { return nodes.at(id).get(); }
 };
 
 Network read_maps(std::istream &is) {
     Network network;
+    // find the pointer for a node id, creating a new node if it's not already
+    // in the network
+    const auto lookup_node = [&network](const std::string &id) {
+        const auto it = network.nodes.find(id);
+        if (it != network.nodes.end()) {
+            return it->second.get();
+        }
+        return network.add_node(id, nullptr, nullptr);
+    };
     std::string id, left, right;
     while (is >> id >> aoc::skip(1) >> left >> right) {
         left = left.substr(1, 3);
         right.resize(3);
-        network.add_node(id, left, right);
+        Node *node = lookup_node(id);
+        node->left = lookup_node(left);
+        node->right = lookup_node(right);
     }
     return network;
 }
@@ -116,19 +126,19 @@ std::ostream &operator<<(std::ostream &os, const CycleInfo &cycle) {
 }
 
 std::vector<CycleInfo> find_cycles(const std::string &directions,
-                                   const aoc::day08::Network &network) {
-    std::vector<const aoc::day08::Node *> curr_nodes;
+                                   const Network &network) {
+    std::vector<const Node *> start_nodes;
     for (const auto &[id, node_ptr] : network.nodes) {
         if (id[2] == 'A') {
-            curr_nodes.push_back(node_ptr.get());
+            start_nodes.push_back(node_ptr.get());
         }
     }
-    std::vector<aoc::day08::CycleInfo> cycles;
-    for (auto node : curr_nodes) {
+    std::vector<CycleInfo> cycles;
+    for (auto node : start_nodes) {
         std::string start_id = node->id;
-        std::map<std::pair<std::string, int>, FinishEntry> z_hits{};
+        std::map<std::pair<std::string, std::size_t>, FinishEntry> z_hits{};
         long step = 0;
-        int dir_idx = 0;
+        std::size_t dir_idx = 0;
         while (true) {
             if (node->id[2] == 'Z') {
                 auto key = std::make_pair(node->id, dir_idx);

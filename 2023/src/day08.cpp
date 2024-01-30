@@ -17,8 +17,9 @@
 int part_1(const std::string &directions, const aoc::day08::Network &network) {
     int steps = 0;
     const aoc::day08::Node *curr = network.get("AAA");
+    const aoc::day08::Node *end = network.get("ZZZ");
     auto dir_it = directions.begin();
-    while (curr->id != "ZZZ") {
+    while (curr != end) {
         curr = network.follow(curr, *dir_it);
         // repeat the direction string if we hit the end
         if (++dir_it == directions.end()) {
