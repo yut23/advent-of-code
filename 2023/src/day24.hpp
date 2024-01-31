@@ -23,8 +23,8 @@
 namespace aoc::day24 {
 
 struct Hailstone {
-    std::int64_t px, py, pz;
-    std::int64_t vx, vy, vz;
+    long double px, py, pz;
+    long double vx, vy, vz;
 };
 
 std::istream &operator>>(std::istream &is, Hailstone &stone) {
@@ -64,15 +64,11 @@ find_intersection_xy(const Hailstone &a, const Hailstone &b) {
      *  Simplify@First@Solve[y-#<>"py"==(#<>"vy"/#<>"vx")(x-#<>"px")&/@{"a.","b."},{x,y}],
      * "\n"]
      */
-    // cast the large position values to doubles, so we don't get integer
-    // overflow
-    double apx = a.px, apy = a.py;
-    double bpx = b.px, bpy = b.py;
-    double x = (apy * a.vx * b.vx - apx * a.vy * b.vx - a.vx * bpy * b.vx +
-                a.vx * bpx * b.vy) /
+    double x = (a.py * a.vx * b.vx - a.px * a.vy * b.vx - a.vx * b.py * b.vx +
+                a.vx * b.px * b.vy) /
                (-(a.vy * b.vx) + a.vx * b.vy);
-    double y = (a.vy * bpy * b.vx - apy * a.vx * b.vy + apx * a.vy * b.vy -
-                a.vy * bpx * b.vy) /
+    double y = (a.vy * b.py * b.vx - a.py * a.vx * b.vy + a.px * a.vy * b.vy -
+                a.vy * b.px * b.vy) /
                (a.vy * b.vx - a.vx * b.vy);
 
     if (std::copysign(1.0, x - a.px) != std::copysign(1.0, a.vx) ||
@@ -85,7 +81,7 @@ find_intersection_xy(const Hailstone &a, const Hailstone &b) {
 }
 
 template <class T>
-std::pair<aoc::ds::Grid<T>, std::vector<T>>
+std::tuple<aoc::ds::Grid<T>, std::vector<T>>
 make_system(const std::vector<aoc::day24::Hailstone> &stones,
             const std::pair<std::size_t, std::size_t> &pair_1,
             const std::pair<std::size_t, std::size_t> &pair_2) {

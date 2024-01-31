@@ -159,7 +159,7 @@ def make_linear_system(
 
 
 def part_2_linalg(stones: list[Hailstone]) -> int:
-    index_pairs = ((0, 1), (2, 3))
+    index_pairs = ((0, 1), (0, 2))
     A, b = make_linear_system(stones, index_pairs)
     # pm1, pm2, pm3 = stones[index_pairs[0][0]].pos
     # vm1, vm2, vm3 = stones[index_pairs[0][0]].vel
