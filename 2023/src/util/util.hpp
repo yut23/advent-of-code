@@ -52,6 +52,10 @@ struct CaptureStream {
     StreamRedirector redir;
 };
 
+// to be used in static_assert inside constexpr if
+template <typename...>
+inline constexpr bool always_false = false;
+
 } // namespace util
 
 #ifdef __GNUG__

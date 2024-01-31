@@ -8,18 +8,23 @@
 #ifndef DAY24_HPP_PKLXENFE
 #define DAY24_HPP_PKLXENFE
 
-#include "lib.hpp"  // for expect_input
-#include <cmath>    // for copysign
-#include <iostream> // for istream, ostream
-#include <optional> // for optional
-#include <utility>  // for pair, move, make_pair
-#include <vector>   // for vector
+#include "ds/grid.hpp"      // for Grid
+#include "lib.hpp"          // for expect_input
+#include <cassert>          // for assert
+#include <cmath>            // for copysign
+#include <cstddef>          // for size_t
+#include <cstdint>          // for int64_t
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for istream, ostream
+#include <optional>         // for optional
+#include <utility>          // for pair, move, make_pair
+#include <vector>           // for vector
 
 namespace aoc::day24 {
 
 struct Hailstone {
-    double px, py, pz;
-    double vx, vy, vz;
+    std::int64_t px, py, pz;
+    std::int64_t vx, vy, vz;
 };
 
 std::istream &operator>>(std::istream &is, Hailstone &stone) {
@@ -59,11 +64,15 @@ find_intersection_xy(const Hailstone &a, const Hailstone &b) {
      *  Simplify@First@Solve[y-#<>"py"==(#<>"vy"/#<>"vx")(x-#<>"px")&/@{"a.","b."},{x,y}],
      * "\n"]
      */
-    double x = (a.py * a.vx * b.vx - a.px * a.vy * b.vx - a.vx * b.py * b.vx +
-                a.vx * b.px * b.vy) /
+    // cast the large position values to doubles, so we don't get integer
+    // overflow
+    double apx = a.px, apy = a.py;
+    double bpx = b.px, bpy = b.py;
+    double x = (apy * a.vx * b.vx - apx * a.vy * b.vx - a.vx * bpy * b.vx +
+                a.vx * bpx * b.vy) /
                (-(a.vy * b.vx) + a.vx * b.vy);
-    double y = (a.vy * b.py * b.vx - a.py * a.vx * b.vy + a.px * a.vy * b.vy -
-                a.vy * b.px * b.vy) /
+    double y = (a.vy * bpy * b.vx - apy * a.vx * b.vy + apx * a.vy * b.vy -
+                a.vy * bpx * b.vy) /
                (a.vy * b.vx - a.vx * b.vy);
 
     if (std::copysign(1.0, x - a.px) != std::copysign(1.0, a.vx) ||
@@ -73,6 +82,62 @@ find_intersection_xy(const Hailstone &a, const Hailstone &b) {
     }
 
     return std::make_pair(x, y);
+}
+
+template <class T>
+std::pair<aoc::ds::Grid<T>, std::vector<T>>
+make_system(const std::vector<aoc::day24::Hailstone> &stones,
+            const std::pair<std::size_t, std::size_t> &pair_1,
+            const std::pair<std::size_t, std::size_t> &pair_2) {
+    aoc::ds::Grid<T> A(6, 6, 0);
+    std::vector<T> b(6, 0);
+    aoc::ds::Grid<T> identity(6, 6, 0);
+    const auto p = [&stones](int idx, int coord) {
+        switch (coord) {
+        case 0:
+            return stones[idx].px;
+        case 1:
+            return stones[idx].py;
+        case 2:
+            return stones[idx].pz;
+        default:
+            assert(false);
+        }
+    };
+    const auto v = [&stones](int idx, int coord) {
+        switch (coord) {
+        case 0:
+            return stones[idx].vx;
+        case 1:
+            return stones[idx].vy;
+        case 2:
+            return stones[idx].vz;
+        default:
+            assert(false);
+        }
+    };
+    // formula from https://codegolf.stackexchange.com/a/160375
+    const auto eps = [](int i, int j, int k) {
+        return (i - j) * (j - k) * (k - i) / 2;
+    };
+    for (std::size_t i = 0; const auto &[m, n] : {pair_1, pair_2}) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            for (std::size_t k = 0; k < 3; ++k) {
+                for (std::size_t l = 0; l < 3; ++l) {
+                    T sign = eps(j, k, l);
+                    if (sign == 0) {
+                        continue;
+                    }
+                    b[i * 3 + j] +=
+                        sign * (p(m, k) * v(m, l) - p(n, k) * v(n, l));
+                    A.at(k, i * 3 + j) += sign * (v(m, l) - v(n, l));
+                    A.at(l + 3, i * 3 + j) += sign * (p(m, k) - p(n, k));
+                }
+            }
+        }
+        ++i;
+    }
+    return {A, b};
 }
 
 std::vector<Hailstone> read_stones(std::istream &is) {

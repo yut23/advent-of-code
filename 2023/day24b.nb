@@ -1,0 +1,1639 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     69170,       1631]
+NotebookOptionsPosition[     66778,       1581]
+NotebookOutlinePosition[     67181,       1597]
+CellTagsIndexPosition[     67138,       1594]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"\[CurlyEpsilon]", "=", 
+  RowBox[{"LeviCivitaTensor", "[", "3", "]"}]}]], "Input",
+ CellChangeTimes->{{3.91511734227525*^9, 3.9151174109489527`*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"03f87126-b5d8-4089-b938-c38b96d229ea"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["SparseArray",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxOpener"]], 
+              ButtonFunction :> (Typeset`open$$ = True), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[
+             SparseArray[
+              Automatic, {10, 10}, 0.93, {
+               1, {{0, 1, 1, 4, 4, 5, 6, 6, 8, 10, 13}, {{4}, {6}, {7}, {
+                 10}, {5}, {9}, {3}, {8}, {5}, {7}, {2}, {3}, {7}}}, {0., 0., 
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.}}], {{0, 0}, {10, 
+              10}}, {0, 1}], Frame -> False, Axes -> False, AspectRatio -> 1, 
+             ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], Frame -> True, FrameTicks -> None, 
+             FrameStyle -> Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameLabel -> {None, None}, 
+             FrameTicks -> {{None, None}, {None, None}}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["6", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"3", ",", "3", ",", "3"}], "}"}], 
+                  "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxCloser"]], 
+              ButtonFunction :> (Typeset`open$$ = False), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[
+             SparseArray[
+              Automatic, {10, 10}, 0.93, {
+               1, {{0, 1, 1, 4, 4, 5, 6, 6, 8, 10, 13}, {{4}, {6}, {7}, {
+                 10}, {5}, {9}, {3}, {8}, {5}, {7}, {2}, {3}, {7}}}, {0., 0., 
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.}}], {{0, 0}, {10, 
+              10}}, {0, 1}], Frame -> False, Axes -> False, AspectRatio -> 1, 
+             ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], Frame -> True, FrameTicks -> None, 
+             FrameStyle -> Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameLabel -> {None, None}, 
+             FrameTicks -> {{None, None}, {None, None}}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["6", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"3", ",", "3", ",", "3"}], "}"}], 
+                  "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Default: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Density: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0.2222222222222222`", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Elements:\"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"\"", "SummaryItem"]}]}, {
+               TagBox[
+                TagBox[
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "2", ",", "3"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    "1", ContentPadding -> False, FrameMargins -> 0, 
+                    StripOnInput -> True, BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "3", ",", "2"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"-", "1"}], ContentPadding -> False, FrameMargins -> 
+                    0, StripOnInput -> True, BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"2", ",", "1", ",", "3"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"-", "1"}], ContentPadding -> False, FrameMargins -> 
+                    0, StripOnInput -> True, BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"2", ",", "3", ",", "1"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    "1", ContentPadding -> False, FrameMargins -> 0, 
+                    StripOnInput -> True, BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    ItemBox[
+                    "\"\[VerticalEllipsis]\"", Alignment -> Center, 
+                    StripOnInput -> False]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                 "Column"], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  SparseArray[
+  Automatic, {3, 3, 3}, 0, {
+   1, {{0, 2, 4, 6}, {{2, 3}, {3, 2}, {1, 3}, {3, 1}, {1, 2}, {2, 1}}}, {
+    1, -1, -1, 1, 1, -1}}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{3.915117411702565*^9, 3.915638307252543*^9},
+ CellLabel->"Out[1]=",ExpressionUUID->"6be7c123-ca55-402d-ac1c-d8a1a3dd6091"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"p", "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"pm1", ",", "pm2", ",", "pm3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"pn1", ",", "pn2", ",", "pn3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"p31", ",", "p32", ",", "p33"}], "}"}]}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"v", "=", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"vm1", ",", "vm2", ",", "vm3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"vn1", ",", "vn2", ",", "vn3"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"v31", ",", "v32", ",", "v33"}], "}"}]}], "}"}]}], 
+  ";"}], "\n", 
+ RowBox[{
+  RowBox[{"pr", "=", 
+   RowBox[{"{", 
+    RowBox[{"pr1", ",", "pr2", ",", "pr3"}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"vr", "=", 
+   RowBox[{"{", 
+    RowBox[{"vr1", ",", "vr2", ",", "vr3"}], "}"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"eqns", "=", 
+  RowBox[{"Flatten", "[", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"m", "=", 
+          RowBox[{"idx", "[", 
+           RowBox[{"[", "1", "]"}], "]"}]}], ",", 
+         RowBox[{"n", "=", 
+          RowBox[{"idx", "[", 
+           RowBox[{"[", "2", "]"}], "]"}]}]}], "}"}], ",", 
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"Sum", "[", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"\[CurlyEpsilon]", "[", 
+             RowBox[{"[", 
+              RowBox[{"j", ",", "k", ",", "l"}], "]"}], "]"}], 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"(", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"p", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"m", ",", "k"}], "]"}], "]"}], 
+                 RowBox[{"v", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"m", ",", "l"}], "]"}], "]"}]}], "-", 
+                RowBox[{
+                 RowBox[{"p", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"n", ",", "k"}], "]"}], "]"}], 
+                 RowBox[{"v", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"n", ",", "l"}], "]"}], "]"}]}]}], ")"}], "-", 
+              RowBox[{
+               RowBox[{"(", 
+                RowBox[{
+                 RowBox[{"p", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"m", ",", "k"}], "]"}], "]"}], "-", 
+                 RowBox[{"p", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"n", ",", "k"}], "]"}], "]"}]}], ")"}], 
+               RowBox[{"vr", "[", 
+                RowBox[{"[", "l", "]"}], "]"}]}], "-", 
+              RowBox[{
+               RowBox[{"(", 
+                RowBox[{
+                 RowBox[{"v", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"m", ",", "l"}], "]"}], "]"}], "-", 
+                 RowBox[{"v", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"n", ",", "l"}], "]"}], "]"}]}], ")"}], 
+               RowBox[{"pr", "[", 
+                RowBox[{"[", "k", "]"}], "]"}]}]}], ")"}]}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"{", 
+            RowBox[{"k", ",", "3"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"l", ",", "3"}], "}"}]}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"j", ",", "3"}], "}"}]}], "]"}]}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"idx", ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"1", ",", "2"}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "3"}], "}"}]}], "}"}]}], "}"}]}], "]"}], 
+   "]"}]}]}], "Input",
+ CellChangeTimes->{{3.9151174621572657`*^9, 3.915117836380859*^9}, {
+  3.915118553005499*^9, 3.91511857446698*^9}, {3.915118608547143*^9, 
+  3.915118654115213*^9}, {3.9151226052477493`*^9, 3.915122626498413*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"ac1873dc-737e-41c9-b118-660858f86e16"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "pm3"}], " ", "vm2"}], "+", 
+    RowBox[{"pm2", " ", "vm3"}], "+", 
+    RowBox[{"pr3", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm2", "-", "vn2"}], ")"}]}], "+", 
+    RowBox[{"pn3", " ", "vn2"}], "-", 
+    RowBox[{"pr2", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm3", "-", "vn3"}], ")"}]}], "-", 
+    RowBox[{"pn2", " ", "vn3"}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm3", "-", "pn3"}], ")"}], " ", "vr2"}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm2", "-", "pn2"}], ")"}], " ", "vr3"}]}], ",", 
+   RowBox[{
+    RowBox[{"pm3", " ", "vm1"}], "-", 
+    RowBox[{"pm1", " ", "vm3"}], "-", 
+    RowBox[{"pr3", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm1", "-", "vn1"}], ")"}]}], "-", 
+    RowBox[{"pn3", " ", "vn1"}], "+", 
+    RowBox[{"pr1", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm3", "-", "vn3"}], ")"}]}], "+", 
+    RowBox[{"pn1", " ", "vn3"}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm3", "-", "pn3"}], ")"}], " ", "vr1"}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm1", "-", "pn1"}], ")"}], " ", "vr3"}]}], ",", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "pm2"}], " ", "vm1"}], "+", 
+    RowBox[{"pm1", " ", "vm2"}], "+", 
+    RowBox[{"pr2", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm1", "-", "vn1"}], ")"}]}], "+", 
+    RowBox[{"pn2", " ", "vn1"}], "-", 
+    RowBox[{"pr1", " ", 
+     RowBox[{"(", 
+      RowBox[{"vm2", "-", "vn2"}], ")"}]}], "-", 
+    RowBox[{"pn1", " ", "vn2"}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm2", "-", "pn2"}], ")"}], " ", "vr1"}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"pm1", "-", "pn1"}], ")"}], " ", "vr2"}]}], ",", 
+   RowBox[{
+    RowBox[{"p33", " ", "v32"}], "-", 
+    RowBox[{"p32", " ", "v33"}], "-", 
+    RowBox[{"pm3", " ", "vm2"}], "+", 
+    RowBox[{"pr3", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v32"}], "+", "vm2"}], ")"}]}], "+", 
+    RowBox[{"pm2", " ", "vm3"}], "-", 
+    RowBox[{"pr2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v33"}], "+", "vm3"}], ")"}]}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p33"}], "+", "pm3"}], ")"}], " ", "vr2"}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p32"}], "+", "pm2"}], ")"}], " ", "vr3"}]}], ",", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "p33"}], " ", "v31"}], "+", 
+    RowBox[{"p31", " ", "v33"}], "+", 
+    RowBox[{"pm3", " ", "vm1"}], "-", 
+    RowBox[{"pr3", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v31"}], "+", "vm1"}], ")"}]}], "-", 
+    RowBox[{"pm1", " ", "vm3"}], "+", 
+    RowBox[{"pr1", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v33"}], "+", "vm3"}], ")"}]}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p33"}], "+", "pm3"}], ")"}], " ", "vr1"}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p31"}], "+", "pm1"}], ")"}], " ", "vr3"}]}], ",", 
+   RowBox[{
+    RowBox[{"p32", " ", "v31"}], "-", 
+    RowBox[{"p31", " ", "v32"}], "-", 
+    RowBox[{"pm2", " ", "vm1"}], "+", 
+    RowBox[{"pr2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v31"}], "+", "vm1"}], ")"}]}], "+", 
+    RowBox[{"pm1", " ", "vm2"}], "-", 
+    RowBox[{"pr1", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "v32"}], "+", "vm2"}], ")"}]}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p32"}], "+", "pm2"}], ")"}], " ", "vr1"}], "-", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", "p31"}], "+", "pm1"}], ")"}], " ", "vr2"}]}]}], 
+  "}"}]], "Output",
+ CellChangeTimes->{{3.915117823096376*^9, 3.915117838556246*^9}, 
+   3.9151186557424507`*^9, 3.915122629230597*^9, 3.915638309331313*^9},
+ CellLabel->"Out[6]=",ExpressionUUID->"f499d4c9-b4d7-4b15-a15a-af6bf91c5d4b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"eqns", "[", 
+   RowBox[{"[", "1", "]"}], "]"}], "==", 
+  RowBox[{
+   RowBox[{"pm2", " ", "vm3"}], "-", 
+   RowBox[{"pm3", " ", "vm2"}], "-", 
+   RowBox[{"pn2", " ", "vn3"}], "+", 
+   RowBox[{"pn3", " ", "vn2"}], "-", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{"pm2", "-", "pn2"}], ")"}], "vr3"}], "+", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{"pm3", "-", "pn3"}], ")"}], "vr2"}], "-", 
+   RowBox[{"pr2", 
+    RowBox[{"(", 
+     RowBox[{"vm3", "-", "vn3"}], ")"}]}], "+", 
+   RowBox[{"pr3", 
+    RowBox[{"(", 
+     RowBox[{"vm2", "-", "vn2"}], ")"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.9151178400600023`*^9, 3.9151179509525537`*^9}, {
+  3.9151186603054*^9, 3.915118661144924*^9}, {3.915122634188809*^9, 
+  3.9151226550803223`*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"37492689-a26f-429f-8a4e-73540fcd3c63"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{3.915117953229287*^9, 3.9151186622289877`*^9, 
+  3.915122655881159*^9, 3.915638310475409*^9},
+ CellLabel->"Out[7]=",ExpressionUUID->"d04fc64b-447b-4c19-8032-6dc8b6b0a6bd"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"coeffs", "=", 
+   RowBox[{"CoefficientArrays", "[", 
+    RowBox[{"eqns", ",", 
+     RowBox[{"Flatten", "[", 
+      RowBox[{"{", 
+       RowBox[{"pr", ",", "vr"}], "}"}], "]"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"b", "=", 
+  RowBox[{"-", 
+   RowBox[{"coeffs", "[", 
+    RowBox[{"[", "1", "]"}], "]"}]}]}], "\[IndentingNewLine]", 
+ RowBox[{"A", "=", 
+  RowBox[{"coeffs", "[", 
+   RowBox[{"[", "2", "]"}], "]"}]}]}], "Input",
+ CellChangeTimes->{{3.9151180794188766`*^9, 3.9151180846936827`*^9}, {
+   3.915118170443459*^9, 3.91511826547995*^9}, {3.915118296427291*^9, 
+   3.915118309224049*^9}, {3.915118362321619*^9, 3.9151183932776747`*^9}, {
+   3.915118455304134*^9, 3.915118487067453*^9}, {3.915118666081003*^9, 
+   3.915118666935705*^9}, {3.9151227075835953`*^9, 3.9151227133990583`*^9}, {
+   3.915122759276565*^9, 3.9151227898210087`*^9}, 3.915123124427953*^9},
+ CellLabel->"In[8]:=",ExpressionUUID->"f0df0e70-2406-4622-8c2f-624978f182a5"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["SparseArray",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxOpener"]], 
+              ButtonFunction :> (Typeset`open$$ = True), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             
+             RasterBox[{{{0.5, 0., 0.}, {0.5, 0., 0.}, {0.5, 0., 0.}, {0.5, 
+              0., 0.}, {0.5, 0., 0.}, {0.5, 0., 0.}}}, {{0, 0}, {6, 1}}, {0, 
+              1}], AspectRatio -> 1, Axes -> False, Frame -> False, 
+             FrameLabel -> {None, None}, FrameStyle -> Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["6", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", "6", "}"}], "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxCloser"]], 
+              ButtonFunction :> (Typeset`open$$ = False), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             
+             RasterBox[{{{0.5, 0., 0.}, {0.5, 0., 0.}, {0.5, 0., 0.}, {0.5, 
+              0., 0.}, {0.5, 0., 0.}, {0.5, 0., 0.}}}, {{0, 0}, {6, 1}}, {0, 
+              1}], AspectRatio -> 1, Axes -> False, Frame -> False, 
+             FrameLabel -> {None, None}, FrameStyle -> Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["6", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", "6", "}"}], "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Default: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Density: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["1.`", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Elements:\"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"\"", "SummaryItem"]}]}, {
+               TagBox[
+                TagBox[
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"{", "1", "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"pm3", " ", "vm2"}], "-", 
+                    RowBox[{"pm2", " ", "vm3"}], "-", 
+                    RowBox[{"pn3", " ", "vn2"}], "+", 
+                    RowBox[{"pn2", " ", "vn3"}]}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", "2", "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"-", "pm3"}], " ", "vm1"}], "+", 
+                    RowBox[{"pm1", " ", "vm3"}], "+", 
+                    RowBox[{"pn3", " ", "vn1"}], "-", 
+                    RowBox[{"pn1", " ", "vn3"}]}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", "3", "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"pm2", " ", "vm1"}], "-", 
+                    RowBox[{"pm1", " ", "vm2"}], "-", 
+                    RowBox[{"pn2", " ", "vn1"}], "+", 
+                    RowBox[{"pn1", " ", "vn2"}]}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", "4", "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"-", "p33"}], " ", "v32"}], "+", 
+                    RowBox[{"p32", " ", "v33"}], "+", 
+                    RowBox[{"pm3", " ", "vm2"}], "-", 
+                    RowBox[{"pm2", " ", "vm3"}]}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    ItemBox[
+                    "\"\[VerticalEllipsis]\"", Alignment -> Center, 
+                    StripOnInput -> False]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                 "Column"], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  SparseArray[
+  Automatic, {6}, 0, {
+   1, {{0, 6}, {{1}, {2}, {3}, {4}, {5}, {
+     6}}}, {$CellContext`pm3 $CellContext`vm2 - $CellContext`pm2 \
+$CellContext`vm3 - $CellContext`pn3 $CellContext`vn2 + $CellContext`pn2 \
+$CellContext`vn3, -$CellContext`pm3 $CellContext`vm1 + $CellContext`pm1 \
+$CellContext`vm3 + $CellContext`pn3 $CellContext`vn1 - $CellContext`pn1 \
+$CellContext`vn3, $CellContext`pm2 $CellContext`vm1 - $CellContext`pm1 \
+$CellContext`vm2 - $CellContext`pn2 $CellContext`vn1 + $CellContext`pn1 \
+$CellContext`vn2, -$CellContext`p33 $CellContext`v32 + $CellContext`p32 \
+$CellContext`v33 + $CellContext`pm3 $CellContext`vm2 - $CellContext`pm2 \
+$CellContext`vm3, $CellContext`p33 $CellContext`v31 - $CellContext`p31 \
+$CellContext`v33 - $CellContext`pm3 $CellContext`vm1 + $CellContext`pm1 \
+$CellContext`vm3, -$CellContext`p32 $CellContext`v31 + $CellContext`p31 \
+$CellContext`v32 + $CellContext`pm2 $CellContext`vm1 - $CellContext`pm1 \
+$CellContext`vm2}}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{{3.915122777740242*^9, 3.9151227902701683`*^9}, 
+   3.915123125120616*^9, 3.915638311622476*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"143301dc-11ac-4641-81c4-dd32a702d2f7"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["SparseArray",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxOpener"]], 
+              ButtonFunction :> (Typeset`open$$ = True), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBgg2IQGwIe2DNgBZjiVuW742YpnbOfY7xoi/mPK/YvFik+
+Dlz1yp7W5ow0e6klPtLCbbDFFwCPiLS0
+              "], {{0, 0}, {6, 6}}, {0, 1}], AspectRatio -> 1, Axes -> False, 
+             Frame -> False, FrameLabel -> {None, None}, FrameStyle -> 
+             Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["24", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"6", ",", "6"}], "}"}], "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxCloser"]], 
+              ButtonFunction :> (Typeset`open$$ = False), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBgg2IQGwIe2DNgBZjiVuW742YpnbOfY7xoi/mPK/YvFik+
+Dlz1yp7W5ow0e6klPtLCbbDFFwCPiLS0
+              "], {{0, 0}, {6, 6}}, {0, 1}], AspectRatio -> 1, Axes -> False, 
+             Frame -> False, FrameLabel -> {None, None}, FrameStyle -> 
+             Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["24", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"6", ",", "6"}], "}"}], "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Default: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Density: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0.6666666666666666`", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Elements:\"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"\"", "SummaryItem"]}]}, {
+               TagBox[
+                TagBox[
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "3"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"vm2", "-", "vn2"}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "2"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"-", "vm3"}], "+", "vn3"}], ContentPadding -> 
+                    False, FrameMargins -> 0, StripOnInput -> True, 
+                    BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "5"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"pm3", "-", "pn3"}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "6"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"-", "pm2"}], "+", "pn2"}], ContentPadding -> 
+                    False, FrameMargins -> 0, StripOnInput -> True, 
+                    BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    ItemBox[
+                    "\"\[VerticalEllipsis]\"", Alignment -> Center, 
+                    StripOnInput -> False]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                 "Column"], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  SparseArray[
+  Automatic, {6, 6}, 0, {
+   1, {{0, 4, 8, 12, 16, 20, 24}, {{3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {
+     2}, {1}, {4}, {5}, {3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {2}, {1}, {
+     4}, {5}}}, {$CellContext`vm2 - $CellContext`vn2, -$CellContext`vm3 + \
+$CellContext`vn3, $CellContext`pm3 - $CellContext`pn3, -$CellContext`pm2 + \
+$CellContext`pn2, -$CellContext`vm1 + $CellContext`vn1, $CellContext`vm3 - \
+$CellContext`vn3, -$CellContext`pm3 + $CellContext`pn3, $CellContext`pm1 - \
+$CellContext`pn1, $CellContext`vm1 - $CellContext`vn1, -$CellContext`vm2 + \
+$CellContext`vn2, $CellContext`pm2 - $CellContext`pn2, -$CellContext`pm1 + \
+$CellContext`pn1, -$CellContext`v32 + $CellContext`vm2, $CellContext`v33 - \
+$CellContext`vm3, -$CellContext`p33 + $CellContext`pm3, $CellContext`p32 - \
+$CellContext`pm2, $CellContext`v31 - $CellContext`vm1, -$CellContext`v33 + \
+$CellContext`vm3, $CellContext`p33 - $CellContext`pm3, -$CellContext`p31 + \
+$CellContext`pm1, -$CellContext`v31 + $CellContext`vm1, $CellContext`v32 - \
+$CellContext`vm2, -$CellContext`p32 + $CellContext`pm2, $CellContext`p31 - \
+$CellContext`pm1}}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{{3.915122777740242*^9, 3.9151227902701683`*^9}, 
+   3.915123125120616*^9, 3.9156383116332417`*^9},
+ CellLabel->"Out[10]=",ExpressionUUID->"d0620467-d4a9-4321-a914-f53baf2be7d9"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Normal", "[", "b", "]"}], "//", "InputForm"}], "//", 
+  "TableForm"}]], "Input",
+ CellChangeTimes->{{3.9151227956372833`*^9, 3.9151228321242847`*^9}, {
+  3.915123129139269*^9, 3.915123141110849*^9}},
+ CellLabel->"In[11]:=",ExpressionUUID->"57c41424-d6ca-4c6f-87b7-1b5231fdf402"],
+
+Cell[BoxData[
+ TagBox[
+  InterpretationBox[
+   StyleBox[
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"pm3", "*", "vm2"}], " ", "-", " ", 
+       RowBox[{"pm2", "*", "vm3"}], " ", "-", " ", 
+       RowBox[{"pn3", "*", "vn2"}], " ", "+", " ", 
+       RowBox[{"pn2", "*", "vn3"}]}], ",", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"(", 
+         RowBox[{"pm3", "*", "vm1"}], ")"}]}], " ", "+", " ", 
+       RowBox[{"pm1", "*", "vm3"}], " ", "+", " ", 
+       RowBox[{"pn3", "*", "vn1"}], " ", "-", " ", 
+       RowBox[{"pn1", "*", "vn3"}]}], ",", " ", 
+      RowBox[{
+       RowBox[{"pm2", "*", "vm1"}], " ", "-", " ", 
+       RowBox[{"pm1", "*", "vm2"}], " ", "-", " ", 
+       RowBox[{"pn2", "*", "vn1"}], " ", "+", " ", 
+       RowBox[{"pn1", "*", "vn2"}]}], ",", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"(", 
+         RowBox[{"p33", "*", "v32"}], ")"}]}], " ", "+", " ", 
+       RowBox[{"p32", "*", "v33"}], " ", "+", " ", 
+       RowBox[{"pm3", "*", "vm2"}], " ", "-", " ", 
+       RowBox[{"pm2", "*", "vm3"}]}], ",", " ", 
+      RowBox[{
+       RowBox[{"p33", "*", "v31"}], " ", "-", " ", 
+       RowBox[{"p31", "*", "v33"}], " ", "-", " ", 
+       RowBox[{"pm3", "*", "vm1"}], " ", "+", " ", 
+       RowBox[{"pm1", "*", "vm3"}]}], ",", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"(", 
+         RowBox[{"p32", "*", "v31"}], ")"}]}], " ", "+", " ", 
+       RowBox[{"p31", "*", "v32"}], " ", "+", " ", 
+       RowBox[{"pm2", "*", "vm1"}], " ", "-", " ", 
+       RowBox[{"pm1", "*", "vm2"}]}]}], "}"}],
+    ShowStringCharacters->True,
+    NumberMarks->True],
+   InputForm[{$CellContext`pm3 $CellContext`vm2 - $CellContext`pm2 \
+$CellContext`vm3 - $CellContext`pn3 $CellContext`vn2 + $CellContext`pn2 \
+$CellContext`vn3, -$CellContext`pm3 $CellContext`vm1 + $CellContext`pm1 \
+$CellContext`vm3 + $CellContext`pn3 $CellContext`vn1 - $CellContext`pn1 \
+$CellContext`vn3, $CellContext`pm2 $CellContext`vm1 - $CellContext`pm1 \
+$CellContext`vm2 - $CellContext`pn2 $CellContext`vn1 + $CellContext`pn1 \
+$CellContext`vn2, -$CellContext`p33 $CellContext`v32 + $CellContext`p32 \
+$CellContext`v33 + $CellContext`pm3 $CellContext`vm2 - $CellContext`pm2 \
+$CellContext`vm3, $CellContext`p33 $CellContext`v31 - $CellContext`p31 \
+$CellContext`v33 - $CellContext`pm3 $CellContext`vm1 + $CellContext`pm1 \
+$CellContext`vm3, -$CellContext`p32 $CellContext`v31 + $CellContext`p31 \
+$CellContext`v32 + $CellContext`pm2 $CellContext`vm1 - $CellContext`pm1 \
+$CellContext`vm2}],
+   AutoDelete->True,
+   Editable->True],
+  Function[BoxForm`e$, 
+   TableForm[BoxForm`e$]]]], "Output",
+ CellChangeTimes->{{3.915122798224374*^9, 3.915122832552765*^9}, {
+   3.915123127365951*^9, 3.9151231414284477`*^9}, 3.915638312583153*^9},
+ CellLabel->
+  "Out[11]//TableForm=",ExpressionUUID->"558c25d1-5c0e-400f-8306-\
+01d25b822a70"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Normal", "[", "A", "]"}]], "Input",
+ CellChangeTimes->{{3.9151228675720673`*^9, 3.9151228718332376`*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"7cc09c12-fad9-4a17-a771-4af23d56d99a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", 
+     RowBox[{
+      RowBox[{"-", "vm3"}], "+", "vn3"}], ",", 
+     RowBox[{"vm2", "-", "vn2"}], ",", "0", ",", 
+     RowBox[{"pm3", "-", "pn3"}], ",", 
+     RowBox[{
+      RowBox[{"-", "pm2"}], "+", "pn2"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"vm3", "-", "vn3"}], ",", "0", ",", 
+     RowBox[{
+      RowBox[{"-", "vm1"}], "+", "vn1"}], ",", 
+     RowBox[{
+      RowBox[{"-", "pm3"}], "+", "pn3"}], ",", "0", ",", 
+     RowBox[{"pm1", "-", "pn1"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "vm2"}], "+", "vn2"}], ",", 
+     RowBox[{"vm1", "-", "vn1"}], ",", "0", ",", 
+     RowBox[{"pm2", "-", "pn2"}], ",", 
+     RowBox[{
+      RowBox[{"-", "pm1"}], "+", "pn1"}], ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", 
+     RowBox[{"v33", "-", "vm3"}], ",", 
+     RowBox[{
+      RowBox[{"-", "v32"}], "+", "vm2"}], ",", "0", ",", 
+     RowBox[{
+      RowBox[{"-", "p33"}], "+", "pm3"}], ",", 
+     RowBox[{"p32", "-", "pm2"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "v33"}], "+", "vm3"}], ",", "0", ",", 
+     RowBox[{"v31", "-", "vm1"}], ",", 
+     RowBox[{"p33", "-", "pm3"}], ",", "0", ",", 
+     RowBox[{
+      RowBox[{"-", "p31"}], "+", "pm1"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"v32", "-", "vm2"}], ",", 
+     RowBox[{
+      RowBox[{"-", "v31"}], "+", "vm1"}], ",", "0", ",", 
+     RowBox[{
+      RowBox[{"-", "p32"}], "+", "pm2"}], ",", 
+     RowBox[{"p31", "-", "pm1"}], ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.915122872323306*^9, 3.9156383174212723`*^9},
+ CellLabel->"Out[12]=",ExpressionUUID->"e801a570-f0cd-4b4c-8d9c-519c45a334bd"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"MatrixForm", "/@", 
+  RowBox[{"Normal", "[", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"-", "b"}], ",", "A"}], "}"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.91511867736012*^9, 3.915118682415257*^9}, {
+  3.915118915614111*^9, 3.915118932784973*^9}, {3.915122663144535*^9, 
+  3.915122663662415*^9}, {3.915638319996628*^9, 3.915638414893429*^9}},
+ CellLabel->"In[22]:=",ExpressionUUID->"910915ac-29d4-4614-aef8-e427a8dfbcd2"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", 
+     TagBox[GridBox[{
+        {
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", "pm3"}], " ", "vm2"}], "+", 
+          RowBox[{"pm2", " ", "vm3"}], "+", 
+          RowBox[{"pn3", " ", "vn2"}], "-", 
+          RowBox[{"pn2", " ", "vn3"}]}]},
+        {
+         RowBox[{
+          RowBox[{"pm3", " ", "vm1"}], "-", 
+          RowBox[{"pm1", " ", "vm3"}], "-", 
+          RowBox[{"pn3", " ", "vn1"}], "+", 
+          RowBox[{"pn1", " ", "vn3"}]}]},
+        {
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", "pm2"}], " ", "vm1"}], "+", 
+          RowBox[{"pm1", " ", "vm2"}], "+", 
+          RowBox[{"pn2", " ", "vn1"}], "-", 
+          RowBox[{"pn1", " ", "vn2"}]}]},
+        {
+         RowBox[{
+          RowBox[{"p33", " ", "v32"}], "-", 
+          RowBox[{"p32", " ", "v33"}], "-", 
+          RowBox[{"pm3", " ", "vm2"}], "+", 
+          RowBox[{"pm2", " ", "vm3"}]}]},
+        {
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", "p33"}], " ", "v31"}], "+", 
+          RowBox[{"p31", " ", "v33"}], "+", 
+          RowBox[{"pm3", " ", "vm1"}], "-", 
+          RowBox[{"pm1", " ", "vm3"}]}]},
+        {
+         RowBox[{
+          RowBox[{"p32", " ", "v31"}], "-", 
+          RowBox[{"p31", " ", "v32"}], "-", 
+          RowBox[{"pm2", " ", "vm1"}], "+", 
+          RowBox[{"pm1", " ", "vm2"}]}]}
+       },
+       GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+       GridBoxSpacings->{"Columns" -> {
+           Offset[0.27999999999999997`], {
+            Offset[0.5599999999999999]}, 
+           Offset[0.27999999999999997`]}, "Rows" -> {
+           Offset[0.2], {
+            Offset[0.4]}, 
+           Offset[0.2]}}],
+      Column], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]], ",", 
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"0", 
+        RowBox[{
+         RowBox[{"-", "vm3"}], "+", "vn3"}], 
+        RowBox[{"vm2", "-", "vn2"}], "0", 
+        RowBox[{"pm3", "-", "pn3"}], 
+        RowBox[{
+         RowBox[{"-", "pm2"}], "+", "pn2"}]},
+       {
+        RowBox[{"vm3", "-", "vn3"}], "0", 
+        RowBox[{
+         RowBox[{"-", "vm1"}], "+", "vn1"}], 
+        RowBox[{
+         RowBox[{"-", "pm3"}], "+", "pn3"}], "0", 
+        RowBox[{"pm1", "-", "pn1"}]},
+       {
+        RowBox[{
+         RowBox[{"-", "vm2"}], "+", "vn2"}], 
+        RowBox[{"vm1", "-", "vn1"}], "0", 
+        RowBox[{"pm2", "-", "pn2"}], 
+        RowBox[{
+         RowBox[{"-", "pm1"}], "+", "pn1"}], "0"},
+       {"0", 
+        RowBox[{"v33", "-", "vm3"}], 
+        RowBox[{
+         RowBox[{"-", "v32"}], "+", "vm2"}], "0", 
+        RowBox[{
+         RowBox[{"-", "p33"}], "+", "pm3"}], 
+        RowBox[{"p32", "-", "pm2"}]},
+       {
+        RowBox[{
+         RowBox[{"-", "v33"}], "+", "vm3"}], "0", 
+        RowBox[{"v31", "-", "vm1"}], 
+        RowBox[{"p33", "-", "pm3"}], "0", 
+        RowBox[{
+         RowBox[{"-", "p31"}], "+", "pm1"}]},
+       {
+        RowBox[{"v32", "-", "vm2"}], 
+        RowBox[{
+         RowBox[{"-", "v31"}], "+", "vm1"}], "0", 
+        RowBox[{
+         RowBox[{"-", "p32"}], "+", "pm2"}], 
+        RowBox[{"p31", "-", "pm1"}], "0"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915118925164721*^9, 3.91511893321907*^9}, 
+   3.915122664247056*^9, 3.9156384153712463`*^9},
+ CellLabel->"Out[22]=",ExpressionUUID->"09f46a2e-683b-478c-90b2-b29c250c110e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["A"], "Input",
+ CellChangeTimes->{{3.9156384371306543`*^9, 3.915638438323518*^9}},
+ NumberMarks->False,
+ CellLabel->"In[23]:=",ExpressionUUID->"9fe567a3-d977-498b-98b0-140e153d724f"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["SparseArray",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = True, Typeset`embedState$$ = "Ready"}, 
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxOpener"]], 
+              ButtonFunction :> (Typeset`open$$ = True), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBgg2IQGwIe2DNgBZjiVuW742YpnbOfY7xoi/mPK/YvFik+
+Dlz1yp7W5ow0e6klPtLCbbDFFwCPiLS0
+              "], {{0, 0}, {6, 6}}, {0, 1}], AspectRatio -> 1, Axes -> False, 
+             Frame -> False, FrameLabel -> {None, None}, FrameStyle -> 
+             Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["24", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"6", ",", "6"}], "}"}], "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            PaneBox[
+             ButtonBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "SummaryBoxCloser"]], 
+              ButtonFunction :> (Typeset`open$$ = False), Appearance -> None, 
+              BaseStyle -> {}, Evaluator -> Automatic, Method -> 
+              "Preemptive"], Alignment -> {Center, Center}, ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}]], 
+            GraphicsBox[
+             RasterBox[CompressedData["
+1:eJxTTMoPSmVmYGBgg2IQGwIe2DNgBZjiVuW742YpnbOfY7xoi/mPK/YvFik+
+Dlz1yp7W5ow0e6klPtLCbbDFFwCPiLS0
+              "], {{0, 0}, {6, 6}}, {0, 1}], AspectRatio -> 1, Axes -> False, 
+             Frame -> False, FrameLabel -> {None, None}, FrameStyle -> 
+             Directive[
+               Opacity[0.5], 
+               Thickness[Tiny], 
+               RGBColor[0.368417, 0.506779, 0.709798]], 
+             FrameTicks -> {{None, None}, {None, None}}, GridLinesStyle -> 
+             Directive[
+               GrayLevel[0.5, 0.4]], ImageSize -> 
+             Dynamic[{
+               Automatic, 
+                3.5 (CurrentValue["FontCapHeight"]/AbsoluteCurrentValue[
+                 Magnification])}], 
+             Method -> {
+              "GridLinesInFront" -> True, "AxisPadding" -> Scaled[0.02], 
+               "DefaultBoundaryStyle" -> Automatic, 
+               "DefaultGraphicsInteraction" -> {
+                "Version" -> 1.2, "TrackMousePosition" -> {True, False}, 
+                 "Effects" -> {
+                  "Highlight" -> {"ratio" -> 2}, 
+                   "HighlightPoint" -> {"ratio" -> 2}, 
+                   "Droplines" -> {
+                    "freeformCursorMode" -> True, 
+                    "placement" -> {"x" -> "All", "y" -> "None"}}}}, 
+               "DefaultPlotStyle" -> Automatic, "DomainPadding" -> 
+               Scaled[0.02], "RangePadding" -> Scaled[0.05]}], 
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"Specified elements: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["24", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Dimensions: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                  RowBox[{"{", 
+                    RowBox[{"6", ",", "6"}], "}"}], "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Default: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Density: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["0.6666666666666666`", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"Elements:\"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"\"", "SummaryItem"]}]}, {
+               TagBox[
+                TagBox[
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "3"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"vm2", "-", "vn2"}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "2"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"-", "vm3"}], "+", "vn3"}], ContentPadding -> 
+                    False, FrameMargins -> 0, StripOnInput -> True, 
+                    BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "5"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{"pm3", "-", "pn3"}], ContentPadding -> False, 
+                    FrameMargins -> 0, StripOnInput -> True, BaselinePosition -> 
+                    Baseline, ImageSize -> {{1, 300}, Automatic}], 
+                    LineBreakWithin -> False]}]}, {
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "6"}], "}"}], "\[Rule]", 
+                    StyleBox[
+                    PaneBox[
+                    RowBox[{
+                    RowBox[{"-", "pm2"}], "+", "pn2"}], ContentPadding -> 
+                    False, FrameMargins -> 0, StripOnInput -> True, 
+                    BaselinePosition -> Baseline, 
+                    ImageSize -> {{1, 300}, Automatic}], LineBreakWithin -> 
+                    False]}]}, {
+                    ItemBox[
+                    "\"\[VerticalEllipsis]\"", Alignment -> Center, 
+                    StripOnInput -> False]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], 
+                 "Column"], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  SparseArray[
+  Automatic, {6, 6}, 0, {
+   1, {{0, 4, 8, 12, 16, 20, 24}, {{3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {
+     2}, {1}, {4}, {5}, {3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {2}, {1}, {
+     4}, {5}}}, {$CellContext`vm2 - $CellContext`vn2, -$CellContext`vm3 + \
+$CellContext`vn3, $CellContext`pm3 - $CellContext`pn3, -$CellContext`pm2 + \
+$CellContext`pn2, -$CellContext`vm1 + $CellContext`vn1, $CellContext`vm3 - \
+$CellContext`vn3, -$CellContext`pm3 + $CellContext`pn3, $CellContext`pm1 - \
+$CellContext`pn1, $CellContext`vm1 - $CellContext`vn1, -$CellContext`vm2 + \
+$CellContext`vn2, $CellContext`pm2 - $CellContext`pn2, -$CellContext`pm1 + \
+$CellContext`pn1, -$CellContext`v32 + $CellContext`vm2, $CellContext`v33 - \
+$CellContext`vm3, -$CellContext`p33 + $CellContext`pm3, $CellContext`p32 - \
+$CellContext`pm2, $CellContext`v31 - $CellContext`vm1, -$CellContext`v33 + \
+$CellContext`vm3, $CellContext`p33 - $CellContext`pm3, -$CellContext`p31 + \
+$CellContext`pm1, -$CellContext`v31 + $CellContext`vm1, $CellContext`v32 - \
+$CellContext`vm2, -$CellContext`p32 + $CellContext`pm2, $CellContext`p31 - \
+$CellContext`pm1}}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{3.915118511702025*^9, 3.9156384388404217`*^9},
+ CellLabel->"Out[23]=",ExpressionUUID->"34069add-13e3-482c-a9cb-3a9a3bd2f4e3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"MatrixForm", "[", "A", "]"}]], "Input",
+ CellChangeTimes->{3.915638472499878*^9},
+ NumberMarks->False,
+ CellLabel->"In[24]:=",ExpressionUUID->"dd04c395-109a-476d-be32-88009b6da3b7"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"0", 
+      RowBox[{
+       RowBox[{"-", "vm3"}], "+", "vn3"}], 
+      RowBox[{"vm2", "-", "vn2"}], "0", 
+      RowBox[{"pm3", "-", "pn3"}], 
+      RowBox[{
+       RowBox[{"-", "pm2"}], "+", "pn2"}]},
+     {
+      RowBox[{"vm3", "-", "vn3"}], "0", 
+      RowBox[{
+       RowBox[{"-", "vm1"}], "+", "vn1"}], 
+      RowBox[{
+       RowBox[{"-", "pm3"}], "+", "pn3"}], "0", 
+      RowBox[{"pm1", "-", "pn1"}]},
+     {
+      RowBox[{
+       RowBox[{"-", "vm2"}], "+", "vn2"}], 
+      RowBox[{"vm1", "-", "vn1"}], "0", 
+      RowBox[{"pm2", "-", "pn2"}], 
+      RowBox[{
+       RowBox[{"-", "pm1"}], "+", "pn1"}], "0"},
+     {"0", 
+      RowBox[{"v33", "-", "vm3"}], 
+      RowBox[{
+       RowBox[{"-", "v32"}], "+", "vm2"}], "0", 
+      RowBox[{
+       RowBox[{"-", "p33"}], "+", "pm3"}], 
+      RowBox[{"p32", "-", "pm2"}]},
+     {
+      RowBox[{
+       RowBox[{"-", "v33"}], "+", "vm3"}], "0", 
+      RowBox[{"v31", "-", "vm1"}], 
+      RowBox[{"p33", "-", "pm3"}], "0", 
+      RowBox[{
+       RowBox[{"-", "p31"}], "+", "pm1"}]},
+     {
+      RowBox[{"v32", "-", "vm2"}], 
+      RowBox[{
+       RowBox[{"-", "v31"}], "+", "vm1"}], "0", 
+      RowBox[{
+       RowBox[{"-", "p32"}], "+", "pm2"}], 
+      RowBox[{"p31", "-", "pm1"}], "0"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[
+   SparseArray[
+    Automatic, {6, 6}, 0, {
+     1, {{0, 4, 8, 12, 16, 20, 24}, {{3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {
+       2}, {1}, {4}, {5}, {3}, {2}, {5}, {6}, {3}, {1}, {4}, {6}, {2}, {1}, {
+       4}, {5}}}, {$CellContext`vm2 - $CellContext`vn2, -$CellContext`vm3 + \
+$CellContext`vn3, $CellContext`pm3 - $CellContext`pn3, -$CellContext`pm2 + \
+$CellContext`pn2, -$CellContext`vm1 + $CellContext`vn1, $CellContext`vm3 - \
+$CellContext`vn3, -$CellContext`pm3 + $CellContext`pn3, $CellContext`pm1 - \
+$CellContext`pn1, $CellContext`vm1 - $CellContext`vn1, -$CellContext`vm2 + \
+$CellContext`vn2, $CellContext`pm2 - $CellContext`pn2, -$CellContext`pm1 + \
+$CellContext`pn1, -$CellContext`v32 + $CellContext`vm2, $CellContext`v33 - \
+$CellContext`vm3, -$CellContext`p33 + $CellContext`pm3, $CellContext`p32 - \
+$CellContext`pm2, $CellContext`v31 - $CellContext`vm1, -$CellContext`v33 + \
+$CellContext`vm3, $CellContext`p33 - $CellContext`pm3, -$CellContext`p31 + \
+$CellContext`pm1, -$CellContext`v31 + $CellContext`vm1, $CellContext`v32 - \
+$CellContext`vm2, -$CellContext`p32 + $CellContext`pm2, $CellContext`p31 - \
+$CellContext`pm1}}]]]]], "Output",
+ CellChangeTimes->{3.915118531459881*^9, 3.915638472917214*^9},
+ CellLabel->
+  "Out[24]//MatrixForm=",ExpressionUUID->"8cea2472-ac4d-4995-9da7-\
+c9d8b633daf2"]
+}, Open  ]]
+},
+WindowSize->{837.75, 683.25},
+WindowMargins->{{405.75, Automatic}, {Automatic, 174.75}},
+FrontEndVersion->"13.3 for Linux x86 (64-bit) (June 3, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"7b77b48c-53d7-488f-ab46-71e143a8767a"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 251, 4, 22, "Input",ExpressionUUID->"03f87126-b5d8-4089-b938-c38b96d229ea"],
+Cell[834, 28, 8941, 189, 53, "Output",ExpressionUUID->"6be7c123-ca55-402d-ac1c-d8a1a3dd6091"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[9812, 222, 4029, 114, 119, "Input",ExpressionUUID->"ac1873dc-737e-41c9-b118-660858f86e16"],
+Cell[13844, 338, 3887, 123, 105, "Output",ExpressionUUID->"f499d4c9-b4d7-4b15-a15a-af6bf91c5d4b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17768, 466, 850, 24, 22, "Input",ExpressionUUID->"37492689-a26f-429f-8a4e-73540fcd3c63"],
+Cell[18621, 492, 222, 3, 25, "Output",ExpressionUUID->"d04fc64b-447b-4c19-8032-6dc8b6b0a6bd"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18880, 500, 997, 22, 53, "Input",ExpressionUUID->"f0df0e70-2406-4622-8c2f-624978f182a5"],
+Cell[19880, 524, 11496, 232, 53, "Output",ExpressionUUID->"143301dc-11ac-4641-81c4-dd32a702d2f7"],
+Cell[31379, 758, 11192, 227, 53, "Output",ExpressionUUID->"d0620467-d4a9-4321-a914-f53baf2be7d9"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42608, 990, 325, 7, 22, "Input",ExpressionUUID->"57c41424-d6ca-4c6f-87b7-1b5231fdf402"],
+Cell[42936, 999, 2864, 65, 70, "Output",ExpressionUUID->"558c25d1-5c0e-400f-8306-01d25b822a70"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[45837, 1069, 208, 3, 22, "Input",ExpressionUUID->"7cc09c12-fad9-4a17-a771-4af23d56d99a"],
+Cell[46048, 1074, 1776, 52, 56, "Output",ExpressionUUID->"e801a570-f0cd-4b4c-8d9c-519c45a334bd"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[47861, 1131, 450, 9, 22, "Input",ExpressionUUID->"910915ac-29d4-4614-aef8-e427a8dfbcd2"],
+Cell[48314, 1142, 3848, 114, 107, "Output",ExpressionUUID->"09f46a2e-683b-478c-90b2-b29c250c110e"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[52199, 1261, 195, 3, 22, "Input",ExpressionUUID->"9fe567a3-d977-498b-98b0-140e153d724f"],
+Cell[52397, 1266, 11134, 225, 145, "Output",ExpressionUUID->"34069add-13e3-482c-a9cb-3a9a3bd2f4e3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[63568, 1496, 205, 4, 22, "Input",ExpressionUUID->"dd04c395-109a-476d-be32-88009b6da3b7"],
+Cell[63776, 1502, 2986, 76, 98, "Output",ExpressionUUID->"8cea2472-ac4d-4995-9da7-c9d8b633daf2"]
+}, Open  ]]
+}
+]
+*)
+
