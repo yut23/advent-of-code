@@ -1,7 +1,8 @@
 #ifndef GRID_HPP_EF9V6ZF8
 #define GRID_HPP_EF9V6ZF8
 
-#include "lib.hpp"           // for Pos
+#include "lib.hpp" // for Pos
+#include "unit_test/pretty_print.hpp"
 #include "util/concepts.hpp" // for any_convertible_range
 
 #include <algorithm> // for copy, move
@@ -9,6 +10,8 @@
 #include <compare>   // for partial_ordering
 #include <concepts>  // for same_as, convertible_to
 #include <cstddef>   // for size_t, ptrdiff_t
+#include <iomanip>   // for setw
+#include <iostream>  // for ostream
 #include <iterator>  // for begin, end, back_inserter, misc concepts
 #include <ranges>    // for range, range_value_t
 #include <span>      // for span, dynamic_extent // IWYU pragma: export
@@ -212,7 +215,8 @@ struct Grid {
         requires std::ranges::range<std::ranges::range_value_t<V>> &&
                      std::same_as<std::ranges::range_value_t<
                                       std::ranges::range_value_t<V>>,
-                                  value_type>
+                                  value_type> &&
+                     (!std::same_as<std::remove_cvref_t<V>, Grid<value_type>>)
     explicit Grid(V &&grid)
         : height(grid.size()), width(grid[0].size()), m_data() {
         assert(!grid.empty());
@@ -299,6 +303,24 @@ Grid(const std::vector<std::vector<T>> &) -> Grid<T>;
 template <class T>
 Grid(std::vector<std::vector<T>> &&) -> Grid<T>;
 
+template <class T>
+std::ostream &print_repr(std::ostream &os, const aoc::ds::Grid<T> &grid,
+                         const bool result) {
+    for (int i = 0; const auto &row : grid) {
+        os << (i == 0 ? '[' : ' ') << '[';
+        for (int j = 0; const auto &value : row) {
+            if (j != 0) {
+                os << " ";
+            }
+            os << std::setw(12) << pretty_print::repr(value, result);
+            ++j;
+        }
+        ++i;
+        os << ']' << (i == grid.height ? "]" : ",\n");
+    }
+    return os;
+}
+
 // instantiate templates in an anonymous namespace, so static analyzers will
 // check these functions
 namespace {
@@ -364,5 +386,9 @@ constexpr bool _grid_lint_helper_constexpr() {
 } // namespace
 
 } // namespace aoc::ds
+
+template <class T>
+struct pretty_print::has_custom_print_repr<aoc::ds::Grid<T>>
+    : pretty_print::has_any_print_repr<T> {};
 
 #endif /* end of include guard: GRID_HPP_EF9V6ZF8 */

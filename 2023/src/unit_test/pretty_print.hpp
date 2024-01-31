@@ -28,15 +28,31 @@ class repr;
 
 template <class T>
 struct has_custom_print_repr : std::false_type {};
+
+template <class T>
+struct has_any_print_repr
+    : std::integral_constant<bool, util::concepts::stream_insertable<T> ||
+                                       has_custom_print_repr<T>::value> {};
+
+template <class T>
+concept has_print_repr = has_any_print_repr<T>::value;
 } // namespace pretty_print
+
+/*
+ * Templated types
+ */
 
 // iterable containers (vector, list, set, etc.)
 template <template <class, class...> class C, class T>
-    requires util::concepts::any_iterable_collection<C<T>, T>
+    requires util::concepts::any_iterable_collection<C<T>, T> &&
+             pretty_print::has_print_repr<
+                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>>
 struct pretty_print::has_custom_print_repr<C<T>> : std::true_type {};
 
 template <template <class, class...> class C, class T>
-    requires util::concepts::any_iterable_collection<C<T>, T>
+    requires util::concepts::any_iterable_collection<C<T>, T> &&
+             pretty_print::has_print_repr<
+                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>>
 std::ostream &print_repr(std::ostream &os, const C<T> &container,
                          const bool result) {
     os << "{";
@@ -51,11 +67,11 @@ std::ostream &print_repr(std::ostream &os, const C<T> &container,
 }
 
 // arrays
-template <class T, std::size_t N>
+template <pretty_print::has_print_repr T, std::size_t N>
 struct pretty_print::has_custom_print_repr<std::array<T, N>> : std::true_type {
 };
 
-template <class T, std::size_t N>
+template <pretty_print::has_print_repr T, std::size_t N>
 std::ostream &print_repr(std::ostream &os, const std::array<T, N> &arr,
                          const bool result) {
     os << "{";
@@ -70,11 +86,13 @@ std::ostream &print_repr(std::ostream &os, const std::array<T, N> &arr,
 }
 
 // mappings (map, unordered_map, multimap, etc.)
-template <template <class, class, class...> class M, class K, class V>
+template <template <class, class, class...> class M,
+          pretty_print::has_print_repr K, pretty_print::has_print_repr V>
     requires util::concepts::any_iterable_mapping<M<K, V>, K, V>
 struct pretty_print::has_custom_print_repr<M<K, V>> : std::true_type {};
 
-template <template <class, class, class...> class M, class K, class V>
+template <template <class, class, class...> class M,
+          pretty_print::has_print_repr K, pretty_print::has_print_repr V>
     requires util::concepts::any_iterable_mapping<M<K, V>, K, V>
 std::ostream &print_repr(std::ostream &os, const M<K, V> &mapping,
                          const bool result) {
@@ -91,12 +109,12 @@ std::ostream &print_repr(std::ostream &os, const M<K, V> &mapping,
 }
 
 // tuple-like containers (tuple, pair)
-template <template <class...> class C, class... Ts>
+template <template <class...> class C, pretty_print::has_print_repr... Ts>
     requires std::same_as<C<Ts...>, std::tuple<Ts...>> ||
              std::same_as<C<Ts...>, std::pair<Ts...>>
 struct pretty_print::has_custom_print_repr<C<Ts...>> : std::true_type {};
 
-template <template <class...> class C, class... Ts>
+template <template <class...> class C, pretty_print::has_print_repr... Ts>
     requires std::same_as<C<Ts...>, std::tuple<Ts...>> ||
              std::same_as<C<Ts...>, std::pair<Ts...>>
 std::ostream &print_repr(std::ostream &os, const C<Ts...> &args,
@@ -113,11 +131,11 @@ std::ostream &print_repr(std::ostream &os, const C<Ts...> &args,
 }
 
 // optional
-template <class T>
+template <pretty_print::has_print_repr T>
 struct pretty_print::has_custom_print_repr<std::optional<T>> : std::true_type {
 };
 
-template <class T>
+template <pretty_print::has_print_repr T>
 std::ostream &print_repr(std::ostream &os, const std::optional<T> &opt,
                          const bool result) {
     if (opt.has_value()) {
@@ -127,6 +145,10 @@ std::ostream &print_repr(std::ostream &os, const std::optional<T> &opt,
     }
     return os;
 }
+
+/*
+ * Base/leaf types
+ */
 
 // strong_ordering
 template <>
@@ -187,16 +209,7 @@ std::ostream &print_repr(std::ostream &os, const T &t, const bool /*result*/) {
     return os;
 }
 
-// Special formatting for printing leaf types
-
 namespace pretty_print {
-
-template <class T>
-concept has_print_repr = requires(std::ostream &os, const T &t, bool result) {
-                             {
-                                 print_repr(os, t, result)
-                                 } -> std::same_as<std::ostream &>;
-                         };
 
 template <class T>
 class repr {
