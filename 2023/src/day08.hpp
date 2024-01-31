@@ -11,6 +11,7 @@
 #include "lib.hpp"       // for skip
 #include <algorithm>     // for sort
 #include <compare>       // for strong_ordering
+#include <cstddef>       // for size_t
 #include <iostream>      // for istream, ostream
 #include <map>           // for map
 #include <memory>        // for unique_ptr, make_unique

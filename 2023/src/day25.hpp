@@ -13,7 +13,6 @@
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream, cerr
 #include <limits>        // for numeric_limits
-#include <memory>        // for shared_ptr (pairing_heap)
 #include <queue>         // for priority_queue
 #include <sstream>       // for istringstream
 #include <string>        // for string, getline
@@ -21,6 +20,7 @@
 #include <unordered_set> // for unordered_set
 #include <utility>       // for pair
 // IWYU pragma: no_include <functional>  // for hash (unordered_{set,map})
+// IWYU pragma: no_include <vector>  // for max (priority_queue)
 
 namespace aoc::day25 {
 
