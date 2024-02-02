@@ -41,7 +41,7 @@ void solve(int argc, char **argv, bool print) {
                               << "\n";
                 }
                 // skip to the final cycle iteration
-                step += (max_step - step) / cycle_length * cycle_length;
+                step += (max_step - step - 1) / cycle_length * cycle_length;
                 if constexpr (aoc::DEBUG) {
                     std::cerr << "skipped to " << step << "\n";
                 }

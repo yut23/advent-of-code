@@ -354,6 +354,7 @@ long Garden::part_2() const {
         es.print_stats();
     }
     long reachable = es.get_reachable();
+#if 0
     int i = es.get_iter();
     if (stones.width == 131) {
         if (target_distance == 2023 * 1 * stones.width + start.x) {
@@ -414,6 +415,7 @@ long Garden::part_2() const {
             }
         }
     }
+#endif
     return reachable;
 }
 

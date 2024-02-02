@@ -353,9 +353,9 @@ std::ostream &operator<<(std::ostream &os, const Range &r) {
 
 void Range::add_condition(const Condition &cond) {
     if (cond.greater) {
-        start = cond.threshold + 1;
+        start = std::max(start, cond.threshold + 1);
     } else {
-        end = cond.threshold - 1;
+        end = std::min(end, cond.threshold - 1);
     }
 }
 
@@ -373,14 +373,17 @@ long Part2Solver::count_combinations(const std::deque<Condition> &conditions) {
         for (const Condition &cond : conditions) {
             std::cerr << " " << cond;
         }
-        std::cerr << "\n";
     }
     for (const Condition &cond : conditions) {
         ranges[cond.rating_idx].add_condition(cond);
     }
-    return std::transform_reduce(ranges.begin(), ranges.end(), 1L,
-                                 std::multiplies<>{},
-                                 [](const Range &r) { return r.size(); });
+    long count = std::transform_reduce(ranges.begin(), ranges.end(), 1L,
+                                       std::multiplies<>{},
+                                       [](const Range &r) { return r.size(); });
+    if constexpr (aoc::DEBUG) {
+        std::cerr << ": " << count << " combinations\n";
+    }
+    return count;
 }
 
 } // namespace aoc::day19
