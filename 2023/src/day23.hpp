@@ -63,6 +63,12 @@ class TrailMap {
     }
     Pos key_to_pos(Key key) const { return grid.index_to_pos(key); }
 
+    const auto &get_fwd_neighbors(const Key key) const;
+    const auto &get_undirected_neighbors(const Key key) const;
+
+    void part_2_backtrack(const Key key, int distance, int depth,
+                          aoc::ds::Grid<bool> &seen, int &max_distance) const;
+
   public:
     explicit TrailMap(const std::vector<std::string> &grid_);
     static TrailMap read(std::istream &);
@@ -190,6 +196,15 @@ void TrailMap::construct_trails(Key start_key) {
     }
 }
 
+const auto &TrailMap::get_fwd_neighbors(const Key key) const {
+    static const decltype(fwd_edges)::mapped_type empty{};
+    auto it = fwd_edges.find(key);
+    if (it != fwd_edges.end()) {
+        return it->second;
+    }
+    return empty;
+}
+
 int TrailMap::part_1() const {
     // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
@@ -206,22 +221,12 @@ int TrailMap::part_1() const {
         }
         std::cerr << "}\n";
     }
-
-    const decltype(fwd_edges)::mapped_type empty_set{};
-    const auto get_neighbors = [this, &empty_set](const Key key)
-        -> const decltype(TrailMap::fwd_edges)::mapped_type & {
-        auto it = fwd_edges.find(key);
-        if (it != fwd_edges.end()) {
-            return it->second;
-        }
-        return empty_set;
-    };
     const auto is_target = [&target = target](const Key key) -> bool {
         return key == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
-        start, get_neighbors, std::bind_front(&TrailMap::get_distance, this),
-        is_target);
+        start, std::bind_front(&TrailMap::get_fwd_neighbors, this),
+        std::bind_front(&TrailMap::get_distance, this), is_target);
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "longest path:\n";
@@ -232,42 +237,42 @@ int TrailMap::part_1() const {
     return distance;
 }
 
+const auto &TrailMap::get_undirected_neighbors(const Key key) const {
+    static const decltype(undirected_edges)::mapped_type empty{};
+    auto it = undirected_edges.find(key);
+    if (it != undirected_edges.end()) {
+        return it->second;
+    }
+    return empty;
+}
+
+void TrailMap::part_2_backtrack(const Key key, int distance, int depth,
+                                aoc::ds::Grid<bool> &seen,
+                                int &max_distance) const {
+    if (key == target) {
+        if (distance > max_distance) {
+            max_distance = distance;
+        }
+        return;
+    }
+    seen[key] = true;
+    for (const Key neighbor : get_undirected_neighbors(key)) {
+        if (seen[neighbor]) {
+            continue;
+        }
+        part_2_backtrack(neighbor, distance + get_distance(key, neighbor),
+                         depth + 1, seen, max_distance);
+    }
+    seen[key] = false;
+}
+
 int TrailMap::part_2() const {
     // try brute-force DFS?
     // it runs in just over 1s on xrb in fast mode
-    const decltype(undirected_edges)::mapped_type empty_set{};
-    const auto get_neighbors = [this, &empty_set](const Key key)
-        -> const decltype(TrailMap::undirected_edges)::mapped_type & {
-        auto it = undirected_edges.find(key);
-        if (it != undirected_edges.end()) {
-            return it->second;
-        }
-        return empty_set;
-    };
 
     aoc::ds::Grid<bool> seen(grid.width, grid.height, false);
     int max_distance = 0;
-    const auto dfs = [this, &get_neighbors, &target = target, &seen,
-                      &max_distance](auto &&rec, const Key key, int distance,
-                                     int depth = 0) -> void {
-        if (key == target) {
-            if (distance > max_distance) {
-                max_distance = distance;
-            }
-            return;
-        }
-        seen[key] = true;
-        for (const Key neighbor : get_neighbors(key)) {
-            if (seen[neighbor]) {
-                continue;
-            }
-            rec(rec, neighbor, distance + get_distance(key, neighbor),
-                depth + 1);
-        }
-        seen[key] = false;
-    };
-
-    dfs(dfs, start, 0);
+    part_2_backtrack(start, 0, 0, seen, max_distance);
 
     return max_distance;
 }
