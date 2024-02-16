@@ -35,47 +35,48 @@ enum class Pipe : char {
 };
 
 std::optional<AbsDirection> get_out_dir(Pipe pipe, AbsDirection in_dir) {
+    using enum AbsDirection;
     switch (pipe) {
     case Pipe::straight_vert:
-        if (in_dir == AbsDirection::north || in_dir == AbsDirection::south) {
+        if (in_dir == north || in_dir == south) {
             return in_dir;
         }
         break;
     case Pipe::straight_horz:
-        if (in_dir == AbsDirection::west || in_dir == AbsDirection::east) {
+        if (in_dir == west || in_dir == east) {
             return in_dir;
         }
         break;
     case Pipe::bend_ne:
-        if (in_dir == AbsDirection::south) {
-            return AbsDirection::east;
+        if (in_dir == south) {
+            return east;
         }
-        if (in_dir == AbsDirection::west) {
-            return AbsDirection::north;
+        if (in_dir == west) {
+            return north;
         }
         break;
     case Pipe::bend_nw:
-        if (in_dir == AbsDirection::south) {
-            return AbsDirection::west;
+        if (in_dir == south) {
+            return west;
         }
-        if (in_dir == AbsDirection::east) {
-            return AbsDirection::north;
+        if (in_dir == east) {
+            return north;
         }
         break;
     case Pipe::bend_sw:
-        if (in_dir == AbsDirection::north) {
-            return AbsDirection::west;
+        if (in_dir == north) {
+            return west;
         }
-        if (in_dir == AbsDirection::east) {
-            return AbsDirection::south;
+        if (in_dir == east) {
+            return south;
         }
         break;
     case Pipe::bend_se:
-        if (in_dir == AbsDirection::north) {
-            return AbsDirection::east;
+        if (in_dir == north) {
+            return east;
         }
-        if (in_dir == AbsDirection::west) {
-            return AbsDirection::south;
+        if (in_dir == west) {
+            return south;
         }
         break;
     case Pipe::start:

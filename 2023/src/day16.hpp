@@ -37,49 +37,50 @@ struct Tile {
 };
 
 std::vector<AbsDirection> Tile::get_out_dir(AbsDirection in_dir) const {
+    using enum AbsDirection;
     AbsDirection out_dir = in_dir;
     switch (type) {
     case TileType::empty:
         break;
     case TileType::vert_splitter:
-        if (in_dir == AbsDirection::east || in_dir == AbsDirection::west) {
-            return {AbsDirection::north, AbsDirection::south};
+        if (in_dir == east || in_dir == west) {
+            return {north, south};
         }
         break;
     case TileType::horz_splitter:
-        if (in_dir == AbsDirection::north || in_dir == AbsDirection::south) {
-            return {AbsDirection::east, AbsDirection::west};
+        if (in_dir == north || in_dir == south) {
+            return {east, west};
         }
         break;
     case TileType::forward_mirror:
         switch (in_dir) {
-        case AbsDirection::north:
-            out_dir = AbsDirection::east;
+        case north:
+            out_dir = east;
             break;
-        case AbsDirection::south:
-            out_dir = AbsDirection::west;
+        case south:
+            out_dir = west;
             break;
-        case AbsDirection::east:
-            out_dir = AbsDirection::north;
+        case east:
+            out_dir = north;
             break;
-        case AbsDirection::west:
-            out_dir = AbsDirection::south;
+        case west:
+            out_dir = south;
             break;
         }
         break;
     case TileType::backward_mirror:
         switch (in_dir) {
-        case AbsDirection::north:
-            out_dir = AbsDirection::west;
+        case north:
+            out_dir = west;
             break;
-        case AbsDirection::south:
-            out_dir = AbsDirection::east;
+        case south:
+            out_dir = east;
             break;
-        case AbsDirection::east:
-            out_dir = AbsDirection::south;
+        case east:
+            out_dir = south;
             break;
-        case AbsDirection::west:
-            out_dir = AbsDirection::north;
+        case west:
+            out_dir = north;
             break;
         }
         break;
