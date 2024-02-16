@@ -45,16 +45,16 @@ class TrailMap {
     Key start;
     Key target;
 
-    bool get_grid_neighbors(const Key &key, const Key &prev_key,
+    bool get_grid_neighbors(const Key key, const Key prev_key,
                             std::vector<Key> &neighbors) const;
 
-    void add_edge(const Key &from, const Key &to, int distance);
+    void add_edge(const Key from, const Key to, int distance);
     void construct_trails(Key start_key);
 
-    std::pair<Key, Key> dist_key(const Key &from, const Key &to) const {
+    std::pair<Key, Key> dist_key(const Key from, const Key to) const {
         return std::minmax(from, to);
     }
-    int get_distance(const Key &from, const Key &to) const {
+    int get_distance(const Key from, const Key to) const {
         return distances.at(dist_key(from, to));
     }
 
@@ -100,7 +100,7 @@ TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     }
 }
 
-bool TrailMap::get_grid_neighbors(const Key &key, const Key &prev_key,
+bool TrailMap::get_grid_neighbors(const Key key, const Key prev_key,
                                   std::vector<Key> &neighbors) const {
     char terrain = grid[key];
     const Pos pos = key_to_pos(key);
@@ -148,7 +148,7 @@ bool TrailMap::get_grid_neighbors(const Key &key, const Key &prev_key,
     return neighbor_count > 2;
 }
 
-void TrailMap::add_edge(const Key &from, const Key &to, int distance) {
+void TrailMap::add_edge(const Key from, const Key to, int distance) {
     fwd_edges[from].emplace(to);
     undirected_edges[from].emplace(to);
     undirected_edges[to].emplace(from);
@@ -176,7 +176,7 @@ void TrailMap::construct_trails(Key start_key) {
                 neighbors.clear();
             } else {
                 // recurse on each of the outgoing paths (if any)
-                for (const Key &neighbor : neighbors) {
+                for (const Key neighbor : neighbors) {
                     pending.emplace(curr_key, neighbor);
                 }
                 neighbors.clear();
@@ -208,7 +208,7 @@ int TrailMap::part_1() const {
     }
 
     const decltype(fwd_edges)::mapped_type empty_set{};
-    const auto get_neighbors = [this, &empty_set](const Key &key)
+    const auto get_neighbors = [this, &empty_set](const Key key)
         -> const decltype(TrailMap::fwd_edges)::mapped_type & {
         auto it = fwd_edges.find(key);
         if (it != fwd_edges.end()) {
@@ -216,7 +216,7 @@ int TrailMap::part_1() const {
         }
         return empty_set;
     };
-    const auto is_target = [&target = target](const Key &key) -> bool {
+    const auto is_target = [&target = target](const Key key) -> bool {
         return key == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
@@ -236,7 +236,7 @@ int TrailMap::part_2() const {
     // try brute-force DFS?
     // it runs in just over 1s on xrb in fast mode
     const decltype(undirected_edges)::mapped_type empty_set{};
-    const auto get_neighbors = [this, &empty_set](const Key &key)
+    const auto get_neighbors = [this, &empty_set](const Key key)
         -> const decltype(TrailMap::undirected_edges)::mapped_type & {
         auto it = undirected_edges.find(key);
         if (it != undirected_edges.end()) {
@@ -257,7 +257,7 @@ int TrailMap::part_2() const {
             return;
         }
         seen[key] = true;
-        for (const Key &neighbor : get_neighbors(key)) {
+        for (const Key neighbor : get_neighbors(key)) {
             if (seen[neighbor]) {
                 continue;
             }
