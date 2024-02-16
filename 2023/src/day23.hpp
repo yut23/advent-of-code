@@ -19,7 +19,7 @@
 #include <map>              // for map
 #include <queue>            // for queue
 #include <string>           // for string, getline, basic_string
-#include <unordered_set>    // for unordered_set
+#include <unordered_set>    // for unordered_set (longest_path_dag)
 #include <utility>          // for move
 #include <vector>           // for vector
 
@@ -37,8 +37,8 @@ class TrailMap {
     using Key = std::size_t;
 
     aoc::ds::Grid<char> grid;
-    std::vector<std::unordered_set<Key>> fwd_edges;
-    std::vector<std::unordered_set<Key>> undirected_edges;
+    std::vector<std::vector<Key>> fwd_edges;
+    std::vector<std::vector<Key>> undirected_edges;
     std::map<std::pair<Key, Key>, int> distances;
     std::map<Pos, Key> key_lookup;
     std::vector<Pos> key_positions;
@@ -169,15 +169,21 @@ bool TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
 void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
     Key from_key = pos_to_key(from);
     Key to_key = pos_to_key(to);
-    fwd_edges[from_key].emplace(to_key);
-    undirected_edges[from_key].emplace(to_key);
-    undirected_edges[to_key].emplace(from_key);
+    assert(std::ranges::count(fwd_edges[from_key], to_key) == 0);
+    fwd_edges[from_key].push_back(to_key);
+    assert(std::ranges::count(undirected_edges[from_key], to_key) == 0);
+    undirected_edges[from_key].push_back(to_key);
+    assert(std::ranges::count(undirected_edges[to_key], from_key) == 0);
+    undirected_edges[to_key].push_back(from_key);
     distances[dist_key(from_key, to_key)] = distance;
 }
 
 void TrailMap::construct_trails(Pos start_pos) {
     std::queue<std::pair<Pos, Pos>> pending;
     pending.emplace(start_pos, start_pos);
+
+    aoc::ds::Grid<bool> seen(grid, false);
+    seen[start_pos] = true;
     // allocate this once and reuse it, instead of allocating and deallocating
     // inside the loop
     std::vector<Pos> neighbors;
@@ -197,7 +203,11 @@ void TrailMap::construct_trails(Pos start_pos) {
             } else {
                 // recurse on each of the outgoing paths (if any)
                 for (const Pos &neighbor : neighbors) {
+                    if (seen[neighbor]) {
+                        continue;
+                    }
                     pending.emplace(curr_pos, neighbor);
+                    seen[neighbor] = true;
                 }
                 neighbors.clear();
                 break;
