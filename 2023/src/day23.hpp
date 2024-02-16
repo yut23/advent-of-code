@@ -42,11 +42,14 @@ class TrailMap {
     std::unordered_map<Key, std::unordered_set<Key>> undirected_edges;
     std::map<std::pair<Key, Key>, int> distances;
 
+    Key start;
+    Key target;
+
     bool get_grid_neighbors(const Key &key, const Key &prev_key,
                             std::vector<Key> &neighbors) const;
 
     void add_edge(const Key &from, const Key &to, int distance);
-    void construct_trails(Key start);
+    void construct_trails(Key start_key);
 
     std::pair<Key, Key> dist_key(const Key &from, const Key &to) const {
         return std::minmax(from, to);
@@ -79,9 +82,22 @@ TrailMap TrailMap::read(std::istream &is) {
 TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     assert(grid.height > 2 && grid.width > 2);
     // starting point
-    Key start = pos_to_key(Pos{1, 0});
+    start = pos_to_key(Pos{1, 0});
     assert(grid[start] == '.');
+    // ending point
+    target = pos_to_key(Pos{grid.width - 2, grid.height - 1});
+    assert(grid[target] == '.');
     construct_trails(start);
+
+    const auto &target_neighbors = undirected_edges.at(target);
+    if (target_neighbors.size() == 1) {
+        // remove other outgoing edges from the node right before the target,
+        // as that's the only way to get to the target
+        Key pentultimate = *target_neighbors.begin();
+        std::erase_if(
+            undirected_edges.at(pentultimate),
+            [target = target](const Key key) { return key != target; });
+    }
 }
 
 bool TrailMap::get_grid_neighbors(const Key &key, const Key &prev_key,
@@ -139,15 +155,15 @@ void TrailMap::add_edge(const Key &from, const Key &to, int distance) {
     distances[dist_key(from, to)] = distance;
 }
 
-void TrailMap::construct_trails(Key start) {
+void TrailMap::construct_trails(Key start_key) {
     std::queue<std::pair<Key, Key>> pending;
-    pending.emplace(start, start);
+    pending.emplace(start_key, start_key);
     // allocate this once and reuse it, instead of allocating and deallocating
     // inside the loop
     std::vector<Key> neighbors;
     while (!pending.empty()) {
         auto [prev_key, curr_key] = pending.front();
-        start = prev_key;
+        start_key = prev_key;
         pending.pop();
         int length = prev_key == curr_key ? 0 : 1;
         while (true) {
@@ -168,8 +184,8 @@ void TrailMap::construct_trails(Key start) {
             }
         }
         if (length > 0) {
-            // add a path from start to current position
-            add_edge(start, curr_key, length);
+            // add a path from start_key to current position
+            add_edge(start_key, curr_key, length);
         }
     }
 }
@@ -191,8 +207,6 @@ int TrailMap::part_1() const {
         std::cerr << "}\n";
     }
 
-    const Key start = pos_to_key(Pos{1, 0});
-    const Key target = pos_to_key(Pos{grid.width - 2, grid.height - 1});
     const decltype(fwd_edges)::mapped_type empty_set{};
     const auto get_neighbors = [this, &empty_set](const Key &key)
         -> const decltype(TrailMap::fwd_edges)::mapped_type & {
@@ -202,7 +216,7 @@ int TrailMap::part_1() const {
         }
         return empty_set;
     };
-    const auto is_target = [&target](const Key &key) -> bool {
+    const auto is_target = [&target = target](const Key &key) -> bool {
         return key == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
@@ -221,9 +235,6 @@ int TrailMap::part_1() const {
 int TrailMap::part_2() const {
     // try brute-force DFS?
     // it runs in just over 1s on xrb in fast mode
-    const Key start = pos_to_key(Pos{1, 0});
-    const Key target = pos_to_key(Pos{grid.width - 2, grid.height - 1});
-
     const decltype(undirected_edges)::mapped_type empty_set{};
     const auto get_neighbors = [this, &empty_set](const Key &key)
         -> const decltype(TrailMap::undirected_edges)::mapped_type & {
@@ -236,7 +247,7 @@ int TrailMap::part_2() const {
 
     aoc::ds::Grid<bool> seen(grid.width, grid.height, false);
     int max_distance = 0;
-    const auto dfs = [this, &get_neighbors, &target, &seen,
+    const auto dfs = [this, &get_neighbors, &target = target, &seen,
                       &max_distance](auto &&rec, const Key key, int distance,
                                      int depth = 0) -> void {
         if (key == target) {
