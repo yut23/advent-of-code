@@ -18,8 +18,7 @@
 #include <iostream>         // for istream
 #include <map>              // for map
 #include <queue>            // for queue
-#include <string>           // for string, getline
-#include <unordered_map>    // for unordered_map
+#include <string>           // for string, getline, basic_string
 #include <unordered_set>    // for unordered_set
 #include <utility>          // for move
 #include <vector>           // for vector
@@ -38,18 +37,20 @@ class TrailMap {
     using Key = std::size_t;
 
     aoc::ds::Grid<char> grid;
-    std::unordered_map<Key, std::unordered_set<Key>> fwd_edges;
-    std::unordered_map<Key, std::unordered_set<Key>> undirected_edges;
+    std::vector<std::unordered_set<Key>> fwd_edges;
+    std::vector<std::unordered_set<Key>> undirected_edges;
     std::map<std::pair<Key, Key>, int> distances;
+    std::map<Pos, Key> key_lookup;
+    std::vector<Pos> key_positions;
 
     Key start;
     Key target;
 
-    bool get_grid_neighbors(const Key key, const Key prev_key,
-                            std::vector<Key> &neighbors) const;
+    bool get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
+                            std::vector<Pos> &neighbors);
 
-    void add_edge(const Key from, const Key to, int distance);
-    void construct_trails(Key start_key);
+    void add_edge(const Pos &from, const Pos &to, int distance);
+    void construct_trails(Pos start_pos);
 
     std::pair<Key, Key> dist_key(const Key from, const Key to) const {
         return std::minmax(from, to);
@@ -58,16 +59,15 @@ class TrailMap {
         return distances.at(dist_key(from, to));
     }
 
-    Key pos_to_key(const Pos &pos) const {
-        return grid.get_index(pos.x, pos.y);
-    }
-    Pos key_to_pos(Key key) const { return grid.index_to_pos(key); }
+    Key pos_to_key(const Pos &pos);
+    Pos key_to_pos(const Key key) const { return key_positions[key]; }
 
     const auto &get_fwd_neighbors(const Key key) const;
     const auto &get_undirected_neighbors(const Key key) const;
 
     void part_2_backtrack(const Key key, int distance, int depth,
-                          aoc::ds::Grid<bool> &seen, int &max_distance) const;
+                          std::basic_string<bool> &seen,
+                          int &max_distance) const;
 
   public:
     explicit TrailMap(const std::vector<std::string> &grid_);
@@ -75,6 +75,18 @@ class TrailMap {
     int part_1() const;
     int part_2() const;
 };
+
+TrailMap::Key TrailMap::pos_to_key(const Pos &pos) {
+    auto it = key_lookup.lower_bound(pos);
+    if (it == key_lookup.end() || it->first != pos) {
+        // add new key for pos
+        it = key_lookup.emplace_hint(it, pos, key_positions.size());
+        key_positions.push_back(pos);
+        fwd_edges.resize(key_positions.size());
+        undirected_edges.resize(key_positions.size());
+    }
+    return it->second;
+}
 
 TrailMap TrailMap::read(std::istream &is) {
     std::vector<std::string> grid;
@@ -88,43 +100,44 @@ TrailMap TrailMap::read(std::istream &is) {
 TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     assert(grid.height > 2 && grid.width > 2);
     // starting point
-    start = pos_to_key(Pos{1, 0});
-    assert(grid[start] == '.');
+    Pos start_pos{1, 0};
+    assert(grid[start_pos] == '.');
+    start = pos_to_key(start_pos);
     // ending point
-    target = pos_to_key(Pos{grid.width - 2, grid.height - 1});
-    assert(grid[target] == '.');
-    construct_trails(start);
+    Pos target_pos{grid.width - 2, grid.height - 1};
+    assert(grid[target_pos] == '.');
+    target = pos_to_key(target_pos);
+    construct_trails(start_pos);
 
-    const auto &target_neighbors = undirected_edges.at(target);
+    const auto &target_neighbors = undirected_edges[target];
     if (target_neighbors.size() == 1) {
         // remove other outgoing edges from the node right before the target,
         // as that's the only way to get to the target
         Key pentultimate = *target_neighbors.begin();
         std::erase_if(
-            undirected_edges.at(pentultimate),
+            undirected_edges[pentultimate],
             [target = target](const Key key) { return key != target; });
     }
 }
 
-bool TrailMap::get_grid_neighbors(const Key key, const Key prev_key,
-                                  std::vector<Key> &neighbors) const {
-    char terrain = grid[key];
-    const Pos pos = key_to_pos(key);
+bool TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
+                                  std::vector<Pos> &neighbors) {
+    char terrain = grid[pos];
     int neighbor_count = 0;
     switch (terrain) {
     case '#':
         break;
     case '>':
-        neighbors.push_back(pos_to_key(pos + Delta(AbsDirection::east, true)));
+        neighbors.push_back(pos + Delta(AbsDirection::east, true));
         break;
     case '<':
-        neighbors.push_back(pos_to_key(pos + Delta(AbsDirection::west, true)));
+        neighbors.push_back(pos + Delta(AbsDirection::west, true));
         break;
     case '^':
-        neighbors.push_back(pos_to_key(pos + Delta(AbsDirection::north, true)));
+        neighbors.push_back(pos + Delta(AbsDirection::north, true));
         break;
     case 'v':
-        neighbors.push_back(pos_to_key(pos + Delta(AbsDirection::south, true)));
+        neighbors.push_back(pos + Delta(AbsDirection::south, true));
         break;
     case '.':
         for (const auto dir : aoc::DIRECTIONS) {
@@ -132,13 +145,12 @@ bool TrailMap::get_grid_neighbors(const Key key, const Key prev_key,
             if (!grid.in_bounds(new_pos)) {
                 continue;
             }
-            Key new_key = pos_to_key(new_pos);
-            char new_terrain = grid[new_key];
+            char new_terrain = grid[new_pos];
             if (new_terrain == '#') {
                 continue;
             }
             ++neighbor_count;
-            if (new_key == prev_key) {
+            if (new_pos == prev_pos) {
                 // don't go backward
                 continue;
             }
@@ -146,7 +158,7 @@ bool TrailMap::get_grid_neighbors(const Key key, const Key prev_key,
                 dir != allowed_directions.at(new_terrain)) {
                 continue;
             }
-            neighbors.push_back(new_key);
+            neighbors.push_back(new_pos);
         }
         assert(neighbors.size() <= 2);
         break;
@@ -154,62 +166,55 @@ bool TrailMap::get_grid_neighbors(const Key key, const Key prev_key,
     return neighbor_count > 2;
 }
 
-void TrailMap::add_edge(const Key from, const Key to, int distance) {
-    fwd_edges[from].emplace(to);
-    undirected_edges[from].emplace(to);
-    undirected_edges[to].emplace(from);
-    distances[dist_key(from, to)] = distance;
+void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
+    Key from_key = pos_to_key(from);
+    Key to_key = pos_to_key(to);
+    fwd_edges[from_key].emplace(to_key);
+    undirected_edges[from_key].emplace(to_key);
+    undirected_edges[to_key].emplace(from_key);
+    distances[dist_key(from_key, to_key)] = distance;
 }
 
-void TrailMap::construct_trails(Key start_key) {
-    std::queue<std::pair<Key, Key>> pending;
-    pending.emplace(start_key, start_key);
+void TrailMap::construct_trails(Pos start_pos) {
+    std::queue<std::pair<Pos, Pos>> pending;
+    pending.emplace(start_pos, start_pos);
     // allocate this once and reuse it, instead of allocating and deallocating
     // inside the loop
-    std::vector<Key> neighbors;
+    std::vector<Pos> neighbors;
     while (!pending.empty()) {
-        auto [prev_key, curr_key] = pending.front();
-        start_key = prev_key;
+        auto [prev_pos, curr_pos] = pending.front();
+        start_pos = prev_pos;
         pending.pop();
-        int length = prev_key == curr_key ? 0 : 1;
+        int length = prev_pos == curr_pos ? 0 : 1;
         while (true) {
             const bool is_junction =
-                get_grid_neighbors(curr_key, prev_key, neighbors);
+                get_grid_neighbors(curr_pos, prev_pos, neighbors);
             if (!is_junction && neighbors.size() == 1) {
                 ++length;
-                prev_key = curr_key;
-                curr_key = neighbors.front();
+                prev_pos = curr_pos;
+                curr_pos = neighbors.front();
                 neighbors.clear();
             } else {
                 // recurse on each of the outgoing paths (if any)
-                for (const Key neighbor : neighbors) {
-                    pending.emplace(curr_key, neighbor);
+                for (const Pos &neighbor : neighbors) {
+                    pending.emplace(curr_pos, neighbor);
                 }
                 neighbors.clear();
                 break;
             }
         }
         if (length > 0) {
-            // add a path from start_key to current position
-            add_edge(start_key, curr_key, length);
+            // add a path from start to curr
+            add_edge(start_pos, curr_pos, length);
         }
     }
-}
-
-const auto &TrailMap::get_fwd_neighbors(const Key key) const {
-    static const decltype(fwd_edges)::mapped_type empty{};
-    auto it = fwd_edges.find(key);
-    if (it != fwd_edges.end()) {
-        return it->second;
-    }
-    return empty;
 }
 
 int TrailMap::part_1() const {
     // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
         std::cerr << "digraph G {\n";
-        for (const auto &[from_key, neighbors] : fwd_edges) {
+        for (Key from_key = 0; const auto &neighbors : fwd_edges) {
             const Pos from = key_to_pos(from_key);
             for (const auto &to_key : neighbors) {
                 const Pos to = key_to_pos(to_key);
@@ -218,15 +223,19 @@ int TrailMap::part_1() const {
                           << " [label=" << get_distance(from_key, to_key)
                           << "];\n";
             }
+            ++from_key;
         }
         std::cerr << "}\n";
     }
+    const auto get_neighbors = [&fwd_edges = fwd_edges](const Key key) {
+        return fwd_edges[key];
+    };
     const auto is_target = [&target = target](const Key key) -> bool {
         return key == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
-        start, std::bind_front(&TrailMap::get_fwd_neighbors, this),
-        std::bind_front(&TrailMap::get_distance, this), is_target);
+        start, get_neighbors, std::bind_front(&TrailMap::get_distance, this),
+        is_target);
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "longest path:\n";
@@ -237,17 +246,8 @@ int TrailMap::part_1() const {
     return distance;
 }
 
-const auto &TrailMap::get_undirected_neighbors(const Key key) const {
-    static const decltype(undirected_edges)::mapped_type empty{};
-    auto it = undirected_edges.find(key);
-    if (it != undirected_edges.end()) {
-        return it->second;
-    }
-    return empty;
-}
-
 void TrailMap::part_2_backtrack(const Key key, int distance, int depth,
-                                aoc::ds::Grid<bool> &seen,
+                                std::basic_string<bool> &seen,
                                 int &max_distance) const {
     if (key == target) {
         if (distance > max_distance) {
@@ -256,7 +256,7 @@ void TrailMap::part_2_backtrack(const Key key, int distance, int depth,
         return;
     }
     seen[key] = true;
-    for (const Key neighbor : get_undirected_neighbors(key)) {
+    for (const Key neighbor : undirected_edges[key]) {
         if (seen[neighbor]) {
             continue;
         }
@@ -270,7 +270,7 @@ int TrailMap::part_2() const {
     // try brute-force DFS?
     // it runs in just over 1s on xrb in fast mode
 
-    aoc::ds::Grid<bool> seen(grid.width, grid.height, false);
+    std::basic_string<bool> seen(undirected_edges.size(), false);
     int max_distance = 0;
     part_2_backtrack(start, 0, 0, seen, max_distance);
 
