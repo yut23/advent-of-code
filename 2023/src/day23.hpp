@@ -8,22 +8,21 @@
 #ifndef DAY23_HPP_VAEIOPZT
 #define DAY23_HPP_VAEIOPZT
 
-#include "ds/grid.hpp"      // for Grid
+#include "ds/grid.hpp" // for Grid
+#include "graph_traversal.hpp"
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
-#include <algorithm>        // for minmax
+#include <algorithm>        // for ranges::count
 #include <cassert>          // for assert
 #include <cstddef>          // for size_t
 #include <functional>       // for bind_front
 #include <initializer_list> // for initializer_list
-#include <iostream>         // for istream
+#include <iostream>         // for istream, cerr
 #include <map>              // for map
 #include <queue>            // for queue
 #include <string>           // for string, getline, basic_string
 #include <unordered_set>    // for unordered_set (longest_path_dag)
-#include <utility>          // for move
-#include <vector>           // for vector
-
-#include "graph_traversal.hpp"
+#include <utility>          // for move, pair
+#include <vector>           // for vector, erase_if
 
 namespace aoc::day23 {
 
@@ -38,8 +37,7 @@ class TrailMap {
 
     aoc::ds::Grid<char> grid;
     std::vector<std::vector<Key>> fwd_edges;
-    std::vector<std::vector<Key>> undirected_edges;
-    std::map<std::pair<Key, Key>, int> distances;
+    std::vector<std::vector<std::pair<Key, int>>> undirected_edges;
     std::map<Pos, Key> key_lookup;
     std::vector<Pos> key_positions;
 
@@ -52,15 +50,10 @@ class TrailMap {
     void add_edge(const Pos &from, const Pos &to, int distance);
     void construct_trails(Pos start_pos);
 
-    std::pair<Key, Key> dist_key(const Key from, const Key to) const {
-        return std::minmax(from, to);
-    }
-    int get_distance(const Key from, const Key to) const {
-        return distances.at(dist_key(from, to));
-    }
+    int get_distance(const Key from, const Key to) const;
 
     Key pos_to_key(const Pos &pos);
-    Pos key_to_pos(const Key key) const { return key_positions[key]; }
+    Pos key_to_pos(const Key key) const;
 
     const auto &get_fwd_neighbors(const Key key) const;
     const auto &get_undirected_neighbors(const Key key) const;
@@ -88,6 +81,8 @@ TrailMap::Key TrailMap::pos_to_key(const Pos &pos) {
     return it->second;
 }
 
+Pos TrailMap::key_to_pos(const Key key) const { return key_positions[key]; }
+
 TrailMap TrailMap::read(std::istream &is) {
     std::vector<std::string> grid;
     std::string line;
@@ -113,10 +108,11 @@ TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     if (target_neighbors.size() == 1) {
         // remove other outgoing edges from the node right before the target,
         // as that's the only way to get to the target
-        Key pentultimate = *target_neighbors.begin();
-        std::erase_if(
-            undirected_edges[pentultimate],
-            [target = target](const Key key) { return key != target; });
+        Key pentultimate = target_neighbors[0].first;
+        std::erase_if(undirected_edges[pentultimate],
+                      [target = target](const std::pair<Key, int> &entry) {
+                          return entry.first != target;
+                      });
     }
 }
 
@@ -171,11 +167,8 @@ void TrailMap::add_edge(const Pos &from, const Pos &to, int distance) {
     Key to_key = pos_to_key(to);
     assert(std::ranges::count(fwd_edges[from_key], to_key) == 0);
     fwd_edges[from_key].push_back(to_key);
-    assert(std::ranges::count(undirected_edges[from_key], to_key) == 0);
-    undirected_edges[from_key].push_back(to_key);
-    assert(std::ranges::count(undirected_edges[to_key], from_key) == 0);
-    undirected_edges[to_key].push_back(from_key);
-    distances[dist_key(from_key, to_key)] = distance;
+    undirected_edges[from_key].emplace_back(to_key, distance);
+    undirected_edges[to_key].emplace_back(from_key, distance);
 }
 
 void TrailMap::construct_trails(Pos start_pos) {
@@ -220,6 +213,17 @@ void TrailMap::construct_trails(Pos start_pos) {
     }
 }
 
+int TrailMap::get_distance(const Key from, const Key to) const {
+    // a linear search here is fine, since there are at most 4 neighbors, and
+    // only part 1 uses this function
+    for (const auto &[key, dist] : undirected_edges[from]) {
+        if (key == to) {
+            return dist;
+        }
+    }
+    assert(false);
+}
+
 int TrailMap::part_1() const {
     // find longest path in a DAG
     if constexpr (aoc::DEBUG) {
@@ -256,6 +260,17 @@ int TrailMap::part_1() const {
     return distance;
 }
 
+int TrailMap::part_2() const {
+    // try brute-force backtracking DFS?
+    // it runs in just over 1s on xrb in fast mode
+
+    std::basic_string<bool> seen(undirected_edges.size(), false);
+    int max_distance = 0;
+    part_2_backtrack(start, 0, 0, seen, max_distance);
+
+    return max_distance;
+}
+
 void TrailMap::part_2_backtrack(const Key key, int distance, int depth,
                                 std::basic_string<bool> &seen,
                                 int &max_distance) const {
@@ -266,25 +281,14 @@ void TrailMap::part_2_backtrack(const Key key, int distance, int depth,
         return;
     }
     seen[key] = true;
-    for (const Key neighbor : undirected_edges[key]) {
+    for (const auto &[neighbor, edge_length] : undirected_edges[key]) {
         if (seen[neighbor]) {
             continue;
         }
-        part_2_backtrack(neighbor, distance + get_distance(key, neighbor),
-                         depth + 1, seen, max_distance);
+        part_2_backtrack(neighbor, distance + edge_length, depth + 1, seen,
+                         max_distance);
     }
     seen[key] = false;
-}
-
-int TrailMap::part_2() const {
-    // try brute-force DFS?
-    // it runs in just over 1s on xrb in fast mode
-
-    std::basic_string<bool> seen(undirected_edges.size(), false);
-    int max_distance = 0;
-    part_2_backtrack(start, 0, 0, seen, max_distance);
-
-    return max_distance;
 }
 } // namespace aoc::day23
 
