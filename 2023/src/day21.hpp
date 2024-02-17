@@ -37,8 +37,7 @@ struct Garden {
     }
 
     Grid<int> get_distances(const Key &source) const {
-        Grid<int> distances(stones.width, stones.height,
-                            std::numeric_limits<int>::max());
+        Grid<int> distances(stones, std::numeric_limits<int>::max());
         distances[source] = 0;
 
         const auto get_neighbors = [this, &distances](const Key &key) {

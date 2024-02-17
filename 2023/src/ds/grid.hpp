@@ -232,6 +232,11 @@ struct Grid {
         }
     }
 
+    // construct a grid with the same dimensions as another grid
+    template <class U>
+    Grid(const Grid<U> &other_grid, const value_type &value)
+        : Grid(other_grid.width, other_grid.height, value) {}
+
     constexpr Grid(const Grid &other) = default;
     constexpr Grid(Grid &&other) noexcept = default;
 
