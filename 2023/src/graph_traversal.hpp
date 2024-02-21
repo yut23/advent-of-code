@@ -10,17 +10,17 @@
 #ifndef GRAPH_TRAVERSAL_HPP_56T9ZURK
 #define GRAPH_TRAVERSAL_HPP_56T9ZURK
 
-#include "util/concepts.hpp"
-#include <algorithm>     // for min, reverse
-#include <concepts>      // for same_as, integral
-#include <functional>    // for function, greater
-#include <map>           // for map
-#include <queue>         // for priority_queue
-#include <set>           // for set
-#include <stack>         // for stack
-#include <stdexcept>     // for invalid_argument
-#include <tuple>         // for tuple
-#include <type_traits>   // for conditional_t // IWYU pragma: export
+#include "util/concepts.hpp" // for Hashable, any_iterable_collection, same_as_any
+#include <algorithm>         // for min, reverse
+#include <concepts>          // for same_as, integral
+#include <functional>        // for function, greater
+#include <map>               // for map
+#include <queue>             // for priority_queue
+#include <set>               // for set
+#include <stack>             // for stack
+#include <stdexcept>         // for invalid_argument
+#include <tuple>             // for tuple
+#include <type_traits> // for conditional_t, invoke_result_t // IWYU pragma: export
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
 #include <utility>       // for move, pair, make_pair, swap, forward
@@ -59,7 +59,9 @@ concept IsTarget = requires(Func is_target, const Key &key) {
 
 template <class Func, class Key>
 concept Visit = requires(Func visit, const Key &key, int distance) {
-                    { visit(key, distance) } -> std::same_as<void>;
+                    {
+                        visit(key, distance)
+                        } -> util::concepts::same_as_any<void, bool>;
                 };
 
 template <class Func, class Key>
@@ -67,8 +69,20 @@ concept VisitWithParent = requires(Func visit_with_parent, const Key &key,
                                    const Key &parent, int depth) {
                               {
                                   visit_with_parent(key, parent, depth)
-                                  } -> std::same_as<void>;
+                                  } -> util::concepts::same_as_any<void, bool>;
                           };
+
+template <class Key, class Func>
+struct visit_invoke_result;
+template <class Key, Visit<Key> Func>
+struct visit_invoke_result<Key, Func> {
+    using type = std::invoke_result_t<Func &&, const Key &, int>;
+};
+
+template <class Key, VisitWithParent<Key> Func>
+struct visit_invoke_result<Key, Func> {
+    using type = std::invoke_result_t<Func &&, const Key &, const Key &, int>;
+};
 
 template <class Func, class Key>
 concept GetDistance = requires(Func get_distance, const Key &u, const Key &v) {
@@ -87,8 +101,10 @@ concept Heuristic = requires(Func heuristic, const Key &key) {
  *
  * At least one of `is_target` and `visit` must be passed.
  *
- * If passed, `visit(node, distance)` will be called for each node.
-
+ * If passed, `visit(node, distance)` will be called for each node. It may
+ * optionally return a bool, which if false, will stop processing that node
+ * (before it is checked for being a target).
+ *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to false if the graph has
  * no cycles.
@@ -101,6 +117,7 @@ template <bool use_seen = true, class Key,
           detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
 int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         Visit &&visit) {
+    using visit_ret_t = typename detail::visit_invoke_result<Key, Visit>::type;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
     detail::maybe_unordered_set<Key> seen{};
@@ -108,7 +125,13 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
     for (int distance = 0; !queue.empty();
          ++distance, queue.clear(), std::swap(queue, next_queue)) {
         for (const Key &key : queue) {
-            visit(key, distance);
+            if constexpr (std::same_as<visit_ret_t, bool>) {
+                if (!visit(key, distance)) {
+                    continue;
+                }
+            } else {
+                visit(key, distance);
+            }
             if (is_target(key)) {
                 return distance;
             }
@@ -134,7 +157,7 @@ template <bool use_seen = true, class Key,
 int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
     return bfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
                          std::forward<IsTarget>(is_target),
-                         [](const Key &, int) {});
+                         [](const Key &, int) -> void {});
 }
 
 template <bool use_seen = true, class Key,
@@ -151,7 +174,8 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
  * At least one of `is_target` and `visit_with_parent` must be passed.
  *
  * If passed, `visit_with_parent(node, parent, depth)` will be called for each
- * node.
+ * node. It may optionally return a bool, which if false, will stop processing
+ * that node (before it is checked for being a target).
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to false if the graph has
@@ -166,6 +190,8 @@ template <bool use_seen = true, class Key,
           detail::VisitWithParent<Key> VisitWithParent>
 int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         VisitWithParent &&visit_with_parent) {
+    using visit_ret_t =
+        typename detail::visit_invoke_result<Key, VisitWithParent>::type;
     std::stack<std::tuple<Key, Key, int>> stack{};
     stack.emplace(source, source, 0);
     detail::maybe_unordered_set<Key> seen{};
@@ -173,7 +199,13 @@ int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
     while (!stack.empty()) {
         const auto [key, parent, depth] = std::move(stack.top());
         stack.pop();
-        visit_with_parent(key, parent, depth);
+        if constexpr (std::same_as<visit_ret_t, bool>) {
+            if (!visit_with_parent(key, parent, depth)) {
+                continue;
+            }
+        } else {
+            visit_with_parent(key, parent, depth);
+        }
         if (is_target(key)) {
             return stack.size() - 1;
         }
@@ -198,7 +230,7 @@ template <bool use_seen = true, class Key,
 int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
     return dfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
                          std::forward<IsTarget>(is_target),
-                         [](const Key &, const Key &, int) {});
+                         [](const Key &, const Key &, int) -> void {});
 }
 
 template <bool use_seen = true, class Key,
