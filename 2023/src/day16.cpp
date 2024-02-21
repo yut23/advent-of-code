@@ -6,9 +6,8 @@
  *****************************************************************************/
 
 #include "day16.hpp"
-#include "lib.hpp"          // for parse_args, Pos, AbsDirection, DEBUG
-#include <initializer_list> // for initializer_list
-#include <iostream>         // for cout, cerr
+#include "lib.hpp"  // for parse_args, Pos, AbsDirection, DEBUG
+#include <iostream> // for cout, cerr
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
@@ -19,40 +18,30 @@ int main(int argc, char **argv) {
         std::cerr << laser_grid << "\n";
     }
 
-    // TODO: optimize this
-    // some sort of DP should work, but loops will need special handling
+    aoc::day16::GraphHelper helper(laser_grid);
 
-    int max_energized = 0;
-    aoc::Pos pos(0, 0);
-    for (pos.y = 0; pos.y < laser_grid.height; ++pos.y) {
-        for (auto dir : {aoc::AbsDirection::east, aoc::AbsDirection::west}) {
-            pos.x = dir == aoc::AbsDirection::east ? 0 : laser_grid.width - 1;
-            laser_grid.send_beam(pos, dir);
-            int count = laser_grid.count_energized();
-            if (pos.x == 0 && pos.y == 0) {
-                // part 1
-                if constexpr (aoc::DEBUG) {
-                    laser_grid.print_energized(std::cerr);
-                    std::cerr << "\n";
-                }
-                std::cout << count << "\n";
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "SCC count:  " << helper.components.size() << "\n";
+        for (auto i = 0u; i < helper.components.size(); ++i) {
+            const auto &component = helper.components[i];
+            if (component.size() > 1) {
+                std::cerr << "loop at " << i << ": size=" << component.size()
+                          << ", successors="
+                          << helper.component_successors[i].size() << "\n";
             }
-            if (max_energized < count) {
-                max_energized = count;
-            }
-            laser_grid.clear_energized();
         }
     }
 
-    for (pos.x = 0; pos.x < laser_grid.width; ++pos.x) {
-        for (auto dir : {aoc::AbsDirection::south, aoc::AbsDirection::north}) {
-            pos.y = dir == aoc::AbsDirection::south ? 0 : laser_grid.height - 1;
-            laser_grid.send_beam(pos, dir);
-            int count = laser_grid.count_energized();
-            if (max_energized < count) {
-                max_energized = count;
-            }
-            laser_grid.clear_energized();
+    int max_energized = 0;
+    for (const auto &key : helper.sources) {
+        int count = helper.count_energized(key);
+        if (key.pos.x == 0 && key.pos.y == 0 &&
+            key.dir == aoc::AbsDirection::east) {
+            // part 1
+            std::cout << count << "\n";
+        }
+        if (max_energized < count) {
+            max_energized = count;
         }
     }
 
