@@ -373,7 +373,7 @@ longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
         path.emplace_back(it->second.second);
     }
     std::ranges::reverse(path);
-    return {max_distance, path};
+    return {max_distance, std::move(path)};
 }
 
 /**
@@ -511,7 +511,7 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
                 path.emplace_back(it->second.key);
             }
             std::ranges::reverse(path);
-            return {curr.dist, path};
+            return {curr.dist, std::move(path)};
         }
         for (const Key &neighbor : get_neighbors(curr.key)) {
             if constexpr (use_visited) {

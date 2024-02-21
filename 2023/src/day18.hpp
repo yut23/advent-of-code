@@ -45,7 +45,7 @@ read_instructions(std::istream &is) {
             instructions2.push_back(std::move(color_instr));
         }
     }
-    return {instructions1, instructions2};
+    return {std::move(instructions1), std::move(instructions2)};
 }
 
 } // namespace aoc::day18

@@ -212,7 +212,7 @@ std::pair<PartCategorizer, std::vector<Part>> read_input(std::istream &is) {
     while (read_part(is, part)) {
         parts.push_back(std::move(part));
     }
-    return {cat, parts};
+    return {std::move(cat), std::move(parts)};
 }
 
 class Part2Solver {

@@ -81,7 +81,7 @@ find_intersection_xy(const Hailstone &a, const Hailstone &b) {
 }
 
 template <class T>
-std::tuple<aoc::ds::Grid<T>, std::vector<T>>
+std::pair<aoc::ds::Grid<T>, std::vector<T>>
 make_system(const std::vector<aoc::day24::Hailstone> &stones,
             const std::pair<std::size_t, std::size_t> &pair_1,
             const std::pair<std::size_t, std::size_t> &pair_2) {
@@ -133,7 +133,7 @@ make_system(const std::vector<aoc::day24::Hailstone> &stones,
         }
         ++i;
     }
-    return {A, b};
+    return {std::move(A), std::move(b)};
 }
 
 std::vector<Hailstone> read_stones(std::istream &is) {
