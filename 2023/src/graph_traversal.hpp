@@ -625,28 +625,38 @@ shortest_distances(const Key &source, GetNeighbors &&get_neighbors,
 // instantiate templates in an anonymous namespace, so static analyzers will
 // check these functions
 namespace {
-using Key1 = std::pair<int, int>;
-[[maybe_unused]] void _lint_helper_unhashable(
-    const Key1 &source,
-    std::function<std::vector<Key1>(const Key1 &)> get_neighbors,
-    std::function<bool(const Key1 &)> is_target,
-    std::function<void(const Key1 &, int)> visit,
-    std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
-    std::function<int(const Key1 &, const Key1 &)> get_distance,
-    std::function<int(const Key1 &)> heuristic) {
+template <class Key>
+void _lint_helper_template(
+    const Key &source,
+    std::function<std::vector<Key>(const Key &)> get_neighbors,
+    std::function<bool(const Key &)> is_target,
+    std::function<void(const Key &, int)> visit,
+    std::function<bool(const Key &, int)> visit_bool,
+    std::function<void(const Key &, const Key &, int)> visit_with_parent,
+    std::function<bool(const Key &, const Key &, int)> visit_with_parent_bool,
+    std::function<int(const Key &, const Key &)> get_distance,
+    std::function<int(const Key &)> heuristic) {
     bfs<true>(source, get_neighbors, is_target);
     bfs<true>(source, get_neighbors, visit);
+    bfs<true>(source, get_neighbors, visit_bool);
     bfs<true>(source, get_neighbors, is_target, visit);
+    bfs<true>(source, get_neighbors, is_target, visit_bool);
     bfs<false>(source, get_neighbors, is_target);
     bfs<false>(source, get_neighbors, visit);
+    bfs<false>(source, get_neighbors, visit_bool);
     bfs<false>(source, get_neighbors, is_target, visit);
+    bfs<false>(source, get_neighbors, is_target, visit_bool);
 
     dfs<true>(source, get_neighbors, is_target);
     dfs<true>(source, get_neighbors, visit_with_parent);
+    dfs<true>(source, get_neighbors, visit_with_parent_bool);
     dfs<true>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<true>(source, get_neighbors, is_target, visit_with_parent_bool);
     dfs<false>(source, get_neighbors, is_target);
     dfs<false>(source, get_neighbors, visit_with_parent);
+    dfs<false>(source, get_neighbors, visit_with_parent_bool);
     dfs<false>(source, get_neighbors, is_target, visit_with_parent);
+    dfs<false>(source, get_neighbors, is_target, visit_with_parent_bool);
 
     topo_sort(source, get_neighbors);
 
@@ -668,48 +678,35 @@ using Key1 = std::pair<int, int>;
 
     shortest_distances(source, get_neighbors, get_distance);
 }
+using Key1 = std::pair<int, int>;
+[[maybe_unused]] void _lint_helper_unhashable(
+    const Key1 &source,
+    std::function<std::vector<Key1>(const Key1 &)> get_neighbors,
+    std::function<bool(const Key1 &)> is_target,
+    std::function<void(const Key1 &, int)> visit,
+    std::function<bool(const Key1 &, int)> visit_bool,
+    std::function<void(const Key1 &, const Key1 &, int)> visit_with_parent,
+    std::function<bool(const Key1 &, const Key1 &, int)> visit_with_parent_bool,
+    std::function<int(const Key1 &, const Key1 &)> get_distance,
+    std::function<int(const Key1 &)> heuristic) {
+    _lint_helper_template(source, get_neighbors, is_target, visit, visit_bool,
+                          visit_with_parent, visit_with_parent_bool,
+                          get_distance, heuristic);
+}
 using Key2 = int;
 [[maybe_unused]] void _lint_helper_hashable(
     const Key2 &source,
     std::function<std::vector<Key2>(const Key2 &)> get_neighbors,
     std::function<bool(const Key2 &)> is_target,
     std::function<void(const Key2 &, int)> visit,
+    std::function<bool(const Key2 &, int)> visit_bool,
     std::function<void(const Key2 &, const Key2 &, int)> visit_with_parent,
+    std::function<bool(const Key2 &, const Key2 &, int)> visit_with_parent_bool,
     std::function<int(const Key2 &, const Key2 &)> get_distance,
     std::function<int(const Key2 &)> heuristic) {
-    bfs<true>(source, get_neighbors, is_target);
-    bfs<true>(source, get_neighbors, visit);
-    bfs<true>(source, get_neighbors, is_target, visit);
-    bfs<false>(source, get_neighbors, is_target);
-    bfs<false>(source, get_neighbors, visit);
-    bfs<false>(source, get_neighbors, is_target, visit);
-
-    dfs<true>(source, get_neighbors, is_target);
-    dfs<true>(source, get_neighbors, visit_with_parent);
-    dfs<true>(source, get_neighbors, is_target, visit_with_parent);
-    dfs<false>(source, get_neighbors, is_target);
-    dfs<false>(source, get_neighbors, visit_with_parent);
-    dfs<false>(source, get_neighbors, is_target, visit_with_parent);
-
-    topo_sort(source, get_neighbors);
-
-    tarjan_scc(source, get_neighbors);
-
-    longest_path_dag(source, get_neighbors, get_distance, is_target);
-
-    dijkstra<false>(source, get_neighbors, get_distance, is_target);
-    dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
-    dijkstra<true>(source, get_neighbors, get_distance, is_target);
-    dijkstra<true>(source, get_neighbors, get_distance, is_target, visit);
-
-    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic,
-                  visit);
-    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic,
-                 visit);
-
-    shortest_distances(source, get_neighbors, get_distance);
+    _lint_helper_template(source, get_neighbors, is_target, visit, visit_bool,
+                          visit_with_parent, visit_with_parent_bool,
+                          get_distance, heuristic);
 }
 } // namespace
 
