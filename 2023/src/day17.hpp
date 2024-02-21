@@ -10,7 +10,7 @@
 
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for dijkstra, a_star
-#include "lib.hpp" // for Pos, AbsDirection, Delta, opposite, DEBUG, DIRECTIONS, as_number
+#include "lib.hpp"             // for Pos, DEBUG, as_number
 
 #include <algorithm>        // for transform
 #include <compare>          // for strong_ordering
@@ -25,11 +25,15 @@
 
 namespace aoc::day17 {
 
+enum Orientation : unsigned char {
+    horizontal = 0,
+    vertical = 1,
+};
+
 class CityMap {
     struct Key {
         Pos pos;
-        AbsDirection dir;
-        int move_count;
+        Orientation orient;
 
         std::strong_ordering operator<=>(const Key &) const = default;
     };
@@ -50,50 +54,64 @@ class CityMap {
 };
 
 std::ostream &operator<<(std::ostream &os, const CityMap::Key &key) {
-    os << "{" << key.pos << ", " << key.dir << ", " << key.move_count << "}";
+    os << "{" << key.pos << ", "
+       << (key.orient == Orientation::horizontal ? "horizontal" : "vertical")
+       << "}";
     return os;
 }
 
 std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
                                                  const Key &key) const {
-    const int min_straight_moves = ultra ? 4 : 0;
+    const int min_straight_moves = ultra ? 4 : 1;
     const int max_straight_moves = ultra ? 10 : 3;
     std::vector<Key> neighbors;
-    for (const AbsDirection &dir : aoc::DIRECTIONS) {
-        if (dir == opposite(key.dir)) {
+    if (key.pos.x == 0 && key.pos.y == 0 &&
+        key.orient == Orientation::horizontal) {
+        // allow going down initially
+        neighbors.push_back({key.pos, Orientation::vertical});
+    }
+    for (const auto orient : {Orientation::horizontal, Orientation::vertical}) {
+        if (orient == key.orient) {
             continue;
         }
-        Key neighbor{key.pos + Delta(dir, true), dir, 1};
-        if (!block_costs.in_bounds(neighbor.pos)) {
-            continue;
-        }
-        if (dir == key.dir) {
-            neighbor.move_count = key.move_count + 1;
-            // not allowed to move in the same direction more than
-            // `max_straight_moves` times in a row
-            if (neighbor.move_count > max_straight_moves) {
-                continue;
-            }
-        } else {
-            // not allowed to turn before moving `min_straight_moves` times in
-            // a straight line, except at the start (key.move_count == 0)
-            if (key.move_count != 0 && key.move_count < min_straight_moves) {
-                continue;
+        for (int dist = min_straight_moves; dist <= max_straight_moves;
+             ++dist) {
+            for (int dir : {-1, 1}) {
+                Key neighbor{key.pos, orient};
+                if (orient == Orientation::horizontal) {
+                    neighbor.pos.x += dir * dist;
+                } else {
+                    neighbor.pos.y += dir * dist;
+                }
+                if (!block_costs.in_bounds(neighbor.pos)) {
+                    continue;
+                }
+                neighbors.push_back(std::move(neighbor));
             }
         }
-        neighbors.push_back(std::move(neighbor));
     }
     return neighbors;
 }
 
-int CityMap::get_distance([[maybe_unused]] const Key &from,
-                          const Key &to) const {
-    return block_costs[to.pos];
+int CityMap::get_distance(const Key &from, const Key &to) const {
+    int total = 0;
+    if (to.orient == Orientation::horizontal) {
+        int delta = to.pos.x > from.pos.x ? -1 : 1;
+        for (Pos pos = to.pos; pos.x != from.pos.x; pos.x += delta) {
+            total += block_costs[pos];
+        }
+    } else {
+        int delta = to.pos.y > from.pos.y ? -1 : 1;
+        for (Pos pos = to.pos; pos.y != from.pos.y; pos.y += delta) {
+            total += block_costs[pos];
+        }
+    }
+    return total;
 }
 
 int CityMap::find_shortest_path(bool ultra) const {
-    Key source{Pos(0, 0), AbsDirection::east, 0};
-    Pos target(block_costs.width - 1, block_costs.height - 1);
+    Key source{Pos(0, 0), Orientation::horizontal};
+    const Pos target(block_costs.width - 1, block_costs.height - 1);
     std::function<void(const Key &, int)> visit = [](const Key &, int) {};
 #if 0
     if (aoc::DEBUG && ultra) {
@@ -108,8 +126,8 @@ int CityMap::find_shortest_path(bool ultra) const {
         };
     }
 #endif
-    const auto is_target = [&target, ultra](const Key &key) -> bool {
-        return key.pos == target && (!ultra || key.move_count >= 4);
+    const auto is_target = [&target](const Key &key) -> bool {
+        return key.pos == target;
     };
 #if 0
     const auto &[distance, path] = aoc::graph::dijkstra(
@@ -152,19 +170,13 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
     for (pos.y = 0; pos.y < block_costs.height; ++pos.y) {
         for (pos.x = 0; pos.x < block_costs.width; ++pos.x) {
             auto it = path_lookup.find(pos);
-            if (it != path_lookup.end() && it->second->move_count > 0) {
-                switch (it->second->dir) {
-                case AbsDirection::north:
-                    os << '^';
+            if (it != path_lookup.end()) {
+                switch (it->second->orient) {
+                case Orientation::horizontal:
+                    os << '-';
                     break;
-                case AbsDirection::east:
-                    os << '>';
-                    break;
-                case AbsDirection::south:
-                    os << 'v';
-                    break;
-                case AbsDirection::west:
-                    os << '<';
+                case Orientation::vertical:
+                    os << '|';
                     break;
                 }
             } else {
