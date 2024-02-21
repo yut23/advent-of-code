@@ -544,6 +544,7 @@ struct a_star_entry {
     int estimate;
     int dist;
     Key key;
+    bool visited = false;
 
     a_star_entry(int estimate, int dist, const Key &key)
         : estimate(estimate), dist(dist), key(key) {}
@@ -568,7 +569,6 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
        Visit &&visit) {
     using Entry = detail::a_star_entry<Key>;
 
-    detail::maybe_unordered_set<Key> visited{};
     detail::maybe_unordered_map<Key, Entry> distances{};
     std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>>
         frontier{};
@@ -579,11 +579,9 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
     while (!frontier.empty()) {
         Entry curr = std::move(frontier.top());
         frontier.pop();
-        {
-            const Entry &existing = distances.at(curr.key);
-            if (curr.dist != existing.dist) {
-                continue;
-            }
+        Entry &distances_entry = distances.at(curr.key);
+        if (curr.dist != distances_entry.dist) {
+            continue;
         }
         visit(curr.key, curr.dist);
         if (is_target(curr.key)) {
@@ -598,13 +596,13 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
             return {curr.dist, std::move(path)};
         }
         for (const Key &neighbor : get_neighbors(curr.key)) {
+            auto it = distances.find(neighbor);
             if constexpr (use_visited) {
-                if (visited.contains(neighbor)) {
+                if (it != distances.end() && it->second.visited) {
                     continue;
                 }
             }
             int new_distance = curr.dist + get_distance(curr.key, neighbor);
-            auto it = distances.find(neighbor);
             if (it == distances.end() || new_distance < it->second.dist) {
                 int new_estimate = new_distance + heuristic(neighbor);
                 Entry new_entry{new_estimate, new_distance, curr.key};
@@ -617,7 +615,7 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
             }
         }
         if constexpr (use_visited) {
-            visited.insert(std::move(curr.key));
+            distances_entry.visited = true;
         }
     }
     return {-1, {}};
