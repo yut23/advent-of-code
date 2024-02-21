@@ -10,8 +10,10 @@
 #ifndef GRAPH_TRAVERSAL_HPP_56T9ZURK
 #define GRAPH_TRAVERSAL_HPP_56T9ZURK
 
+#include "lib.hpp"           // for DEBUG
 #include "util/concepts.hpp" // for Hashable, any_iterable_collection, same_as_any
 #include <algorithm>         // for min, reverse
+#include <cassert>           // for assert
 #include <concepts>          // for same_as, integral
 #include <functional>        // for function, greater
 #include <map>               // for map
@@ -282,66 +284,102 @@ namespace detail {
 struct tarjan_entry {
     int index = -1;
     int lowlink = -1;
-    bool onStack = false;
+    int component_id = -1;
+    std::vector<int> pending_edges;
 };
 } // namespace detail
 
 /**
  * Find strongly connected components of a directed graph.
  *
- * Components are returned in topological order.
+ * Components are returned in topological order, along with a set of the
+ * directed edges between the components.
  */
 template <class Key, detail::GetNeighbors<Key> GetNeighbors>
-std::vector<detail::maybe_unordered_set<Key>>
+std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
 tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
     int index = 0;
     std::stack<Key> S{};
-    std::vector<detail::maybe_unordered_set<Key>> components{};
+    std::vector<std::vector<Key>> components{};
 
     detail::maybe_unordered_map<Key, detail::tarjan_entry> entries;
+    std::set<std::pair<int, int>> component_links;
 
-    const auto strongconnect = [&](const Key &v, auto &rec) -> void {
+    const auto strongconnect =
+        [&get_neighbors, &index, &S, &components, &entries,
+         &component_links](const Key &v, auto &rec) -> detail::tarjan_entry & {
         detail::tarjan_entry &v_entry = entries[v];
         v_entry.index = index;
         v_entry.lowlink = index;
         ++index;
         S.push(v);
-        v_entry.onStack = true;
+        assert(v_entry.component_id == -1);
 
         for (const Key &w : get_neighbors(v)) {
-            if (!entries.contains(w)) {
+            detail::tarjan_entry *w_entry = nullptr;
+            auto it = entries.find(w);
+            if (it == entries.end()) {
                 // Successor w has not yet been visited; recurse on it
-                rec(w, rec);
-                detail::tarjan_entry &w_entry = entries.at(w);
-                v_entry.lowlink = std::min(v_entry.lowlink, w_entry.lowlink);
-                continue;
-            }
-            detail::tarjan_entry &w_entry = entries.at(w);
-            if (w_entry.onStack) {
-                // Successor w is in stack S and hence in the current SCC
-                // If w is not on stack, then (v, w) is an edge pointing to an
-                // SCC already found and must be ignored
+                w_entry = &rec(w, rec);
+                v_entry.lowlink = std::min(v_entry.lowlink, w_entry->lowlink);
+            } else {
+                w_entry = &it->second;
+                if (it->second.component_id == -1) {
+                    // Successor w is in stack S and hence in the current SCC
+                    // If w is not on stack, then (v, w) is an edge pointing to
+                    // an SCC already found and must be ignored
 
-                v_entry.lowlink = std::min(v_entry.lowlink, w_entry.index);
+                    v_entry.lowlink = std::min(v_entry.lowlink, w_entry->index);
+                }
+            }
+            if (w_entry->component_id != -1) {
+                v_entry.pending_edges.push_back(w_entry->component_id);
             }
         }
         // If v is a root node, pop the stack and generate an SCC
         if (v_entry.lowlink == v_entry.index) {
+            int component_id = components.size();
             components.emplace_back();
-            Key w;
+            Key w = S.top();
             do {
                 w = S.top();
                 S.pop();
-                entries.at(w).onStack = false;
-                components.back().insert(w);
+                auto &entry = entries.at(w);
+                entry.component_id = component_id;
+                for (int x : entry.pending_edges) {
+                    component_links.emplace(component_id, x);
+                }
+                components.back().push_back(w);
             } while (w != v);
         }
+        return v_entry;
     };
 
     strongconnect(source, strongconnect);
 
+    // check edges
+    if constexpr (aoc::DEBUG) {
+        // reconstruct the links between components manually
+        std::set<std::pair<int, int>> reconstructed_links;
+        for (const auto &[v, v_entry] : entries) {
+            for (const Key &w : get_neighbors(v)) {
+                const auto &w_entry = entries.at(w);
+                if (v_entry.component_id != w_entry.component_id) {
+                    reconstructed_links.emplace(v_entry.component_id,
+                                                w_entry.component_id);
+                }
+            }
+        }
+        assert(component_links == reconstructed_links);
+    }
+
     std::ranges::reverse(components);
-    return components;
+    std::set<std::pair<int, int>> reversed_links;
+    for (const auto &[v_id, w_id] : component_links) {
+        reversed_links.emplace(components.size() - 1 - v_id,
+                               components.size() - 1 - w_id);
+    }
+    return {std::move(components), std::move(reversed_links)};
 }
 
 /**

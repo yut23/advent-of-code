@@ -18,10 +18,10 @@
 #include <memory>        // for unique_ptr, make_unique
 #include <numeric>       // for lcm
 #include <queue>         // for queue
+#include <set>           // for set (tarjan_scc)
 #include <sstream>       // for istringstream
 #include <string>        // for string, getline
 #include <unordered_map> // for unordered_map
-#include <unordered_set> // for unordered_set
 #include <utility>       // for move, forward
 #include <vector>        // for vector
 // IWYU pragma: no_include <functional>  // for hash (unordered_map)
@@ -116,7 +116,7 @@ struct CycleInfo {
 class MessageBus {
     std::unordered_map<std::string, std::unique_ptr<ModuleBase>> modules;
     std::queue<Message> msg_queue;
-    std::vector<std::unordered_set<std::string>> components{};
+    std::vector<std::vector<std::string>> components{};
     MessageCounter counter;
 
     bool _rx_activated = false;
@@ -338,7 +338,7 @@ void MessageBus::identify_components() {
     const auto get_neighbors = [this](const std::string &name) {
         return modules.at(name)->outputs;
     };
-    components = aoc::graph::tarjan_scc(root, get_neighbors);
+    components = aoc::graph::tarjan_scc(root, get_neighbors).first;
 
     // store component ids in each module
     for (std::size_t i = 0; i < components.size(); ++i) {

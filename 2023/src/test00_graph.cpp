@@ -9,11 +9,12 @@
 #include "unit_test/unit_test.hpp"
 
 #include "graph_traversal.hpp"
+#include <algorithm>     // for sort
 #include <cstddef>       // for size_t
+#include <set>           // for set
 #include <unordered_map> // for unordered_map
-#include <unordered_set> // for unordered_set
+#include <utility>       // for pair
 #include <vector>        // for vector
-// IWYU pragma: no_include <algorithm>  // for copy
 
 namespace aoc::graph::test {
 
@@ -21,11 +22,16 @@ std::size_t test_tarjan_scc() {
     unit_test::PureTest test(
         "aoc::graph::tarjan_scc",
         +[](const std::unordered_map<int, std::vector<int>> &adj,
-            int root) -> std::vector<std::unordered_set<int>> {
+            int root) -> std::pair<std::vector<std::vector<int>>,
+                                   std::set<std::pair<int, int>>> {
             const auto get_neighbors = [&adj](int key) -> std::vector<int> {
                 return adj.at(key);
             };
-            return aoc::graph::tarjan_scc(root, get_neighbors);
+            auto result = aoc::graph::tarjan_scc(root, get_neighbors);
+            for (auto &component : result.first) {
+                std::sort(component.begin(), component.end());
+            }
+            return result;
         });
 
     // example from Tarjan's original 1972 paper, "Depth-first search and
@@ -38,7 +44,7 @@ std::size_t test_tarjan_scc() {
           {6, {}},
           {7, {4, 6}},
           {8, {1, 7}}},
-         1, {{1, 2, 8}, {3, 4, 5, 7}, {6}});
+         1, {{{1, 2, 8}, {3, 4, 5, 7}, {6}}, {{0, 1}, {1, 2}}});
     // example from Wikipedia:
     // https://commons.wikimedia.org/wiki/File:Tarjan%27s_Algorithm_Animation.gif
     // numbering:
@@ -52,7 +58,9 @@ std::size_t test_tarjan_scc() {
           {6, {8}},
           {7, {6}},
           {8, {7}}},
-         1, {{1}, {3, 5}, {2, 4}, {6, 7, 8}});
+         1,
+         {{{1}, {3, 5}, {2, 4}, {6, 7, 8}},
+          {{0, 1}, {0, 2}, {1, 2}, {1, 3}, {2, 3}}});
 
     return test.done(), test.num_failed();
 }
