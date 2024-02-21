@@ -13,7 +13,6 @@
 #include <cassert>          // for assert
 #include <cmath>            // for copysign
 #include <cstddef>          // for size_t
-#include <cstdint>          // for int64_t
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, ostream
 #include <optional>         // for optional

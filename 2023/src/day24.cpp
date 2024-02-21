@@ -8,10 +8,11 @@
 #include "day24.hpp"
 #include "gauss_elim.hpp" // for gauss_elim, solve_upper_triangular, RowPermuter
 #include "lib.hpp"        // for parse_args, DEBUG
-#include "unit_test/pretty_print.hpp" // for repr
-#include <cmath>                      // for llround
-#include <iostream>                   // for cout, cerr
-#include <vector>                     // for vector
+#include "unit_test/pretty_print.hpp"
+#include <cmath>    // for llround
+#include <cstdint>  // for int64_t
+#include <iostream> // for cout, cerr
+#include <vector>   // for vector
 // IWYU pragma: no_include <algorithm>  // for fill_n
 
 constexpr long MIN_X = 200000000000000, MAX_X = 400000000000000;
