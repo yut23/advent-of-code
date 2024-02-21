@@ -16,12 +16,13 @@
 #include <cassert>           // for assert
 #include <concepts>          // for same_as, integral
 #include <functional>        // for function, greater
-#include <map>               // for map
-#include <queue>             // for priority_queue
-#include <set>               // for set
-#include <stack>             // for stack
-#include <stdexcept>         // for invalid_argument
-#include <tuple>             // for tuple
+#include <initializer_list> // for initializer_list
+#include <map>              // for map
+#include <queue>            // for priority_queue
+#include <set>              // for set
+#include <stack>            // for stack
+#include <stdexcept>        // for invalid_argument
+#include <tuple>            // for tuple
 #include <type_traits> // for conditional_t, invoke_result_t // IWYU pragma: export
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
@@ -295,9 +296,11 @@ struct tarjan_entry {
  * Components are returned in topological order, along with a set of the
  * directed edges between the components.
  */
-template <class Key, detail::GetNeighbors<Key> GetNeighbors>
+template <class Key,
+          util::concepts::any_iterable_collection<Key> SourceCollection,
+          detail::GetNeighbors<Key> GetNeighbors>
 std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
-tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
+tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
     int index = 0;
     std::stack<Key> S{};
     std::vector<std::vector<Key>> components{};
@@ -355,7 +358,11 @@ tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
         return v_entry;
     };
 
-    strongconnect(source, strongconnect);
+    for (const auto &source : sources) {
+        if (!entries.contains(source)) {
+            strongconnect(source, strongconnect);
+        }
+    }
 
     // check edges
     if constexpr (aoc::DEBUG) {
@@ -380,6 +387,13 @@ tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
                                components.size() - 1 - w_id);
     }
     return {std::move(components), std::move(reversed_links)};
+}
+
+template <class Key, detail::GetNeighbors<Key> GetNeighbors>
+std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
+tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
+    const std::initializer_list<Key> sources = {source};
+    return tarjan_scc<Key>(sources, get_neighbors);
 }
 
 /**
@@ -699,6 +713,8 @@ void _lint_helper_template(
     topo_sort(source, get_neighbors);
 
     tarjan_scc(source, get_neighbors);
+    const std::vector<Key> sources{source, source};
+    tarjan_scc<Key>(sources, get_neighbors);
 
     longest_path_dag(source, get_neighbors, get_distance, is_target);
 
