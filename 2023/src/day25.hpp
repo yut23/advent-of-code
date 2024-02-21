@@ -17,24 +17,28 @@
 #include <sstream>       // for istringstream
 #include <string>        // for string, getline
 #include <unordered_map> // for unordered_map
-#include <unordered_set> // for unordered_set
 #include <utility>       // for pair
-// IWYU pragma: no_include <functional>  // for hash (unordered_{set,map})
-// IWYU pragma: no_include <vector>  // for max (priority_queue)
+#include <vector>        // for vector
+// IWYU pragma: no_include <algorithm>  // for fill_n (vector)
+// IWYU pragma: no_include <functional>  // for hash (unordered_map)
 
 namespace aoc::day25 {
 
-using vertex_t = std::size_t;
+using vertex_t = unsigned int;
 using weight_t = unsigned int;
 using cut_t = std::pair<weight_t, std::size_t>;
 
 class Graph {
-    std::unordered_map<vertex_t, std::unordered_map<vertex_t, weight_t>> edges;
+    std::vector<std::unordered_map<vertex_t, weight_t>> edges;
     std::unordered_map<vertex_t, std::size_t> merged_counts;
+    std::size_t m_vertex_count = 0;
+    std::size_t m_next_vertex = 0;
 
   public:
-    std::size_t num_vertices() const { return edges.size(); }
-    void add_edge(vertex_t u, vertex_t v, weight_t weight = 1);
+    std::size_t num_vertices() const { return m_vertex_count; }
+    std::size_t next_vertex() const { return m_next_vertex; }
+    void add_edge(vertex_t u, vertex_t v, weight_t weight = 1,
+                  bool allow_resize = true);
 
   private:
     void remove_vertex(vertex_t u);
@@ -42,35 +46,43 @@ class Graph {
     void merge_vertices(vertex_t u, vertex_t v);
 
   public:
-    vertex_t get_arbitrary_vertex() const { return edges.begin()->first; }
+    vertex_t get_arbitrary_vertex() const { return 0; }
     cut_t MinimumCutPhase(vertex_t a);
 };
 
-void Graph::add_edge(vertex_t u, vertex_t v, weight_t weight) {
+void Graph::add_edge(vertex_t u, vertex_t v, weight_t weight,
+                     bool allow_resize) {
     assert(u != v);
-    bool inserted;
-    inserted = edges[u].emplace(v, weight).second;
-    assert(inserted);
-    inserted = edges[v].emplace(u, weight).second;
-    assert(inserted);
+    if (u > v) {
+        std::swap(u, v);
+    }
+    // v is now the larger vertex
+    if (allow_resize && v >= m_next_vertex) {
+        m_next_vertex = v + 1;
+        edges.resize(m_next_vertex);
+        m_vertex_count = m_next_vertex;
+    }
+    edges[u].emplace(v, weight);
+    edges[v].emplace(u, weight);
 }
 
 void Graph::remove_vertex(vertex_t u) {
-    const auto &neighbors = edges.at(u);
+    auto &neighbors = edges[u];
     // remove incoming edges
     for (const auto &[v, _] : neighbors) {
-        edges.at(v).erase(u);
+        edges[v].erase(u);
     }
     // remove outgoing edges
-    edges.erase(u);
+    neighbors.clear();
 
     merged_counts.erase(u);
+    --m_vertex_count;
 }
 
 void Graph::merge_vertices(vertex_t s, vertex_t t) {
     // merge vertex t into s
-    auto &s_neighbors = edges.at(s);
-    auto &t_neighbors = edges.at(t);
+    auto &s_neighbors = edges[s];
+    auto &t_neighbors = edges[t];
 
     for (const auto &[v, w] : t_neighbors) {
         if (v == s) {
@@ -79,9 +91,10 @@ void Graph::merge_vertices(vertex_t s, vertex_t t) {
         auto it = s_neighbors.find(v);
         if (it != s_neighbors.end()) {
             it->second += w;
-            edges.at(v).at(s) += w;
+            edges[v].at(s) += w;
         } else {
-            add_edge(s, v, w);
+            const bool allow_resize = false;
+            add_edge(s, v, w, allow_resize);
         }
     }
     merged_counts[s] = (merged_counts[s] + 1) + (merged_counts[t] + 1) - 1;
@@ -91,33 +104,36 @@ void Graph::merge_vertices(vertex_t s, vertex_t t) {
 // Stoer-Wagner minimum cut algorithm
 
 cut_t Graph::MinimumCutPhase(vertex_t a) {
-    std::unordered_set<vertex_t> A = {a};
+    std::vector<bool> A(next_vertex(), false);
+    A[a] = true;
+    std::size_t A_count = 1;
     vertex_t s = a, t = a;
     weight_t cut_value = 0;
     std::priority_queue<std::pair<weight_t, vertex_t>> pq;
-    std::unordered_map<vertex_t, weight_t> weight_sum;
-    for (const auto &[v, w] : edges.at(a)) {
+    std::vector<weight_t> weight_sum(next_vertex(), 0);
+    for (const auto &[v, w] : edges[a]) {
         pq.emplace(w, v);
-        weight_sum.emplace(v, w);
+        weight_sum[v] = w;
     }
-    while (A.size() != num_vertices()) {
+    while (A_count != num_vertices()) {
         // add to A the most tightly connected vertex
         if constexpr (aoc::DEBUG) {
-            std::cerr << "A: " << A.size() << "; pq: " << pq.size()
-                      << "; total_weights: " << weight_sum.size() << "\n";
+            std::cerr << "A: " << A_count << "; pq: " << pq.size()
+                      << "; num_vertices: " << num_vertices() << "\n";
         }
         const auto tmp = pq.top();
         pq.pop();
-        if (A.contains(tmp.second)) {
+        if (A[tmp.second]) {
             continue;
         }
         s = t;
         t = tmp.second;
         cut_value = tmp.first;
-        A.insert(t);
+        A[t] = true;
+        ++A_count;
         // update or add all nodes connected to t in the priority queue
-        for (const auto &[v, w] : edges.at(t)) {
-            if (A.contains(v)) {
+        for (const auto &[v, w] : edges[t]) {
+            if (A[v]) {
                 continue;
             }
             auto &weight = weight_sum[v];
