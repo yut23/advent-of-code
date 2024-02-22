@@ -213,7 +213,9 @@ void TrailMap::construct_trails(Pos start_pos) {
     }
 }
 
-int TrailMap::get_distance(const Key from, const Key to) const {
+// this attribute improves the performance of part_2() from 200ms to 175ms
+// under clang
+[[gnu::cold]] int TrailMap::get_distance(const Key from, const Key to) const {
     // a linear search here is fine, since there are at most 4 neighbors, and
     // only part 1 uses this function
     for (const auto &[key, dist] : undirected_edges[from]) {
