@@ -237,7 +237,7 @@ class Part2Solver {
 
     std::multimap<Key, Key> prev{};
 
-    std::vector<Key> get_neighbors(const Key &key);
+    void process_neighbors(const Key &key, auto &&visit) const;
 
     void visit_with_parent(const Key &key, const Key &parent, int);
 
@@ -257,18 +257,16 @@ std::ostream &operator<<(std::ostream &os, const Part2Solver::Key &key) {
     return os;
 }
 
-std::vector<Part2Solver::Key> Part2Solver::get_neighbors(const Key &key) {
+void Part2Solver::process_neighbors(const Key &key, auto &&visit) const {
     const auto &[name, index] = key;
-    std::vector<Key> neighbors;
     if (name == "A" || name == "R") {
-        return neighbors;
+        return;
     }
     const Rule &rule = cat.at(name, index);
     if (rule.conditional()) {
-        neighbors.emplace_back(name, index + 1);
+        visit({name, index + 1});
     }
-    neighbors.emplace_back(rule.dest, 0);
-    return neighbors;
+    visit({rule.dest, 0});
 }
 
 void Part2Solver::visit_with_parent(const Key &key, const Key &parent, int) {
@@ -293,7 +291,8 @@ std::optional<Condition> Part2Solver::get_condition(const Key &from,
 long Part2Solver::solve() {
     constexpr bool use_seen = false;
     aoc::graph::dfs<use_seen>(
-        source, std::bind_front(&Part2Solver::get_neighbors, this),
+        source,
+        [this](const Key &key, auto &&visit) { process_neighbors(key, visit); },
         std::bind_front(&Part2Solver::visit_with_parent, this));
 
     if constexpr (aoc::DEBUG) {

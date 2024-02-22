@@ -44,10 +44,11 @@ int part_2(const aoc::day22::BrickStack &stack) {
             }
         }
 
-        const auto get_neighbors = [&stack](const Brick *brick) {
-            return stack.supporting.at(brick);
+        const auto process_neighbors = [&stack](const Brick *brick,
+                                                auto &&visit) {
+            std::ranges::for_each(stack.supporting.at(brick), visit);
         };
-        const auto ordering = aoc::graph::topo_sort(root, get_neighbors);
+        const auto ordering = aoc::graph::topo_sort(root, process_neighbors);
 
         std::unordered_set<const Brick *> falling{root};
         for (const Brick *brick : ordering) {

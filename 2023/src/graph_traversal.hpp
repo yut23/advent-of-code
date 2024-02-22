@@ -50,9 +50,10 @@ using maybe_unordered_map =
                        std::unordered_map<Key, T>, std::map<Key, T>>;
 
 template <class Func, class Key>
-concept GetNeighbors =
-    requires(Func get_neighbors, const Key &key) {
-        { get_neighbors(key) } -> util::concepts::any_iterable_collection<Key>;
+concept ProcessNeighbors =
+    requires(Func process_neighbors, const Key &key,
+             std::function<void(const Key &key)> &handler) {
+        process_neighbors(key, handler);
     };
 
 template <class Func, class Key>
@@ -116,10 +117,10 @@ concept Heuristic = requires(Func heuristic, const Key &key) {
  * found.
  */
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
-int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
-        Visit &&visit) {
+int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
+        IsTarget &&is_target, Visit &&visit) {
     using visit_ret_t = typename detail::visit_invoke_result<Key, Visit>::type;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
@@ -141,33 +142,39 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
             if constexpr (use_seen) {
                 seen.insert(key);
             }
-            for (const Key &neighbor : get_neighbors(key)) {
+            process_neighbors(key, [&seen, &next_queue](const Key &neighbor) {
                 if constexpr (use_seen) {
                     if (seen.contains(neighbor)) {
-                        continue;
+                        return;
                     }
+                } else {
+                    // suppress unused lambda capture warning
+                    (void)seen;
                 }
                 next_queue.insert(neighbor);
-            }
+            });
         }
     }
     return -1;
 }
 
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::IsTarget<Key> IsTarget>
-int bfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
-    return bfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
-                         std::forward<IsTarget>(is_target),
-                         [](const Key &, int) -> void {});
+int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
+        IsTarget &&is_target) {
+    return bfs<use_seen>(
+        source, std::forward<ProcessNeighbors>(process_neighbors),
+        std::forward<IsTarget>(is_target), [](const Key &, int) -> void {});
 }
 
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors, detail::Visit<Key> Visit>
-int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::Visit<Key> Visit>
+int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
+        Visit &&visit) {
     return bfs<use_seen>(
-        source, std::forward<GetNeighbors>(get_neighbors),
+        source, std::forward<ProcessNeighbors>(process_neighbors),
         [](const Key &) { return false; }, std::forward<Visit>(visit));
 }
 
@@ -188,11 +195,11 @@ int bfs(const Key &source, GetNeighbors &&get_neighbors, Visit &&visit) {
  * found.
  */
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::IsTarget<Key> IsTarget,
           detail::VisitWithParent<Key> VisitWithParent>
-int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
-        VisitWithParent &&visit_with_parent) {
+int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
+        IsTarget &&is_target, VisitWithParent &&visit_with_parent) {
     using visit_ret_t =
         typename detail::visit_invoke_result<Key, VisitWithParent>::type;
     std::stack<std::tuple<Key, Key, int>> stack{};
@@ -215,34 +222,40 @@ int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target,
         if constexpr (use_seen) {
             seen.insert(key);
         }
-        for (const Key &neighbor : get_neighbors(key)) {
+        process_neighbors(key, [&seen, &stack, &key = key,
+                                depth = depth](const Key &neighbor) {
             if constexpr (use_seen) {
                 if (seen.contains(neighbor)) {
-                    continue;
+                    return;
                 }
+            } else {
+                // suppress unused lambda capture warning
+                (void)seen;
             }
             stack.emplace(neighbor, key, depth + 1);
-        }
+        });
     }
     return -1;
 }
 
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::IsTarget<Key> IsTarget>
-int dfs(const Key &source, GetNeighbors &&get_neighbors, IsTarget &&is_target) {
-    return dfs<use_seen>(source, std::forward<GetNeighbors>(get_neighbors),
+int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
+        IsTarget &&is_target) {
+    return dfs<use_seen>(source,
+                         std::forward<ProcessNeighbors>(process_neighbors),
                          std::forward<IsTarget>(is_target),
                          [](const Key &, const Key &, int) -> void {});
 }
 
 template <bool use_seen = true, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::VisitWithParent<Key> VisitWithParent>
-int dfs(const Key &source, GetNeighbors &&get_neighbors,
+int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
         VisitWithParent &&visit_with_parent) {
     return dfs<use_seen>(
-        source, std::forward<GetNeighbors>(get_neighbors),
+        source, std::forward<ProcessNeighbors>(process_neighbors),
         [](const Key &) { return false; },
         std::forward<VisitWithParent>(visit_with_parent));
 }
@@ -252,14 +265,16 @@ int dfs(const Key &source, GetNeighbors &&get_neighbors,
  *
  * Throws a std::invalid_argument exception if the graph contains any cycles.
  */
-template <class Key, detail::GetNeighbors<Key> GetNeighbors>
-std::vector<Key> topo_sort(const Key &source, GetNeighbors &&get_neighbors) {
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors>
+std::vector<Key> topo_sort(const Key &source,
+                           ProcessNeighbors &&process_neighbors) {
     detail::maybe_unordered_set<Key> temp_marks{};
     detail::maybe_unordered_set<Key> perm_marks{};
 
     std::vector<Key> ordered{};
 
-    auto visit = [&](const Key &n, auto &rec) -> void {
+    auto visit = [&process_neighbors, &temp_marks, &perm_marks,
+                  &ordered](auto &rec, const Key &n) -> void {
         if (perm_marks.contains(n)) {
             return;
         }
@@ -267,14 +282,12 @@ std::vector<Key> topo_sort(const Key &source, GetNeighbors &&get_neighbors) {
             throw std::invalid_argument("graph contains at least one cycle");
         }
         temp_marks.emplace(n);
-        for (const Key &neighbor : get_neighbors(n)) {
-            rec(neighbor, rec);
-        }
+        process_neighbors(n, std::bind_front(rec, rec));
         perm_marks.insert(temp_marks.extract(n));
         ordered.emplace_back(n);
     };
 
-    visit(source, visit);
+    visit(visit, source);
 
     std::ranges::reverse(ordered);
 
@@ -298,9 +311,10 @@ struct tarjan_entry {
  */
 template <class Key,
           util::concepts::any_iterable_collection<Key> SourceCollection,
-          detail::GetNeighbors<Key> GetNeighbors>
+          detail::ProcessNeighbors<Key> ProcessNeighbors>
 std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
-tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
+tarjan_scc(const SourceCollection &sources,
+           ProcessNeighbors &&process_neighbors) {
     int index = 0;
     std::stack<Key> S{};
     std::vector<std::vector<Key>> components{};
@@ -309,7 +323,7 @@ tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
     std::set<std::pair<int, int>> component_links;
 
     const auto strongconnect =
-        [&get_neighbors, &index, &S, &components, &entries,
+        [&process_neighbors, &index, &S, &components, &entries,
          &component_links](const Key &v, auto &rec) -> detail::tarjan_entry & {
         detail::tarjan_entry &v_entry = entries[v];
         v_entry.index = index;
@@ -318,7 +332,7 @@ tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
         S.push(v);
         assert(v_entry.component_id == -1);
 
-        for (const Key &w : get_neighbors(v)) {
+        process_neighbors(v, [&entries, &rec, &v_entry](const Key &w) {
             detail::tarjan_entry *w_entry = nullptr;
             auto it = entries.find(w);
             if (it == entries.end()) {
@@ -338,7 +352,7 @@ tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
             if (w_entry->component_id != -1) {
                 v_entry.pending_edges.push_back(w_entry->component_id);
             }
-        }
+        });
         // If v is a root node, pop the stack and generate an SCC
         if (v_entry.lowlink == v_entry.index) {
             int component_id = components.size();
@@ -369,13 +383,14 @@ tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
         // reconstruct the links between components manually
         std::set<std::pair<int, int>> reconstructed_links;
         for (const auto &[v, v_entry] : entries) {
-            for (const Key &w : get_neighbors(v)) {
+            process_neighbors(v, [&entries, &reconstructed_links,
+                                  &v_entry = v_entry](const Key &w) {
                 const auto &w_entry = entries.at(w);
                 if (v_entry.component_id != w_entry.component_id) {
                     reconstructed_links.emplace(v_entry.component_id,
                                                 w_entry.component_id);
                 }
-            }
+            });
         }
         assert(component_links == reconstructed_links);
     }
@@ -389,37 +404,37 @@ tarjan_scc(const SourceCollection &sources, GetNeighbors &&get_neighbors) {
     return {std::move(components), std::move(reversed_links)};
 }
 
-template <class Key, detail::GetNeighbors<Key> GetNeighbors>
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors>
 std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
-tarjan_scc(const Key &source, GetNeighbors &&get_neighbors) {
+tarjan_scc(const Key &source, ProcessNeighbors &&process_neighbors) {
     const std::initializer_list<Key> sources = {source};
-    return tarjan_scc<Key>(sources, get_neighbors);
+    return tarjan_scc<Key>(sources,
+                           std::forward<ProcessNeighbors>(process_neighbors));
 }
 
 /**
  * Longest path algorithm for a DAG.
  */
-template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
 std::pair<int, std::vector<Key>>
-longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
+longest_path_dag(const Key &source, ProcessNeighbors &&process_neighbors,
                  GetDistance &&get_distance, IsTarget &&is_target) {
-    std::vector<Key> ordering = topo_sort<Key>(source, get_neighbors);
-    detail::maybe_unordered_map<Key, std::pair<int, Key>> longest_path{};
-    // longest_path.try_emplace(source, std::make_pair(0, source));
-
     // find all the incoming neighbors of each node
     detail::maybe_unordered_map<Key, detail::maybe_unordered_set<Key>>
         incoming_neighbors{};
     incoming_neighbors[source] = {};
     constexpr bool use_seen = false;
     dfs<use_seen>(
-        source, get_neighbors,
+        source, process_neighbors,
         [&incoming_neighbors](const Key &node, const Key &parent, int) {
             if (node != parent) {
                 incoming_neighbors[node].emplace(parent);
             }
         });
+
+    std::vector<Key> ordering = topo_sort<Key>(source, process_neighbors);
+    detail::maybe_unordered_map<Key, std::pair<int, Key>> longest_path{};
 
     // find longest path from source to each node
     longest_path.emplace(source, std::make_pair(0, source));
@@ -429,7 +444,7 @@ longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
             int new_distance = get_distance(parent, key);
             const auto it = longest_path.find(parent);
             if (it != longest_path.end()) {
-                new_distance += longest_path.at(parent).first;
+                new_distance += it->second.first;
             }
             if (new_distance > max_distance.first) {
                 max_distance = {new_distance, parent};
@@ -467,11 +482,11 @@ longest_path_dag(const Key &source, GetNeighbors &&get_neighbors,
  * or -1 and an empty path if not found.
  */
 template <bool use_visited = false, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
           detail::Visit<Key> Visit>
 std::pair<int, std::vector<Key>>
-dijkstra(const Key &source, GetNeighbors &&get_neighbors,
+dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
          GetDistance &&get_distance, IsTarget &&is_target, Visit &&visit) {
     detail::maybe_unordered_set<Key> visited{};
     detail::maybe_unordered_map<Key, std::pair<int, Key>> distances{};
@@ -501,11 +516,16 @@ dijkstra(const Key &source, GetNeighbors &&get_neighbors,
             std::ranges::reverse(path);
             return {dist, path};
         }
-        for (const Key &neighbor : get_neighbors(current)) {
+        process_neighbors(current, [&get_distance, &visited, &distances,
+                                    &frontier, dist = dist,
+                                    &current = current](const Key &neighbor) {
             if constexpr (use_visited) {
                 if (visited.contains(neighbor)) {
-                    continue;
+                    return;
                 }
+            } else {
+                // suppress unused lambda capture warning
+                (void)visited;
             }
             int new_distance = dist + get_distance(current, neighbor);
             auto it = distances.find(neighbor);
@@ -518,7 +538,7 @@ dijkstra(const Key &source, GetNeighbors &&get_neighbors,
                 }
                 frontier.emplace(new_distance, neighbor);
             }
-        }
+        });
         if constexpr (use_visited) {
             visited.insert(std::move(current));
         }
@@ -527,13 +547,13 @@ dijkstra(const Key &source, GetNeighbors &&get_neighbors,
 }
 
 template <bool use_visited = false, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
 std::pair<int, std::vector<Key>>
-dijkstra(const Key &source, GetNeighbors &&get_neighbors,
+dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
          GetDistance &&get_distance, IsTarget &&is_target) {
     return dijkstra<use_visited>(
-        source, std::forward<GetNeighbors>(get_neighbors),
+        source, std::forward<ProcessNeighbors>(process_neighbors),
         std::forward<GetDistance>(get_distance),
         std::forward<IsTarget>(is_target), [](const Key &, int) {});
 }
@@ -560,11 +580,11 @@ struct a_star_entry {
  * or -1 and an empty path if not found.
  */
 template <bool use_visited = false, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
           detail::Heuristic<Key> Heuristic, detail::Visit<Key> Visit>
 std::pair<int, std::vector<Key>>
-a_star(const Key &source, GetNeighbors &&get_neighbors,
+a_star(const Key &source, ProcessNeighbors &&process_neighbors,
        GetDistance &&get_distance, IsTarget &&is_target, Heuristic &&heuristic,
        Visit &&visit) {
     using Entry = detail::a_star_entry<Key>;
@@ -595,11 +615,12 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
             std::ranges::reverse(path);
             return {curr.dist, std::move(path)};
         }
-        for (const Key &neighbor : get_neighbors(curr.key)) {
+        process_neighbors(curr.key, [&get_distance, &heuristic, &distances,
+                                     &frontier, &curr](const Key &neighbor) {
             auto it = distances.find(neighbor);
             if constexpr (use_visited) {
                 if (it != distances.end() && it->second.visited) {
-                    continue;
+                    return;
                 }
             }
             int new_distance = curr.dist + get_distance(curr.key, neighbor);
@@ -613,7 +634,7 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
                 }
                 frontier.emplace(new_estimate, new_distance, neighbor);
             }
-        }
+        });
         if constexpr (use_visited) {
             distances_entry.visited = true;
         }
@@ -621,15 +642,15 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
     return {-1, {}};
 }
 template <bool use_visited = false, class Key,
-          detail::GetNeighbors<Key> GetNeighbors,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
           detail::Heuristic<Key> Heuristic>
 std::pair<int, std::vector<Key>>
-a_star(const Key &source, GetNeighbors &&get_neighbors,
+a_star(const Key &source, ProcessNeighbors &&process_neighbors,
        GetDistance &&get_distance, IsTarget &&is_target,
        Heuristic &&heuristic) {
     return a_star<use_visited>(
-        source, std::forward<GetNeighbors>(get_neighbors),
+        source, std::forward<ProcessNeighbors>(process_neighbors),
         std::forward<GetDistance>(get_distance),
         std::forward<IsTarget>(is_target), std::forward<Heuristic>(heuristic),
         [](const Key &, int) {});
@@ -638,10 +659,10 @@ a_star(const Key &source, GetNeighbors &&get_neighbors,
 /**
  * Shortest distances from a single node using Dijkstra's algorithm.
  */
-template <class Key, detail::GetNeighbors<Key> GetNeighbors,
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance>
 detail::maybe_unordered_map<Key, int>
-shortest_distances(const Key &source, GetNeighbors &&get_neighbors,
+shortest_distances(const Key &source, ProcessNeighbors &&process_neighbors,
                    GetDistance &&get_distance) {
     detail::maybe_unordered_set<Key> visited{};
     detail::maybe_unordered_map<Key, int> distances{};
@@ -655,18 +676,19 @@ shortest_distances(const Key &source, GetNeighbors &&get_neighbors,
         if (dist != distances[current]) {
             continue;
         }
-        for (const Key &neighbor : get_neighbors(current)) {
+        process_neighbors(current, [&get_distance, &visited, &distances, &pq,
+                                    dist = dist,
+                                    &current = current](const Key &neighbor) {
             if (visited.contains(neighbor)) {
-                continue;
+                return;
             }
-            int new_distance =
-                distances[current] + get_distance(current, neighbor);
+            int new_distance = dist + get_distance(current, neighbor);
             auto it = distances.find(neighbor);
             if (it == distances.end() || it->second > new_distance) {
                 distances[neighbor] = new_distance;
                 pq.emplace(new_distance, neighbor);
             }
-        }
+        });
         visited.insert(std::move(current));
     }
     return distances;
@@ -678,7 +700,8 @@ namespace {
 template <class Key>
 void _lint_helper_template(
     const Key &source,
-    std::function<std::vector<Key>(const Key &)> get_neighbors,
+    std::function<void(const Key &, std::function<void(const Key &)>)>
+        process_neighbors,
     std::function<bool(const Key &)> is_target,
     std::function<void(const Key &, int)> visit,
     std::function<bool(const Key &, int)> visit_bool,
@@ -686,54 +709,56 @@ void _lint_helper_template(
     std::function<bool(const Key &, const Key &, int)> visit_with_parent_bool,
     std::function<int(const Key &, const Key &)> get_distance,
     std::function<int(const Key &)> heuristic) {
-    bfs<true>(source, get_neighbors, is_target);
-    bfs<true>(source, get_neighbors, visit);
-    bfs<true>(source, get_neighbors, visit_bool);
-    bfs<true>(source, get_neighbors, is_target, visit);
-    bfs<true>(source, get_neighbors, is_target, visit_bool);
-    bfs<false>(source, get_neighbors, is_target);
-    bfs<false>(source, get_neighbors, visit);
-    bfs<false>(source, get_neighbors, visit_bool);
-    bfs<false>(source, get_neighbors, is_target, visit);
-    bfs<false>(source, get_neighbors, is_target, visit_bool);
+    bfs<true>(source, process_neighbors, is_target);
+    bfs<true>(source, process_neighbors, visit);
+    bfs<true>(source, process_neighbors, visit_bool);
+    bfs<true>(source, process_neighbors, is_target, visit);
+    bfs<true>(source, process_neighbors, is_target, visit_bool);
+    bfs<false>(source, process_neighbors, is_target);
+    bfs<false>(source, process_neighbors, visit);
+    bfs<false>(source, process_neighbors, visit_bool);
+    bfs<false>(source, process_neighbors, is_target, visit);
+    bfs<false>(source, process_neighbors, is_target, visit_bool);
 
-    dfs<true>(source, get_neighbors, is_target);
-    dfs<true>(source, get_neighbors, visit_with_parent);
-    dfs<true>(source, get_neighbors, visit_with_parent_bool);
-    dfs<true>(source, get_neighbors, is_target, visit_with_parent);
-    dfs<true>(source, get_neighbors, is_target, visit_with_parent_bool);
-    dfs<false>(source, get_neighbors, is_target);
-    dfs<false>(source, get_neighbors, visit_with_parent);
-    dfs<false>(source, get_neighbors, visit_with_parent_bool);
-    dfs<false>(source, get_neighbors, is_target, visit_with_parent);
-    dfs<false>(source, get_neighbors, is_target, visit_with_parent_bool);
+    dfs<true>(source, process_neighbors, is_target);
+    dfs<true>(source, process_neighbors, visit_with_parent);
+    dfs<true>(source, process_neighbors, visit_with_parent_bool);
+    dfs<true>(source, process_neighbors, is_target, visit_with_parent);
+    dfs<true>(source, process_neighbors, is_target, visit_with_parent_bool);
+    dfs<false>(source, process_neighbors, is_target);
+    dfs<false>(source, process_neighbors, visit_with_parent);
+    dfs<false>(source, process_neighbors, visit_with_parent_bool);
+    dfs<false>(source, process_neighbors, is_target, visit_with_parent);
+    dfs<false>(source, process_neighbors, is_target, visit_with_parent_bool);
 
-    topo_sort(source, get_neighbors);
+    topo_sort(source, process_neighbors);
 
-    tarjan_scc(source, get_neighbors);
+    tarjan_scc(source, process_neighbors);
     const std::vector<Key> sources{source, source};
-    tarjan_scc<Key>(sources, get_neighbors);
+    tarjan_scc<Key>(sources, process_neighbors);
 
-    longest_path_dag(source, get_neighbors, get_distance, is_target);
+    longest_path_dag(source, process_neighbors, get_distance, is_target);
 
-    dijkstra<false>(source, get_neighbors, get_distance, is_target);
-    dijkstra<false>(source, get_neighbors, get_distance, is_target, visit);
-    dijkstra<true>(source, get_neighbors, get_distance, is_target);
-    dijkstra<true>(source, get_neighbors, get_distance, is_target, visit);
+    dijkstra<false>(source, process_neighbors, get_distance, is_target);
+    dijkstra<false>(source, process_neighbors, get_distance, is_target, visit);
+    dijkstra<true>(source, process_neighbors, get_distance, is_target);
+    dijkstra<true>(source, process_neighbors, get_distance, is_target, visit);
 
-    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<false>(source, get_neighbors, get_distance, is_target, heuristic,
+    a_star<false>(source, process_neighbors, get_distance, is_target,
+                  heuristic);
+    a_star<false>(source, process_neighbors, get_distance, is_target, heuristic,
                   visit);
-    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic);
-    a_star<true>(source, get_neighbors, get_distance, is_target, heuristic,
+    a_star<true>(source, process_neighbors, get_distance, is_target, heuristic);
+    a_star<true>(source, process_neighbors, get_distance, is_target, heuristic,
                  visit);
 
-    shortest_distances(source, get_neighbors, get_distance);
+    shortest_distances(source, process_neighbors, get_distance);
 }
 using Key1 = std::pair<int, int>;
 [[maybe_unused]] void _lint_helper_unhashable(
     const Key1 &source,
-    std::function<std::vector<Key1>(const Key1 &)> get_neighbors,
+    std::function<void(const Key1 &, std::function<void(const Key1 &)>)>
+        process_neighbors,
     std::function<bool(const Key1 &)> is_target,
     std::function<void(const Key1 &, int)> visit,
     std::function<bool(const Key1 &, int)> visit_bool,
@@ -741,14 +766,15 @@ using Key1 = std::pair<int, int>;
     std::function<bool(const Key1 &, const Key1 &, int)> visit_with_parent_bool,
     std::function<int(const Key1 &, const Key1 &)> get_distance,
     std::function<int(const Key1 &)> heuristic) {
-    _lint_helper_template(source, get_neighbors, is_target, visit, visit_bool,
-                          visit_with_parent, visit_with_parent_bool,
+    _lint_helper_template(source, process_neighbors, is_target, visit,
+                          visit_bool, visit_with_parent, visit_with_parent_bool,
                           get_distance, heuristic);
 }
 using Key2 = int;
 [[maybe_unused]] void _lint_helper_hashable(
     const Key2 &source,
-    std::function<std::vector<Key2>(const Key2 &)> get_neighbors,
+    std::function<void(const Key2 &, std::function<void(const Key2 &)>)>
+        process_neighbors,
     std::function<bool(const Key2 &)> is_target,
     std::function<void(const Key2 &, int)> visit,
     std::function<bool(const Key2 &, int)> visit_bool,
@@ -756,8 +782,8 @@ using Key2 = int;
     std::function<bool(const Key2 &, const Key2 &, int)> visit_with_parent_bool,
     std::function<int(const Key2 &, const Key2 &)> get_distance,
     std::function<int(const Key2 &)> heuristic) {
-    _lint_helper_template(source, get_neighbors, is_target, visit, visit_bool,
-                          visit_with_parent, visit_with_parent_bool,
+    _lint_helper_template(source, process_neighbors, is_target, visit,
+                          visit_bool, visit_with_parent, visit_with_parent_bool,
                           get_distance, heuristic);
 }
 } // namespace

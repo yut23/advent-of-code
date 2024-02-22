@@ -40,17 +40,15 @@ struct Garden {
         Grid<int> distances(stones, std::numeric_limits<int>::max());
         distances[source] = 0;
 
-        const auto get_neighbors = [this, &distances](const Key &key) {
-            std::vector<Key> neighbors{};
-            neighbors.reserve(4);
+        const auto process_neighbors = [this, &distances](const Key &key,
+                                                          auto &&visit) {
             for (const AbsDirection &dir : aoc::DIRECTIONS) {
                 Pos pos = key + Delta(dir, true);
                 if (stones.in_bounds(pos) && stones[pos] &&
                     distances[pos] == std::numeric_limits<int>::max()) {
-                    neighbors.push_back(pos);
+                    visit(pos);
                 }
             }
-            return neighbors;
         };
         const auto visit = [&distances](const Key &key, int distance) {
             distances[key] = distance;
@@ -58,7 +56,7 @@ struct Garden {
 
         // handled in get_neighbors
         constexpr bool use_seen = false;
-        aoc::graph::bfs<use_seen>(source, get_neighbors, visit);
+        aoc::graph::bfs<use_seen>(source, process_neighbors, visit);
 
         return distances;
     }

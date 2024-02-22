@@ -25,10 +25,10 @@ std::size_t test_tarjan_scc() {
         +[](const std::unordered_map<int, std::vector<int>> &adj,
             int root) -> std::pair<std::vector<std::vector<int>>,
                                    std::set<std::pair<int, int>>> {
-            const auto get_neighbors = [&adj](int key) -> std::vector<int> {
-                return adj.at(key);
+            const auto process_neighbors = [&adj](int key, auto &&visit) {
+                std::ranges::for_each(adj.at(key), visit);
             };
-            auto result = aoc::graph::tarjan_scc(root, get_neighbors);
+            auto result = aoc::graph::tarjan_scc(root, process_neighbors);
             for (auto &component : result.first) {
                 std::sort(component.begin(), component.end());
             }

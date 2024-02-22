@@ -198,15 +198,13 @@ struct GraphHelper {
     std::vector<std::vector<int>> component_successors;
     std::map<Key, int> source_components;
 
-    std::vector<Key> get_neighbors(const Key &key) const {
-        std::vector<Key> neighbors;
+    void process_neighbors(const Key &key, auto &&handler) const {
         for (AbsDirection dir : grid[key.pos].get_out_dir(key.dir)) {
             Pos new_pos = key.pos + Delta(dir, true);
             if (grid.in_bounds(new_pos)) {
-                neighbors.emplace_back(new_pos, dir);
+                handler({new_pos, dir});
             }
         }
-        return neighbors;
     }
 
     explicit GraphHelper(const LaserGrid &grid_) : grid(grid_) {
@@ -229,7 +227,9 @@ struct GraphHelper {
 
         std::set<std::pair<int, int>> edges;
         std::tie(components, edges) = aoc::graph::tarjan_scc<Key>(
-            sources, std::bind_front(&GraphHelper::get_neighbors, this));
+            sources, [this](const Key &key, auto &&handler) {
+                process_neighbors(key, handler);
+            });
 
         component_successors.resize(components.size());
         for (const auto &[from, to] : edges) {
@@ -244,8 +244,8 @@ struct GraphHelper {
         }
     }
 
-    const std::vector<int> &get_component_neighbors(int id) const {
-        return component_successors[id];
+    void process_component_neighbors(int id, auto &&handler) const {
+        std::ranges::for_each(component_successors[id], handler);
     }
 
     int count_energized(const Key &source) const;
@@ -276,7 +276,9 @@ int GraphHelper::count_energized(const GraphHelper::Key &source) const {
     constexpr bool use_seen = false;
     aoc::graph::dfs<use_seen>(
         source_components.at(source),
-        std::bind_front(&GraphHelper::get_component_neighbors, this),
+        [this](int id, auto &&handler) {
+            process_component_neighbors(id, handler);
+        },
         visit_with_parent);
 
     return std::count(energized.data().begin(), energized.data().end(), true);

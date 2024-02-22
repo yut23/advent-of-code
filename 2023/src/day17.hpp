@@ -40,7 +40,7 @@ class CityMap {
 
     aoc::ds::Grid<unsigned char> block_costs;
 
-    std::vector<Key> get_neighbors(bool ultra, const Key &key) const;
+    void process_neighbors(bool ultra, const Key &key, auto &&visit) const;
     int get_distance(const Key &from, const Key &to) const;
 
   public:
@@ -60,15 +60,14 @@ std::ostream &operator<<(std::ostream &os, const CityMap::Key &key) {
     return os;
 }
 
-std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
-                                                 const Key &key) const {
+void CityMap::process_neighbors(bool ultra, const Key &key,
+                                auto &&visit) const {
     const int min_straight_moves = ultra ? 4 : 1;
     const int max_straight_moves = ultra ? 10 : 3;
-    std::vector<Key> neighbors;
     if (key.pos.x == 0 && key.pos.y == 0 &&
         key.orient == Orientation::horizontal) {
         // allow going down initially
-        neighbors.push_back({key.pos, Orientation::vertical});
+        visit({key.pos, Orientation::vertical});
     }
     for (const auto orient : {Orientation::horizontal, Orientation::vertical}) {
         if (orient == key.orient) {
@@ -86,11 +85,10 @@ std::vector<CityMap::Key> CityMap::get_neighbors(bool ultra,
                 if (!block_costs.in_bounds(neighbor.pos)) {
                     continue;
                 }
-                neighbors.push_back(std::move(neighbor));
+                visit(neighbor);
             }
         }
     }
-    return neighbors;
 }
 
 int CityMap::get_distance(const Key &from, const Key &to) const {
@@ -135,7 +133,10 @@ int CityMap::find_shortest_path(bool ultra) const {
         std::bind_front(&CityMap::get_distance, this), is_target, visit);
 #else
     const auto &[distance, path] = aoc::graph::a_star(
-        source, std::bind_front(&CityMap::get_neighbors, this, ultra),
+        source,
+        [this, ultra](const Key &key, auto &&visit_neighbor) {
+            process_neighbors(ultra, key, visit_neighbor);
+        },
         std::bind_front(&CityMap::get_distance, this), is_target,
         [&target](const Key &key) -> int {
             return (key.pos - target).manhattan_distance();

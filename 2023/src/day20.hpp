@@ -336,10 +336,11 @@ MessageBus MessageBus::read_modules(std::istream &is) {
 
 void MessageBus::identify_components() {
     const std::string root = "broadcaster";
-    const auto get_neighbors = [this](const std::string &name) {
-        return modules.at(name)->outputs;
+    const auto process_neighbors = [this](const std::string &name,
+                                          auto &&visit) {
+        std::ranges::for_each(modules.at(name)->outputs, visit);
     };
-    components = aoc::graph::tarjan_scc(root, get_neighbors).first;
+    components = aoc::graph::tarjan_scc(root, process_neighbors).first;
 
     // store component ids in each module
     for (std::size_t i = 0; i < components.size(); ++i) {

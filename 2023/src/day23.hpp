@@ -241,15 +241,16 @@ int TrailMap::part_1() const {
         }
         std::cerr << "}\n";
     }
-    const auto get_neighbors = [&fwd_edges = fwd_edges](const Key key) {
-        return fwd_edges[key];
+    const auto process_neighbors = [&fwd_edges = fwd_edges](const Key key,
+                                                            auto &&visit) {
+        std::ranges::for_each(fwd_edges[key], visit);
     };
     const auto is_target = [&target = target](const Key key) -> bool {
         return key == target;
     };
     const auto &[distance, path] = aoc::graph::longest_path_dag(
-        start, get_neighbors, std::bind_front(&TrailMap::get_distance, this),
-        is_target);
+        start, process_neighbors,
+        std::bind_front(&TrailMap::get_distance, this), is_target);
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "longest path:\n";
