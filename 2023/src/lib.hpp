@@ -210,9 +210,19 @@ inline Delta operator*(Delta lhs, int rhs) {
     lhs *= rhs;
     return lhs;
 }
+inline Delta operator*(int lhs, Delta rhs) {
+    rhs *= lhs;
+    return rhs;
+}
 inline Delta operator/(Delta lhs, int rhs) {
     lhs /= rhs;
     return lhs;
+}
+// negation operator
+inline Delta operator-(Delta delta) {
+    delta.dx *= -1;
+    delta.dy *= -1;
+    return delta;
 }
 
 std::ostream &operator<<(std::ostream &os, const Delta &delta) {
@@ -233,6 +243,11 @@ struct Pos {
         y += rhs.dy;
         return *this;
     }
+    Pos &operator-=(const Delta &rhs) {
+        x -= rhs.dx;
+        y -= rhs.dy;
+        return *this;
+    }
 
     // can scale by an integer
     Pos &operator*=(int rhs) {
@@ -251,6 +266,10 @@ struct Pos {
 // this takes lhs by copy, so it doesn't modify the original lhs
 inline Pos operator+(Pos lhs, const Delta &rhs) {
     lhs += rhs;
+    return lhs;
+}
+inline Pos operator-(Pos lhs, const Delta &rhs) {
+    lhs -= rhs;
     return lhs;
 }
 inline Pos operator*(Pos lhs, int rhs) {
