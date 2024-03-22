@@ -11,10 +11,12 @@
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for dijkstra, a_star
 #include "lib.hpp"             // for Pos, DEBUG, as_number
+#include "util/hash.hpp"       // for make_hash
 
 #include <algorithm>        // for transform
 #include <compare>          // for strong_ordering
-#include <functional>       // for function, bind_front
+#include <cstddef>          // for size_t
+#include <functional>       // for function, bind_front, hash
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cerr, istream, ostream
 #include <iterator>         // for back_inserter
@@ -31,6 +33,7 @@ enum Orientation : unsigned char {
 };
 
 class CityMap {
+  public:
     struct Key {
         Pos pos;
         Orientation orient;
@@ -38,6 +41,7 @@ class CityMap {
         std::strong_ordering operator<=>(const Key &) const = default;
     };
 
+  private:
     aoc::ds::Grid<unsigned char> block_costs;
 
     void process_neighbors(bool ultra, const Key &key, auto &&visit) const;
@@ -49,8 +53,6 @@ class CityMap {
     int find_shortest_path(bool ultra = false) const;
     void print(std::ostream &, const std::vector<Key> &path = {}) const;
     static CityMap read(std::istream &is);
-
-    friend std::ostream &operator<<(std::ostream &, const Key &);
 };
 
 std::ostream &operator<<(std::ostream &os, const CityMap::Key &key) {
@@ -127,9 +129,12 @@ int CityMap::find_shortest_path(bool ultra) const {
     const auto is_target = [&target](const Key &key) -> bool {
         return key.pos == target;
     };
-#if 0
+#if 1
     const auto &[distance, path] = aoc::graph::dijkstra(
-        source, std::bind_front(&CityMap::get_neighbors, this, ultra),
+        source,
+        [this, ultra](const Key &key, auto &&visit_neighbor) {
+            process_neighbors(ultra, key, visit_neighbor);
+        },
         std::bind_front(&CityMap::get_distance, this), is_target, visit);
 #else
     const auto &[distance, path] = aoc::graph::a_star(
@@ -202,16 +207,15 @@ CityMap CityMap::read(std::istream &is) {
 
 } // namespace aoc::day17
 
-#if 0
 template <>
 struct std::hash<aoc::day17::CityMap::Key> {
     std::size_t operator()(const aoc::day17::CityMap::Key &key) const noexcept {
-        std::size_t seed = std::hash<aoc::Pos>{}(key.pos);
-        aoc::hash_combine(seed, std::hash<aoc::AbsDirection>{}(key.dir));
-        aoc::hash_combine(seed, std::hash<int>{}(key.move_count));
+        // random number
+        std::size_t seed = 0x580ac2097baf0cb7ull;
+        util::make_hash(seed, key.pos.x, key.pos.y,
+                        key.orient == aoc::day17::Orientation::horizontal);
         return seed;
     }
 };
-#endif
 
 #endif /* end of include guard: DAY17_HPP_3D5Q7QMY */

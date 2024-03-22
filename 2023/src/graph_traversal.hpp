@@ -12,11 +12,13 @@
 
 #include "lib.hpp"           // for DEBUG
 #include "util/concepts.hpp" // for Hashable, any_iterable_collection, same_as_any
+#include "util/hash.hpp"     // for unordered_map_badness
 #include <algorithm>         // for min, reverse
 #include <cassert>           // for assert
 #include <concepts>          // for same_as, integral
 #include <functional>        // for function, greater
 #include <initializer_list> // for initializer_list
+#include <iostream>         // for cerr
 #include <map>              // for map
 #include <queue>            // for priority_queue
 #include <set>              // for set
@@ -514,6 +516,11 @@ dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
                 path.emplace_back(it->second.second);
             }
             std::ranges::reverse(path);
+            if constexpr (aoc::DEBUG && util::concepts::Hashable<Key>) {
+                std::cerr << "distances map badness: "
+                          << util::hash::unordered_map_badness(distances)
+                          << "\n";
+            }
             return {dist, path};
         }
         process_neighbors(current, [&get_distance, &visited, &distances,
