@@ -181,7 +181,7 @@ int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
 }
 
 /**
- * Generic DFS on an arbitrary graph.
+ * Generic DFS on an arbitrary graph, non-recursive version.
  *
  * At least one of `is_target` and `visit_with_parent` must be passed.
  *
@@ -257,6 +257,99 @@ template <bool use_seen = true, class Key,
 int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
         VisitWithParent &&visit_with_parent) {
     return dfs<use_seen>(
+        source, std::forward<ProcessNeighbors>(process_neighbors),
+        [](const Key &) { return false; },
+        std::forward<VisitWithParent>(visit_with_parent));
+}
+
+/**
+ * Generic DFS on an arbitrary graph, recursive version.
+ *
+ * Uses less memory than the non-recursive version, but requires
+ * `process_neighbors` to be reentrant.
+ *
+ * At least one of `is_target` and `visit_with_parent` must be passed.
+ *
+ * If passed, `visit_with_parent(node, parent, depth)` will be called for each
+ * node. It may optionally return a bool, which if false, will stop processing
+ * that node (before it is checked for being a target).
+ *
+ * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
+ * visited as a tree). `use_seen` should only be set to false if the graph has
+ * no cycles.
+ *
+ * Returns the distance from the source to the first target found, or -1 if not
+ * found.
+ */
+template <bool use_seen = true, class Key,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::IsTarget<Key> IsTarget,
+          detail::VisitWithParent<Key> VisitWithParent>
+int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
+            IsTarget &&is_target, VisitWithParent &&visit_with_parent) {
+    using visit_ret_t =
+        typename detail::visit_invoke_result<Key, VisitWithParent>::type;
+    detail::maybe_unordered_set<Key> seen{};
+
+    auto helper = [&seen, &process_neighbors, &is_target,
+                   &visit_with_parent](const Key &key, int depth,
+                                       const Key &parent, const auto &rec) {
+        if constexpr (std::same_as<visit_ret_t, bool>) {
+            if (!visit_with_parent(key, parent, depth)) {
+                return -1;
+            }
+        } else {
+            visit_with_parent(key, parent, depth);
+        }
+        if (is_target(key)) {
+            return depth;
+        }
+        if constexpr (use_seen) {
+            seen.insert(key);
+        } else {
+            // suppress unused lambda capture warning
+            (void)seen;
+        }
+        int result = -1;
+        process_neighbors(
+            key, [&rec, &seen, &result, &key, depth](const Key &neighbor) {
+                if (result != -1) {
+                    // found target in a previous iteration
+                    return;
+                }
+                if constexpr (use_seen) {
+                    if (seen.contains(neighbor)) {
+                        return;
+                    }
+                } else {
+                    // suppress unused lambda capture warning
+                    (void)seen;
+                }
+                result = rec(neighbor, depth + 1, key, rec);
+            });
+        return result;
+    };
+
+    return helper(source, 0, source, helper);
+}
+
+template <bool use_seen = true, class Key,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::IsTarget<Key> IsTarget>
+int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
+            IsTarget &&is_target) {
+    return dfs_rec<use_seen>(source,
+                             std::forward<ProcessNeighbors>(process_neighbors),
+                             std::forward<IsTarget>(is_target),
+                             [](const Key &, const Key &, int) -> void {});
+}
+
+template <bool use_seen = true, class Key,
+          detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::VisitWithParent<Key> VisitWithParent>
+int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
+            VisitWithParent &&visit_with_parent) {
+    return dfs_rec<use_seen>(
         source, std::forward<ProcessNeighbors>(process_neighbors),
         [](const Key &) { return false; },
         std::forward<VisitWithParent>(visit_with_parent));
@@ -737,6 +830,18 @@ void _lint_helper_template(
     dfs<false>(source, process_neighbors, visit_with_parent_bool);
     dfs<false>(source, process_neighbors, is_target, visit_with_parent);
     dfs<false>(source, process_neighbors, is_target, visit_with_parent_bool);
+
+    dfs_rec<true>(source, process_neighbors, is_target);
+    dfs_rec<true>(source, process_neighbors, visit_with_parent);
+    dfs_rec<true>(source, process_neighbors, visit_with_parent_bool);
+    dfs_rec<true>(source, process_neighbors, is_target, visit_with_parent);
+    dfs_rec<true>(source, process_neighbors, is_target, visit_with_parent_bool);
+    dfs_rec<false>(source, process_neighbors, is_target);
+    dfs_rec<false>(source, process_neighbors, visit_with_parent);
+    dfs_rec<false>(source, process_neighbors, visit_with_parent_bool);
+    dfs_rec<false>(source, process_neighbors, is_target, visit_with_parent);
+    dfs_rec<false>(source, process_neighbors, is_target,
+                   visit_with_parent_bool);
 
     topo_sort(source, process_neighbors);
 
