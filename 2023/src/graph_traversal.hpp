@@ -52,8 +52,8 @@ using maybe_unordered_map =
 template <class Func, class Key>
 concept ProcessNeighbors =
     requires(Func process_neighbors, const Key &key,
-             std::function<void(const Key &key)> &handler) {
-        process_neighbors(key, handler);
+             std::function<void(const Key &key)> &visitor) {
+        process_neighbors(key, visitor);
     };
 
 template <class Func, class Key>
