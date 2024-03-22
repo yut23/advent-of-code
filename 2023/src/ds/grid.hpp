@@ -276,6 +276,12 @@ struct Grid {
     constexpr const_reference at(size_type x, size_type y) const {
         return m_data.at(get_index(x, y));
     }
+    constexpr reference at_unchecked(size_type x, size_type y) {
+        return m_data[get_index(x, y)];
+    }
+    constexpr const_reference at_unchecked(size_type x, size_type y) const {
+        return m_data[get_index(x, y)];
+    }
 
     // indexing by Pos
     constexpr reference at(const Pos &pos) { return at(pos.x, pos.y); }

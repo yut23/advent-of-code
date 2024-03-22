@@ -48,7 +48,7 @@ void Platform::transpose() {
     const int n = rocks.width;
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < y; ++x) {
-            std::swap(rocks.at(x, y), rocks.at(y, x));
+            std::swap(rocks.at_unchecked(x, y), rocks.at_unchecked(y, x));
         }
     }
 }
@@ -58,7 +58,7 @@ void Platform::flip_rows() {
     for (int y = 0; y < n; ++y) {
         for (int x = 0; x < n / 2; ++x) {
             const int z = n - x - 1;
-            std::swap(rocks.at(x, y), rocks.at(z, y));
+            std::swap(rocks.at_unchecked(x, y), rocks.at_unchecked(z, y));
         }
     }
 }
@@ -68,7 +68,7 @@ void Platform::flip_columns() {
     for (int x = 0; x < n; ++x) {
         for (int y = 0; y < n / 2; ++y) {
             const int z = n - y - 1;
-            std::swap(rocks.at(x, y), rocks.at(x, z));
+            std::swap(rocks.at_unchecked(x, y), rocks.at_unchecked(x, z));
         }
     }
 }
@@ -117,7 +117,7 @@ int Platform::calculate_load() const {
     int load = 0;
     for (int y = 0; y < rocks.height; ++y) {
         for (int x = 0; x < rocks.width; ++x) {
-            if (rocks.at(x, y) == Rock::round) {
+            if (rocks.at_unchecked(x, y) == Rock::round) {
                 load += rocks.width - x;
             }
         }
