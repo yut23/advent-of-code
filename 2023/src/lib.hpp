@@ -9,6 +9,7 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
+#include "util/hash.hpp"    // for make_hash
 #include <algorithm>        // for max, min
 #include <cassert>          // for assert
 #include <compare>          // for strong_ordering
@@ -417,9 +418,10 @@ std::ifstream parse_args(int argc, char **argv) {
 template <>
 struct std::hash<aoc::Pos> {
     std::size_t operator()(const aoc::Pos &pos) const noexcept {
-        std::size_t h1 = std::hash<int>{}(pos.x);
-        std::size_t h2 = std::hash<int>{}(pos.y);
-        return h1 ^ (h2 << 1);
+        // random number
+        std::size_t seed = 0xbedb5bb0b473b6b7ull;
+        util::make_hash(seed, pos.x, pos.y);
+        return seed;
     }
 };
 
