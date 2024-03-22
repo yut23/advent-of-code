@@ -11,14 +11,15 @@
 #include "ds/grid.hpp" // for Grid
 #include "graph_traversal.hpp"
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
+#include "util/hash.hpp"    // for make_hash
 #include <algorithm>        // for count_if
-#include <compare>          // for strong_ordering
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, ostream
-#include <map>              // for map
 #include <set>              // for set
 #include <string>           // for string, getline
 #include <tuple>            // for tie
+#include <unordered_map>    // for unordered_map
+#include <unordered_set>    // for unordered_set
 #include <utility>          // for pair
 #include <vector>           // for vector
 
@@ -141,21 +142,38 @@ std::ostream &operator<<(std::ostream &os, const LaserGrid &laser_grid) {
 
 ///
 
+struct GraphHelper_Key {
+    Pos pos;
+    AbsDirection dir;
+
+    GraphHelper_Key(const Pos &pos, AbsDirection dir) : pos(pos), dir(dir) {}
+
+    bool operator==(const GraphHelper_Key &) const = default;
+};
+
+} // namespace aoc::day16
+
+template <>
+struct std::hash<aoc::day16::GraphHelper_Key> {
+    std::size_t
+    operator()(const aoc::day16::GraphHelper_Key &key) const noexcept {
+        // random number
+        std::size_t seed = 0x57456df670c76ed8ull;
+        util::make_hash(seed, key.pos.x, key.pos.y, key.dir);
+        return seed;
+    }
+};
+
+namespace aoc::day16 {
+
 struct GraphHelper {
-    struct Key {
-        Pos pos;
-        AbsDirection dir;
-
-        Key(const Pos &pos, AbsDirection dir) : pos(pos), dir(dir) {}
-
-        std::strong_ordering operator<=>(const Key &) const = default;
-    };
+    using Key = GraphHelper_Key;
 
     const LaserGrid &grid;
-    std::set<Key> sources;
+    std::unordered_set<Key> sources;
     std::vector<std::vector<Key>> components;
     std::vector<std::vector<int>> component_successors;
-    std::map<Key, int> source_components;
+    std::unordered_map<Key, int> source_components;
 
     void process_neighbors(const Key &key, auto &&handler) const {
         for (AbsDirection dir : grid[key.pos].get_out_dir(key.dir)) {
