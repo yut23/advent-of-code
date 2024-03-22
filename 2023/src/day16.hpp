@@ -12,17 +12,14 @@
 #include "graph_traversal.hpp"
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
 #include <algorithm>        // for count_if
-#include <cassert>          // for assert
 #include <compare>          // for strong_ordering
-#include <cstddef>          // for size_t
-#include <functional>       // for bind_front
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, ostream
 #include <map>              // for map
 #include <set>              // for set
 #include <string>           // for string, getline
 #include <tuple>            // for tie
-#include <utility>          // for pair, make_pair
+#include <utility>          // for pair
 #include <vector>           // for vector
 
 namespace aoc::day16 {
@@ -95,15 +92,9 @@ std::vector<AbsDirection> Tile::get_out_dir(AbsDirection in_dir) const {
 }
 
 class LaserGrid : public aoc::ds::Grid<Tile> {
-    using visit_cache_t = std::set<std::pair<Pos, AbsDirection>>;
-
-    void send_beam_helper(Pos pos, AbsDirection dir, visit_cache_t &seen);
-
   public:
     explicit LaserGrid(std::vector<std::vector<Tile>> &&tiles)
         : Grid<Tile>(std::move(tiles)) {}
-    void send_beam(Pos pos, AbsDirection dir);
-    void clear_energized();
     int count_energized() const;
 
     static LaserGrid read(std::istream &);
@@ -111,38 +102,6 @@ class LaserGrid : public aoc::ds::Grid<Tile> {
     void print_energized(std::ostream &os) const;
     friend std::ostream &operator<<(std::ostream &, const LaserGrid &);
 };
-
-void LaserGrid::send_beam(Pos pos, AbsDirection dir) {
-    visit_cache_t seen;
-    send_beam_helper(pos, dir, seen);
-}
-
-void LaserGrid::send_beam_helper(Pos pos, AbsDirection dir,
-                                 visit_cache_t &seen) {
-    while (in_bounds(pos)) {
-        auto key = std::make_pair(pos, dir);
-        if (seen.contains(key)) {
-            return;
-        }
-        seen.insert(key);
-        Tile &tile = (*this)[pos];
-        tile.energized = true;
-        std::vector<AbsDirection> new_dirs = tile.get_out_dir(dir);
-        assert(new_dirs.size() > 0);
-        // recurse on any extra beams
-        for (std::size_t i = 1; i < new_dirs.size(); ++i) {
-            send_beam_helper(pos + Delta(new_dirs[i], true), new_dirs[i], seen);
-        }
-        dir = new_dirs[0];
-        pos += Delta(dir, true);
-    }
-}
-
-void LaserGrid::clear_energized() {
-    for (auto &tile : data()) {
-        tile.energized = false;
-    }
-}
 
 int LaserGrid::count_energized() const {
     return std::count_if(m_data.begin(), m_data.end(),
