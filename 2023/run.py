@@ -64,62 +64,59 @@ def main() -> None:
         days = [str(TODAY)]
 
     for i, day_arg in enumerate(days):
-        day_num = day_arg.partition("_")[0]
-        if len(day_num) == 1:
-            day_arg = f"0{day_arg}"
-            day_num = f"0{day_num}"
-        path = ROOT / f"input/day{day_num}" / args.input_name
-        with open(path, "r") as file:
-            lines = file.read().splitlines(keepends=False)
-
-        day = importlib.import_module(f"day{day_arg}")
-
-        print(f"Day {int(day_num)}")
-        if hasattr(day, "setup"):
-            start_time = time.perf_counter()
-            input_data = day.setup(lines)
-            elapsed = time.perf_counter() - start_time
-            print(f"Setup: {_format_time(elapsed)}")
-            if args.timeit:
-                get_timing("day.setup(lines)", globals={**locals(), **globals()})
-        else:
-            input_data = lines
-
-        if hasattr(day, "both_parts"):
-            start_time = time.perf_counter()
-            answers = day.both_parts(input_data)
-            elapsed = time.perf_counter() - start_time
-            print(
-                f"Part 1: {answers[0]}\nPart 2: {answers[1]} ({_format_time(elapsed)})"
-            )
-            if args.timeit:
-                get_timing(
-                    "day.both_parts(input_data)", globals={**locals(), **globals()}
-                )
-
-        else:
-            if hasattr(day, "part_1"):
-                start_time = time.perf_counter()
-                answer = day.part_1(input_data)
-                elapsed = time.perf_counter() - start_time
-                print(f"Part 1: {answer} ({_format_time(elapsed)})")
-                if args.timeit:
-                    get_timing(
-                        "day.part_1(input_data)", globals={**locals(), **globals()}
-                    )
-
-            if hasattr(day, "part_2"):
-                start_time = time.perf_counter()
-                answer = day.part_2(input_data)
-                elapsed = time.perf_counter() - start_time
-                print(f"Part 2: {answer} ({_format_time(elapsed)})")
-                if args.timeit:
-                    get_timing(
-                        "day.part_2(input_data)", globals={**locals(), **globals()}
-                    )
-
+        run_day(day_arg, args.input_name, args.timeit)
         if i != len(days) - 1:
             print()
+
+
+def run_day(day_arg: str, input_name: str, do_timing: bool) -> None:
+    day_num = day_arg.partition("_")[0]
+    if len(day_num) == 1:
+        day_arg = f"0{day_arg}"
+        day_num = f"0{day_num}"
+    path = ROOT / f"input/day{day_num}" / input_name
+    with open(path, "r") as file:
+        lines = file.read().splitlines(keepends=False)
+
+    day = importlib.import_module(f"day{day_arg}")
+
+    print(f"Day {int(day_num)}")
+    namespace = {**locals(), **globals()}
+    if hasattr(day, "setup"):
+        start_time = time.perf_counter()
+        input_data = day.setup(lines)
+        elapsed = time.perf_counter() - start_time
+        print(f"Setup: {_format_time(elapsed)}")
+        if do_timing:
+            get_timing("day.setup(lines)", namespace=namespace)
+    else:
+        input_data = lines
+
+    namespace["input_data"] = input_data
+    if hasattr(day, "both_parts"):
+        start_time = time.perf_counter()
+        answers = day.both_parts(input_data)
+        elapsed = time.perf_counter() - start_time
+        print(f"Part 1: {answers[0]}\nPart 2: {answers[1]} ({_format_time(elapsed)})")
+        if do_timing:
+            get_timing("day.both_parts(input_data)", namespace=namespace)
+
+    else:
+        if hasattr(day, "part_1"):
+            start_time = time.perf_counter()
+            answer = day.part_1(input_data)
+            elapsed = time.perf_counter() - start_time
+            print(f"Part 1: {answer} ({_format_time(elapsed)})")
+            if do_timing:
+                get_timing("day.part_1(input_data)", namespace=namespace)
+
+        if hasattr(day, "part_2"):
+            start_time = time.perf_counter()
+            answer = day.part_2(input_data)
+            elapsed = time.perf_counter() - start_time
+            print(f"Part 2: {answer} ({_format_time(elapsed)})")
+            if do_timing:
+                get_timing("day.part_2(input_data)", namespace=namespace)
 
 
 # from IPython/core/magics/execution.py
@@ -155,9 +152,9 @@ def get_timing(
     stmt: str = "pass",
     setup: str = "pass",
     repeat: int = 7,
-    globals: Optional[Dict[str, Any]] = None,
+    namespace: Optional[Dict[str, Any]] = None,
 ) -> None:
-    timer = timeit.Timer(stmt, setup, globals=globals)
+    timer = timeit.Timer(stmt, setup, globals=namespace)
     num_loops, total_time = timer.autorange()
     times = [
         t / num_loops
