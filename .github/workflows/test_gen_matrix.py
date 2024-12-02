@@ -7,13 +7,14 @@ def test_get_dependencies_cpp():
     base_dir = ROOT / "2023"
     src = base_dir / "src"
     aoc_lib = base_dir.parent / "aoc_lib"
-    assert get_dependencies(src / "day01.cpp") == {aoc_lib / "lib.hpp"}
-    assert get_dependencies(src / "day05.cpp") == {
+    include_dirs = (src, aoc_lib)
+    assert get_dependencies(src / "day01.cpp", *include_dirs) == {aoc_lib / "lib.hpp"}
+    assert get_dependencies(src / "day05.cpp", *include_dirs) == {
         src / "day05.hpp",
         aoc_lib / "lib.hpp",
     }
-    assert get_dependencies(src / "day05.hpp") == {aoc_lib / "lib.hpp"}
-    assert get_dependencies(src / "test05.cpp") == {
+    assert get_dependencies(src / "day05.hpp", *include_dirs) == {aoc_lib / "lib.hpp"}
+    assert get_dependencies(src / "test05.cpp", *include_dirs) == {
         src / "day05.hpp",
         aoc_lib / "unit_test/unit_test.hpp",
     }
