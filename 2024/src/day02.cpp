@@ -15,7 +15,12 @@ int main(int argc, char **argv) {
 
     auto reports = aoc::day02::read_input(infile);
 
+    // part 1
     int count = std::ranges::count_if(reports, aoc::day02::is_safe);
+    std::cout << count << "\n";
+
+    // part 2
+    count = std::ranges::count_if(reports, aoc::day02::is_safe_with_dampener);
     std::cout << count << "\n";
 
     return 0;

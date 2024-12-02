@@ -33,6 +33,22 @@ bool is_safe(std::vector<int> levels) {
     return true;
 }
 
+bool is_safe_with_dampener(std::vector<int> levels) {
+    // not elegant, but it works...
+    std::vector<int> adjusted(levels.size() - 1);
+    std::copy(levels.cbegin() + 1, levels.cend(), adjusted.begin());
+
+    for (std::size_t i = 0; i < levels.size(); ++i) {
+        if (is_safe(adjusted)) {
+            return true;
+        }
+        if (i < adjusted.size()) {
+            adjusted[i] = levels[i];
+        }
+    }
+    return false;
+}
+
 auto read_input(std::istream &is) {
     // read file line-by-line
     std::string line;
