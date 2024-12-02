@@ -12,7 +12,8 @@ ifeq ($(USE_LIBCXX),TRUE)
 	STDLIB_LDFLAGS = $(STDLIB_CXXFLAGS)
 endif
 
-INCLUDES = -Isrc
+# These are searched left-to-right
+INCLUDES = -Isrc -I../aoc_lib
 
 LOCAL_CXXFLAGS = -Wall -Wextra -O3 -g -std=c++20 $(INCLUDES) $(STDLIB_CXXFLAGS)
 DEBUG_CXXFLAGS = $(LOCAL_CXXFLAGS) -O0 -DDEBUG_MODE
