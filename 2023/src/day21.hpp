@@ -46,17 +46,22 @@ struct Garden {
                 Pos pos = key + Delta(dir, true);
                 if (stones.in_bounds(pos) && stones[pos] &&
                     distances[pos] == std::numeric_limits<int>::max()) {
-                    visit(pos);
+                    visit(std::move(pos));
                 }
             }
         };
-        const auto visit = [&distances](const Key &key, int distance) {
-            distances[key] = distance;
+        const auto visit = [&source, &distances](const Key &key,
+                                                 int distance) -> bool {
+            auto idx = distances.get_index(key);
+            if (key != source &&
+                distances[idx] != std::numeric_limits<int>::max()) {
+                return false;
+            }
+            distances[idx] = distance;
+            return true;
         };
 
-        // handled in get_neighbors
-        constexpr bool use_seen = false;
-        aoc::graph::bfs<use_seen>(source, process_neighbors, visit);
+        aoc::graph::bfs_manual_dedupe(source, process_neighbors, visit);
 
         return distances;
     }
