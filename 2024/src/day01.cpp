@@ -25,5 +25,28 @@ int main(int argc, char **argv) {
 
     std::cout << distance << "\n";
 
+    // part 2
+
+    auto left_counts = aoc::day01::count_sorted(left);
+    auto right_counts = aoc::day01::count_sorted(right);
+
+    int similarity = 0;
+    auto right_it = right_counts.cbegin();
+    for (auto left_it = left_counts.cbegin(); left_it != left_counts.cend();
+         ++left_it) {
+        while (right_it != right_counts.cend() &&
+               right_it->first < left_it->first) {
+            ++right_it;
+        }
+        if (right_it == right_counts.cend()) {
+            break;
+        }
+        if (left_it->first == right_it->first) {
+            similarity += left_it->first * left_it->second * right_it->second;
+        }
+    }
+
+    std::cout << similarity << "\n";
+
     return 0;
 }

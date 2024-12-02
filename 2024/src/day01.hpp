@@ -14,6 +14,19 @@
 
 namespace aoc::day01 {
 
+auto count_sorted(const std::vector<int> &vec) {
+    std::vector<std::pair<int, unsigned int>> counts;
+    for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
+        unsigned int count = 1;
+        while ((it + 1) != vec.cend() && *it == *(it + 1)) {
+            ++count;
+            ++it;
+        }
+        counts.emplace_back(*it, count);
+    }
+    return counts;
+}
+
 std::pair<std::vector<int>, std::vector<int>> read_input(std::istream &is) {
     // read file line-by-line
     std::vector<int> left, right;
