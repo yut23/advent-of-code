@@ -181,6 +181,65 @@ int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
 }
 
 /**
+ * Generic BFS on an arbitrary graph, with no duplicate checking.
+ *
+ * At least one of `is_target` and `visit` must be passed.
+ *
+ * If passed, `visit(node, distance)` will be called for each node. It may
+ * optionally return a bool, which if false, will stop processing that node
+ * (before it is checked for being a target).
+ *
+ * Returns the distance from the source to the first target found, or -1 if not
+ * found.
+ */
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
+int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
+                      IsTarget &&is_target, Visit &&visit) {
+    using visit_ret_t = typename detail::visit_invoke_result<Key, Visit>::type;
+    std::vector<Key> queue = {source};
+    std::vector<Key> next_queue{};
+
+    for (int distance = 0; !queue.empty();
+         ++distance, queue.clear(), std::swap(queue, next_queue)) {
+        for (const Key &key : queue) {
+            if constexpr (std::same_as<visit_ret_t, bool>) {
+                if (!visit(key, distance)) {
+                    continue;
+                }
+            } else {
+                visit(key, distance);
+            }
+            if (is_target(key)) {
+                return distance;
+            }
+            process_neighbors(key, [&next_queue](const Key &neighbor) {
+                next_queue.push_back(neighbor);
+            });
+        }
+    }
+    return -1;
+}
+
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::IsTarget<Key> IsTarget>
+int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
+                      IsTarget &&is_target) {
+    return bfs_manual_dedupe(
+        source, std::forward<ProcessNeighbors>(process_neighbors),
+        std::forward<IsTarget>(is_target), [](const Key &, int) -> void {});
+}
+
+template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
+          detail::Visit<Key> Visit>
+int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
+                      Visit &&visit) {
+    return bfs_manual_dedupe(
+        source, std::forward<ProcessNeighbors>(process_neighbors),
+        [](const Key &) { return false; }, std::forward<Visit>(visit));
+}
+
+/**
  * Generic DFS on an arbitrary graph, non-recursive version.
  *
  * At least one of `is_target` and `visit_with_parent` must be passed.
@@ -819,6 +878,12 @@ void _lint_helper_template(
     bfs<false>(source, process_neighbors, visit_bool);
     bfs<false>(source, process_neighbors, is_target, visit);
     bfs<false>(source, process_neighbors, is_target, visit_bool);
+
+    bfs_manual_dedupe(source, process_neighbors, is_target);
+    bfs_manual_dedupe(source, process_neighbors, visit);
+    bfs_manual_dedupe(source, process_neighbors, visit_bool);
+    bfs_manual_dedupe(source, process_neighbors, is_target, visit);
+    bfs_manual_dedupe(source, process_neighbors, is_target, visit_bool);
 
     dfs<true>(source, process_neighbors, is_target);
     dfs<true>(source, process_neighbors, visit_with_parent);
