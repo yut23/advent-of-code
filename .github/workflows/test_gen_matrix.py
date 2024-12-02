@@ -55,7 +55,7 @@ def matrix_helper(*changed_files: str) -> dict[str, set[str]]:
 
 def test_matrix():
     # pylint: disable=use-dict-literal
-    everything = matrix_helper("2022/Makefile", "2023/Makefile")
+    everything = matrix_helper("2022/Makefile", "tools/cpp/Makefile")
 
     # C++ source files
     assert matrix_helper("2023/src/day05.cpp") == dict(

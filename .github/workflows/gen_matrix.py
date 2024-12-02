@@ -102,7 +102,7 @@ class Target:
             src / f"{self}.cpp", src, aoc_lib
         ):
             deps.add(included_file)
-        deps.add(self.base_dir / "Makefile")
+        deps.add((self.base_dir / "Makefile").resolve())
         if mode == "answer":
             for answer_test in self.base_dir.glob(f"answer_tests/{self}/*"):
                 deps.add(answer_test)
