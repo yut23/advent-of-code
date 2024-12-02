@@ -246,6 +246,9 @@ struct Grid {
     constexpr inline std::size_t get_index(size_type x, size_type y) const {
         return y * width + x;
     }
+    constexpr inline std::size_t get_index(const Pos &pos) const {
+        return get_index(pos.x, pos.y);
+    }
     constexpr Pos index_to_pos(std::size_t index) const {
         return Pos(index % width, index / width);
     }
@@ -361,6 +364,9 @@ constexpr bool _grid_lint_helper_constexpr() {
     Grid grid3c(std::move(bool_vec));
     static_assert(std::is_same_v<decltype(grid3a), decltype(grid3b)>);
     static_assert(std::is_same_v<decltype(grid3a), decltype(grid3c)>);
+
+    [[maybe_unused]] Grid<float> grid4a(grid1a, 0.0);
+    [[maybe_unused]] Grid<int> grid4b(grid1a, 1);
 
     static_assert(std::bidirectional_iterator<Grid<int>::iterator>);
     static_assert(!std::random_access_iterator<Grid<int>::iterator>);
