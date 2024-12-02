@@ -6,12 +6,16 @@ ACTIONS_DIR = ROOT / ".github/actions"
 def test_get_dependencies_cpp():
     base_dir = ROOT / "2023"
     src = base_dir / "src"
-    assert get_dependencies(src / "day01.cpp") == {src / "lib.hpp"}
-    assert get_dependencies(src / "day05.cpp") == {src / "day05.hpp", src / "lib.hpp"}
-    assert get_dependencies(src / "day05.hpp") == {src / "lib.hpp"}
+    aoc_lib = base_dir.parent / "aoc_lib"
+    assert get_dependencies(src / "day01.cpp") == {aoc_lib / "lib.hpp"}
+    assert get_dependencies(src / "day05.cpp") == {
+        src / "day05.hpp",
+        aoc_lib / "lib.hpp",
+    }
+    assert get_dependencies(src / "day05.hpp") == {aoc_lib / "lib.hpp"}
     assert get_dependencies(src / "test05.cpp") == {
         src / "day05.hpp",
-        src / "unit_test/unit_test.hpp",
+        aoc_lib / "unit_test/unit_test.hpp",
     }
 
 

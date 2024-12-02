@@ -2,6 +2,14 @@ name: Test gen_matrix.py
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+
 jobs:
   test:
     runs-on: ubuntu-latest
