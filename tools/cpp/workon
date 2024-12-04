@@ -38,8 +38,8 @@ fi
 to_edit+=("$source_file" "$header_file")
 
 # update the entire compilation database if needed
-if [[ -e make_wrapper.sh ]] && [[ Makefile -nt compile_commands.json ]]; then
-  ./make_wrapper.sh || true
+if [[ -e make_wrapper.sh ]] && [[ Makefile -nt ../compile_commands_$AOC_YEAR.json ]]; then
+  make_wrapper || true
 fi
 # build this day's binaries so the compilation database gets updated
 make_targets=()
