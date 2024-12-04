@@ -17,8 +17,12 @@ if ! [[ -e input/day$day/example1.txt ]]; then
   to_edit+=("input/day$day/example1.txt")
 fi
 mkdir -p "answer_tests/day$day"
-if ! [[ -e answer_tests/day$day/example1.txt ]]; then
-  to_edit+=("answer_tests/day$day/example1.txt")
+example_answers="answer_tests/day$day/example1.txt"
+if ! [[ -e "$example_answers" ]] || [[ $(wc -l "$example_answers") -lt 2 ]]; then
+  if ! [[ -e "$example_answers" ]]; then
+    echo "Day $day:" > "$example_answers"
+  fi
+  to_edit+=("$example_answers")
 fi
 source_file="src/day$day.cpp"
 header_file="src/day$day.hpp"
