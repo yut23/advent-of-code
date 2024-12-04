@@ -8,15 +8,17 @@
 #ifndef DAY02_HPP_QMMUZCBK
 #define DAY02_HPP_QMMUZCBK
 
-#include <cstdlib>  // for abs, size_t
-#include <iostream> // for istream
-#include <sstream>  // for istringstream
-#include <string>   // for string, getline
-#include <vector>   // for vector
+#include <algorithm> // for copy
+#include <cstdlib>   // for abs, size_t
+#include <iostream>  // for istream
+#include <sstream>   // for istringstream
+#include <string>    // for string, getline
+#include <utility>   // for move
+#include <vector>    // for vector
 
 namespace aoc::day02 {
 
-bool is_safe(std::vector<int> levels) {
+bool is_safe(const std::vector<int> &levels) {
     bool increasing = levels.at(1) > levels[0];
     for (std::size_t i = 0; i < levels.size() - 1; ++i) {
         int diff = levels[i + 1] - levels[i];
@@ -33,7 +35,7 @@ bool is_safe(std::vector<int> levels) {
     return true;
 }
 
-bool is_safe_with_dampener(std::vector<int> levels) {
+bool is_safe_with_dampener(const std::vector<int> &levels) {
     // not elegant, but it works...
     std::vector<int> adjusted(levels.size() - 1);
     std::copy(levels.cbegin() + 1, levels.cend(), adjusted.begin());

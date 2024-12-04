@@ -8,7 +8,9 @@
 #include "day02.hpp"
 #include "lib.hpp"
 #include <algorithm> // for ranges::count_if
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout
+// IWYU pragma: no_include <functional>  // for identity (ranges::count_if)
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);

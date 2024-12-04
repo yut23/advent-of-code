@@ -9,7 +9,9 @@
 #include "lib.hpp"
 #include <algorithm> // for ranges::sort
 #include <cstdlib>   // for abs, size_t
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout
+// IWYU pragma: no_include <functional>  // for identity, less (ranges::sort)
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);

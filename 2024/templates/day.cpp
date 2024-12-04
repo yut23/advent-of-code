@@ -7,6 +7,7 @@
 
 #include "day{{DAY}}.hpp"
 #include "lib.hpp"
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
