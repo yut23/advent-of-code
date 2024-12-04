@@ -20,7 +20,7 @@ mkdir -p "answer_tests/day$day"
 example_answers="answer_tests/day$day/example1.txt"
 if ! [[ -e "$example_answers" ]] || [[ $(wc -l "$example_answers" | cut -d' ' -f1) -lt 2 ]]; then
   if ! [[ -e "$example_answers" ]]; then
-    echo "Day $day:" > "$example_answers"
+    echo "Day ${day#0}:" > "$example_answers"
   fi
   to_edit+=("$example_answers")
 fi
