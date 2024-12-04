@@ -8,6 +8,7 @@
 #include "day18.hpp"
 #include "lib.hpp"  // for parse_args, Pos, Delta
 #include <cstdlib>  // for abs
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 #include <vector>   // for vector
 

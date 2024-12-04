@@ -11,11 +11,11 @@
 
 #include "lib.hpp"  // for expect_input, as_number
 #include <cstddef>  // for size_t
-#include <iostream> // for istream
 #include <limits>   // for numeric_limits
 #include <sstream>  // for istringstream, ostringstream, skipws, noskipws
 #include <string>   // for string, to_string, string_literals
 #include <typeinfo> // for type_info
+// IWYU pragma: no_include <utility>  // for move (expect_input)
 
 namespace aoc::test {
 

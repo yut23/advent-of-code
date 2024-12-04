@@ -7,6 +7,7 @@
 
 #include "day20.hpp"
 #include "lib.hpp"  // for parse_args, DEBUG
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 #include <string>   // for string
 

@@ -18,7 +18,7 @@
 #include <functional>       // for hash
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cout
-#include <string>           // for string
+#include <string>           // for string, operator==
 #include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 #include <utility> // for move
 

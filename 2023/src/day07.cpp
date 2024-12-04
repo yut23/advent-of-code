@@ -9,6 +9,7 @@
 #include "lib.hpp"
 #include <algorithm> // for sort
 #include <cstddef>   // for size_t
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout
 #include <vector>    // for vector
 

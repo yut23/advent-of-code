@@ -8,6 +8,7 @@
 #include "lib.hpp"
 #include <cmath>    // for sqrt
 #include <cstddef>  // for size_t
+#include <fstream>  // for ifstream
 #include <iomanip>  // for setprecision
 #include <iostream> // for cout
 #include <sstream>  // for istringstream, stringstream

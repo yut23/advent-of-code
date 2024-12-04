@@ -7,6 +7,7 @@
 
 #include "day16.hpp"
 #include "lib.hpp"  // for parse_args, Pos, AbsDirection, DEBUG
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
 
 int main(int argc, char **argv) {

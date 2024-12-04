@@ -18,6 +18,7 @@
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, noskipws, cerr
 #include <limits>           // for numeric_limits
+#include <utility>          // for move
 #include <vector>           // for vector
 // IWYU pragma: no_include <algorithm>  // for copy
 

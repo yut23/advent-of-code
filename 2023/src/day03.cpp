@@ -7,6 +7,7 @@
 
 #include "lib.hpp"
 #include <cctype>   // for isdigit
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, istream
 #include <map>      // for map
 #include <memory>   // for unique_ptr, make_unique

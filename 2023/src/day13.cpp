@@ -7,6 +7,7 @@
 
 #include "day13.hpp"
 #include "lib.hpp"  // for parse_args, DEBUG
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
 
 void print_grid(std::ostream &os, const aoc::day13::Grid &grid) {

@@ -9,6 +9,7 @@
 #include "lib.hpp"   // for parse_args, DEBUG
 #include <algorithm> // for max, any_of
 #include <cstdlib>   // for abs, size_t
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout, cerr
 #include <numeric>   // for lcm
 #include <string>    // for string

@@ -11,6 +11,7 @@
 #include "unit_test/pretty_print.hpp"
 #include <cmath>    // for llround
 #include <cstdint>  // for int64_t
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
 #include <vector>   // for vector
 // IWYU pragma: no_include <algorithm>  // for fill_n

@@ -7,6 +7,7 @@
 
 #include "day15.hpp"
 #include "lib.hpp"  // for parse_args, DEBUG
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
 #include <string>   // for string
 #include <vector>   // for vector

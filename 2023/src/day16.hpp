@@ -13,6 +13,8 @@
 #include "lib.hpp"          // for Pos, AbsDirection, Delta
 #include "util/hash.hpp"    // for make_hash
 #include <algorithm>        // for count_if
+#include <cstddef>          // for size_t
+#include <functional>       // for hash
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream, ostream
 #include <set>              // for set

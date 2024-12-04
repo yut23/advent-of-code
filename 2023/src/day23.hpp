@@ -20,7 +20,6 @@
 #include <map>              // for map
 #include <queue>            // for queue
 #include <string>           // for string, getline, basic_string
-#include <unordered_set>    // for unordered_set (longest_path_dag)
 #include <utility>          // for move, pair
 #include <vector>           // for vector, erase_if
 

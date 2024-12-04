@@ -10,6 +10,7 @@
 #include "day10.hpp"
 #include "lib.hpp"  // for parse_args, Pos, DEBUG
 #include <cstdlib>  // for abs
+#include <fstream>  // for ifstream
 #include <iomanip>  // for setw
 #include <iostream> // for cout, cerr
 

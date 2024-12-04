@@ -9,13 +9,12 @@
 #include "unit_test/unit_test.hpp"
 
 #include "graph_traversal.hpp"
-#include <algorithm>        // for sort
-#include <cstddef>          // for size_t
-#include <initializer_list> // for initializer_list (single-source tarjan_scc)
-#include <set>              // for set
-#include <unordered_map>    // for unordered_map
-#include <utility>          // for pair
-#include <vector>           // for vector
+#include <algorithm>     // for sort
+#include <cstddef>       // for size_t
+#include <set>           // for set
+#include <unordered_map> // for unordered_map
+#include <utility>       // for pair
+#include <vector>        // for vector
 
 namespace aoc::graph::test {
 

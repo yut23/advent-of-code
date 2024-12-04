@@ -8,6 +8,7 @@
 #include "day22.hpp"
 #include "graph_traversal.hpp" // for topo_sort
 #include "lib.hpp"             // for parse_args, DEBUG
+#include <fstream>             // for ifstream
 #include <iostream>            // for cout, cerr
 #include <unordered_set>       // for unordered_set
 

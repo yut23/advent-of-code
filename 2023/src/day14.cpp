@@ -7,6 +7,7 @@
 
 #include "day14.hpp"
 #include "lib.hpp"       // for parse_args, DEBUG
+#include <fstream>       // for ifstream
 #include <iostream>      // for cout, cerr
 #include <unordered_map> // for unordered_map
 // IWYU pragma: no_include <functional>  // for hash (unordered_map)

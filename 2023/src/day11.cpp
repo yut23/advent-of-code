@@ -8,6 +8,7 @@
 #include "day11.hpp"
 #include "lib.hpp"  // for parse_args, Pos, DEBUG
 #include <cstddef>  // for size_t
+#include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
 
 long sum_paths(const std::vector<aoc::Pos> &galaxies) {

@@ -8,6 +8,7 @@
 #include "day09.hpp"
 #include "lib.hpp"   // for parse_args
 #include <algorithm> // for any_of
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout
 #include <stack>     // for stack
 #include <string>    // for string, getline

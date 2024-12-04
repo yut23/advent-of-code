@@ -7,6 +7,7 @@
 
 #include "day19.hpp"
 #include "lib.hpp"
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 #include <numeric>  // for reduce
 #include <vector>   // for vector

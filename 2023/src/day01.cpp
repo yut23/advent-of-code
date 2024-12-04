@@ -7,6 +7,7 @@
 
 #include "lib.hpp"   // for parse_args
 #include <algorithm> // for find
+#include <fstream>   // for ifstream
 #include <iostream>  // for cout
 #include <iterator>  // for distance
 #include <regex>     // for regex, sregex_iterator

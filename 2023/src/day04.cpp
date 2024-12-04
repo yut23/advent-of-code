@@ -6,6 +6,7 @@
  *****************************************************************************/
 
 #include "lib.hpp"
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 #include <map>      // for map
 #include <set>      // for set

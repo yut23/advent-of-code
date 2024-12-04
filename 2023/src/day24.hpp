@@ -18,6 +18,7 @@
 #include <optional>         // for optional
 #include <utility>          // for pair, move, make_pair
 #include <vector>           // for vector
+// IWYU pragma: no_include <string>  // for operator== (expect_input)
 
 namespace aoc::day24 {
 

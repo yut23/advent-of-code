@@ -8,6 +8,7 @@
 #include "day25.hpp"
 #include "lib.hpp"  // for parse_args
 #include <cassert>  // for assert
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {

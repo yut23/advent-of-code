@@ -10,6 +10,7 @@
 #include <algorithm> // for min_element, sort
 #include <cassert>   // for assert
 #include <cstddef>   // for size_t
+#include <fstream>   // for ifstream
 #include <iostream>  // for cerr, cout, ws
 #include <limits>    // for numeric_limits
 // IWYU pragma: no_include <functional>  // for identity, less (ranges::{min_element,sort})

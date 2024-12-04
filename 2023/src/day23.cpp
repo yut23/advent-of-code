@@ -7,6 +7,7 @@
 
 #include "day23.hpp"
 #include "lib.hpp"
+#include <fstream>  // for ifstream
 #include <iostream> // for cout
 
 void solve(int argc, char **argv, bool print) {

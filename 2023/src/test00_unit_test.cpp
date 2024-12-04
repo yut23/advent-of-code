@@ -13,6 +13,7 @@
 #include <string>        // for string
 #include <unordered_map> // for unordered_map
 #include <vector>        // for vector
+// IWYU pragma: no_include <utility>  // for pair (unordered_map)
 
 namespace unit_test::test {
 
