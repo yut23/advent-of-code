@@ -37,7 +37,7 @@ int count_xmas_at(const Grid<char> &grid, const Pos &p) {
     if (grid[p] != WORD[0]) {
         return count;
     }
-    for (const auto d : ADJ_DELTAS) {
+    for (const auto &d : ADJ_DELTAS) {
         bool valid = true;
         Pos q = p + d;
         for (std::size_t i = 1; i < WORD.size(); ++i, q += d) {
@@ -51,6 +51,30 @@ int count_xmas_at(const Grid<char> &grid, const Pos &p) {
         }
     }
     return count;
+}
+
+constexpr std::initializer_list<Delta> DIAG_DELTAS = {
+    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+
+bool check_mas(const Grid<char> &grid, const Pos &p) {
+    // start from the central 'A'
+    if (grid[p] != 'A') {
+        return false;
+    }
+    bool found_diag = false, found_anti = false;
+    for (const auto &d : DIAG_DELTAS) {
+        if (grid.in_bounds(p - d) && grid.in_bounds(p + d) &&
+            grid[p - d] == 'M' && grid[p + d] == 'S') {
+            if (d.dx == d.dy) {
+                // diagonal
+                found_diag = true;
+            } else {
+                // anti-diagonal
+                found_anti = true;
+            }
+        }
+    }
+    return found_diag && found_anti;
 }
 
 Grid<char> read_input(std::istream &is) {

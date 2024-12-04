@@ -15,15 +15,15 @@ int main(int argc, char **argv) {
 
     auto grid = aoc::day04::read_input(infile);
 
-    // part 1
-    int count = 0;
+    int count_1 = 0, count_2 = 0;
     aoc::Pos pos(0, 0);
     for (pos.y = 0; pos.y < grid.height; ++pos.y) {
         for (pos.x = 0; pos.x < grid.width; ++pos.x) {
-            count += aoc::day04::count_xmas_at(grid, pos);
+            count_1 += aoc::day04::count_xmas_at(grid, pos);
+            count_2 += aoc::day04::check_mas(grid, pos);
         }
     }
-    std::cout << count << "\n";
+    std::cout << count_1 << "\n" << count_2 << "\n";
 
     return 0;
 }
