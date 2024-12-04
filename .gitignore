@@ -6,3 +6,4 @@
 */perf.data
 */perf.data.old
 /2023/unofficial-aoc2023-inputs/
+compile_commands*.json

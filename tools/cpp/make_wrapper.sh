@@ -13,16 +13,20 @@ if ! command -v bear &> /dev/null; then
   exit
 fi
 
+# store the compilation database in the repo root, so ccls+vim-lsp works
+# properly with `-I../aoc_lib`
+comp_db="../compile_commands_$AOC_YEAR.json"
+
 # check if the makefile is newer than the compilation database
-if [[ Makefile -nt compile_commands.json ]]; then
+if [[ Makefile -nt "$comp_db" ]]; then
   echo "Makefile changed, rebuilding entire compilation database..."
-  if ! [[ -e compile_commands.json ]]; then
+  if ! [[ -e $comp_db ]]; then
     # the compilation database was removed, so touch the Makefile to make sure
     # everything gets rebuilt
     touch Makefile
   fi
   # clear the compilation database
-  rm -f compile_commands.json
+  rm -f "$comp_db"
   # add "all" to the arguments if it's not already present
   if ! [[ " $* " =~ " all " ]]; then
     set -- all "$@"
@@ -48,12 +52,14 @@ shopt -u nullglob globstar
 if [[ ${#events[@]} -gt 0 ]]; then
   cat "${events[@]}" > events.json
   rm "${events[@]}"
-  $BEAR_PREFIX citnames --append --config ../tools/cpp/bear_config.json
+  $BEAR_PREFIX citnames --append --config ../tools/cpp/bear_config.json --output "$comp_db"
   if command -v jq &> /dev/null && command -v sponge &> /dev/null; then
     # sort with jq
-    jq 'sort_by(.file, .output)' compile_commands.json | sponge compile_commands.json
+    jq 'sort_by(.file, .output)' "$comp_db" | sponge "$comp_db"
   fi
+  # merge the per-year compilation databases into one
+  cat ../compile_commands_*.json | jq '.[]' | jq -s '.' > ../compile_commands.json
   rm events.json
 fi
 
-exit $ret
+exit "$ret"
