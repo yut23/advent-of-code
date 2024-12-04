@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: aoc [day] [-t|--gdb] [-q] [-d|-f] [-e [example number] [-w]|-i <input file name>]"
+  echo "Usage: aoc [day] [-t|--gdb] [-q] [-d|-f] [-w] [-e [example number]|-i <input file name>]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
