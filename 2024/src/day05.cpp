@@ -18,21 +18,27 @@ int main(int argc, char **argv) {
 
     auto [rules, orderings] = aoc::day05::Rules::read(infile);
 
-    int total = 0;
+    int total_1 = 0, total_2 = 0;
     for (const auto &pages : orderings) {
-        if (rules.is_valid_ordering(pages)) {
 #if DEBUG_MODE
-            std::cerr << "valid: " << repr(pages) << "\n\n";
+        std::cerr << "pages: " << repr(pages) << "\n";
 #endif
-            total += pages[pages.size() / 2];
+        auto new_ordering = rules.check_ordering(pages);
+        if (new_ordering.empty()) {
+#if DEBUG_MODE
+            std::cerr << "valid\n\n";
+#endif
+            total_1 += pages[pages.size() / 2];
         } else {
 #if DEBUG_MODE
-            std::cerr << "not valid: " << repr(pages) << "\n\n";
+            std::cerr << "not valid, new ordering = " << repr(new_ordering)
+                      << "\n\n";
 #endif
+            total_2 += new_ordering[pages.size() / 2];
         }
     }
 
-    std::cout << total << "\n";
+    std::cout << total_1 << "\n" << total_2 << "\n";
 
     return 0;
 }
