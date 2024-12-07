@@ -52,6 +52,10 @@ long concat_slow(long x, long y) {
 bool Equation::is_valid_helper(bool use_concat, long acc,
                                std::size_t idx) const {
     // try all possible operator combinations using recursion
+    if (acc > test_value) {
+        // all operators make the number larger
+        return false;
+    }
     if (idx >= operands.size()) {
         // base case: check the value in the accumulator
         return acc == test_value;
