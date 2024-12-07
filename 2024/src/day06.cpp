@@ -16,7 +16,10 @@ int main(int argc, char **argv) {
     aoc::day06::GuardSim guard_sim = aoc::day06::read_input(infile);
 
     guard_sim.run();
+    // part 1
     std::cout << guard_sim.count_visited() << "\n";
+    // part 2
+    std::cout << guard_sim.count_new_loops() << "\n";
 
     return 0;
 }
