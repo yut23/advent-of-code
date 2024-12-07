@@ -15,13 +15,16 @@ int main(int argc, char **argv) {
 
     auto equations = aoc::day07::read_input(infile);
 
-    long part_1 = 0;
+    long part_1 = 0, part_2 = 0;
     for (const auto &eqn : equations) {
-        if (eqn.is_valid()) {
+        if (eqn.is_valid(false)) {
             part_1 += eqn.test_value;
+            part_2 += eqn.test_value;
+        } else if (eqn.is_valid(true)) {
+            part_2 += eqn.test_value;
         }
     }
-    std::cout << part_1 << "\n";
+    std::cout << part_1 << "\n" << part_2 << "\n";
 
     return 0;
 }

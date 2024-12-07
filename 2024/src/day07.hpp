@@ -9,9 +9,11 @@
 #define DAY07_HPP_BVIUF38H
 
 #include "lib.hpp"  // for expect_input
+#include <cassert>  // for assert
+#include <cmath>    // for ceil, log10, pow
 #include <cstddef>  // for size_t
 #include <iostream> // for istream
-#include <sstream>  // for istringstream
+#include <sstream>  // for istringstream, stringstream
 #include <string>   // for string, getline
 #include <utility>  // for move
 #include <vector>   // for vector
@@ -23,21 +25,45 @@ struct Equation {
     std::vector<long> operands;
 
   private:
-    bool is_valid_helper(long acc, std::size_t idx) const;
+    bool is_valid_helper(bool use_concat, long acc, std::size_t idx) const;
 
   public:
-    bool is_valid() const { return is_valid_helper(0, 0); }
+    bool is_valid(bool use_concat) const {
+        return is_valid_helper(use_concat, 0, 0);
+    }
 };
 
-bool Equation::is_valid_helper(long acc, std::size_t idx) const {
+long concat(long x, long y) {
+    return x * std::pow(10, std::ceil(std::log10(y + 1))) + y;
+}
+
+long concat_slow(long x, long y) {
+    std::stringstream ss;
+    ss << x << y;
+    long result;
+    ss >> result;
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "concat(" << x << ", " << y << "): " << result << "\n";
+    }
+    assert(result == concat(x, y));
+    return result;
+}
+
+bool Equation::is_valid_helper(bool use_concat, long acc,
+                               std::size_t idx) const {
     // try all possible operator combinations using recursion
     if (idx >= operands.size()) {
         // base case: check the value in the accumulator
         return acc == test_value;
     }
     // this will short-circuit if we find a valid operator combination
-    return is_valid_helper(acc + operands[idx], idx + 1) ||
-           is_valid_helper(acc * operands[idx], idx + 1);
+    bool result = is_valid_helper(use_concat, acc + operands[idx], idx + 1) ||
+                  is_valid_helper(use_concat, acc * operands[idx], idx + 1);
+    if (!result && use_concat) {
+        result =
+            is_valid_helper(use_concat, concat(acc, operands[idx]), idx + 1);
+    }
+    return result;
 }
 
 std::istream &operator>>(std::istream &is, Equation &eqn) {
