@@ -120,6 +120,7 @@ std::ostream &operator<<(std::ostream &os, const RelDirection &dir) {
     return os;
 }
 
+namespace directions {
 AbsDirection turn(AbsDirection dir, RelDirection turn_dir) {
     return static_cast<AbsDirection>(
         (static_cast<std::underlying_type_t<AbsDirection>>(dir) +
@@ -137,6 +138,7 @@ RelDirection relative_to(AbsDirection old_dir, AbsDirection new_dir) {
          static_cast<std::underlying_type_t<AbsDirection>>(old_dir) + 4) %
         4);
 }
+} // namespace directions
 
 struct Delta {
     int dx;
