@@ -1,0 +1,2 @@
+" add the aoc_lib dir to 'path', so gf works as expected
+let &path = lh#path#munge(&path, lh#path#fix(g:localvimrc_script_dir . '/aoc_lib'))
