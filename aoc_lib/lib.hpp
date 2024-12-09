@@ -18,6 +18,7 @@
 #include <functional>       // for hash
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cout
+#include <iterator>         // for istreambuf_iterator
 #include <string>           // for string, operator==
 #include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 #include <utility> // for move
@@ -424,6 +425,13 @@ std::ifstream parse_args(int argc, char **argv) {
         std::exit(1);
     }
     return std::ifstream{argv[1]};
+}
+
+/**
+ * @brief  Reads an entire stream into a string.
+ */
+std::string read_whole_stream(std::istream &is) {
+    return std::string{std::istreambuf_iterator<char>(is), {}};
 }
 
 } // namespace aoc

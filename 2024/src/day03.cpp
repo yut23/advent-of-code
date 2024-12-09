@@ -5,7 +5,6 @@
  * Created:     2024-12-04
  *****************************************************************************/
 
-#include "day03.hpp"
 #include "lib.hpp"
 #include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
@@ -15,7 +14,7 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv);
 
-    std::string memory = aoc::day03::read_input(infile);
+    std::string memory = aoc::read_whole_stream(infile);
 
     std::regex op_regex(R"((mul)\((\d+),(\d+)\)|(do)\(\)|(don't)\(\))");
     std::sregex_iterator op_begin{memory.begin(), memory.end(), op_regex};
