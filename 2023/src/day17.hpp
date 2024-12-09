@@ -112,20 +112,20 @@ int CityMap::get_distance(const Key &from, const Key &to) const {
 
 template <aoc::Part part>
 int CityMap::find_shortest_path() const {
-    constexpr ultra = part == PART_2;
+    constexpr bool ultra = part == PART_2;
     Key source{Pos(0, 0), Orientation::horizontal};
     const Pos target(block_costs.width - 1, block_costs.height - 1);
     std::function<void(const Key &, int)> visit = [](const Key &, int) {};
 #if 0
     if constexpr (aoc::DEBUG && ultra) {
-        visit = [this, ultra](const Key &key, int dist) {
+        visit = [this](const Key &key, int dist) {
             std::cerr << "visiting " << key << ", with distance=" << dist
                       << "\n";
             std::cerr << "neighbors:\n";
-            for (const auto &neighbor : get_neighbors(ultra, key)) {
+            process_neighbors(ultra, key, [this, &key](const Key &neighbor) {
                 std::cerr << "  " << neighbor
                           << ", dist=" << get_distance(key, neighbor) << "\n";
-            }
+            });
         };
     }
 #endif
@@ -135,15 +135,15 @@ int CityMap::find_shortest_path() const {
 #if 1
     const auto &[distance, path] = aoc::graph::dijkstra(
         source,
-        [this, ultra](const Key &key, auto &&visit_neighbor) {
-            process_neighbors(ultra, key, visit_neighbor);
+        [this](const Key &key, auto &&visit_neighbor) {
+            this->process_neighbors(ultra, key, visit_neighbor);
         },
         std::bind_front(&CityMap::get_distance, this), is_target, visit);
 #else
     const auto &[distance, path] = aoc::graph::a_star(
         source,
-        [this, ultra](const Key &key, auto &&visit_neighbor) {
-            process_neighbors(ultra, key, visit_neighbor);
+        [this](const Key &key, auto &&visit_neighbor) {
+            this->process_neighbors(ultra, key, visit_neighbor);
         },
         std::bind_front(&CityMap::get_distance, this), is_target,
         [&target](const Key &key) -> int {
