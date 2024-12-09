@@ -17,7 +17,7 @@ pad_day_number() {
   printf '%02d\n' "${1#0}"
 }
 
-# usage: parse_day_args [day [year]] | read -r day year
+# usage: read -r day year < <(parse_day_args [day [year]])
 parse_day_args() {
   local day year
   read -r day month year < <(TZ='America/New_York' date +'%-d %m %Y')

@@ -1,0 +1,69 @@
+#!/bin/bash
+set -euo pipefail
+# benchmark with hyperfine
+# takes the same arguments as `aoc`
+
+usage() {
+  echo "Usage: benchmark [day] [-d|-f] [-s <binary suffix>] [-r <repeat count>] [-e [example number]|-i <input file name>]"
+}
+
+AOC_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=../lib.sh
+source "$AOC_ROOT/tools/lib.sh"
+# shellcheck source=../cli.sh
+source "$AOC_ROOT/tools/cli.sh"
+# cd to the base directory for this year
+cd -- "$AOC_ROOT/$AOC_YEAR"
+
+setup_help
+
+num_repeat=1
+
+init_day_args
+init_input_args
+init_target_args
+init_make_args
+
+first_iter=y
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -r|--repeat)
+      num_repeat=$2
+      shift
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      shift_count=0
+      if handle_input_arg "$@"; then
+        shift "$shift_count"
+      elif handle_target_arg "$@"; then
+        shift "$shift_count"
+      elif handle_make_arg "$@"; then
+        shift "$shift_count"
+      else
+        echo "Error: unrecognized option '$1'"
+        usage
+        exit 1
+      fi
+      ;;
+    *)
+      handle_day_arg "$@"
+      # we either consumed the day number or exited with an error
+      shift
+      ;;
+  esac
+  first_iter=n
+done
+
+finalize_day_args
+finalize_input_args
+finalize_target_args
+finalize_make_args
+
+for ((i=1; i <= num_repeat; i++)); do
+  hyperfine --shell none "$binary $input_path"
+done

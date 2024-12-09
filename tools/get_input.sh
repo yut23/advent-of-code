@@ -7,7 +7,7 @@ AOC_ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=lib.sh
 source "$AOC_ROOT/tools/lib.sh"
 
-parse_day_args "$@" | read -r day_padded year
+read -r day_padded year < <(parse_day_args "$@")
 # remove leading zero
 day=${day_padded#0}
 dest_dir="input/day$day_padded"

@@ -2,43 +2,34 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: aoc [day] [-t|--gdb] [-q] [-d|-f] [-w] [-e [example number]|-i <input file name>]"
+  echo "Usage: aoc [day] [-t|--gdb] [-q] [-d|-f] [-s <binary suffix>] [-w] [-e [example number]|-i <input file name>]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
 # shellcheck source=../lib.sh
 source "$AOC_ROOT/tools/lib.sh"
+# shellcheck source=../cli.sh
+source "$AOC_ROOT/tools/cli.sh"
 # cd to the base directory for this year
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
-input_name=input.txt
-day=$(TZ='America/New_York' date +%-d)
-bin_dir=build/release
+setup_help
+
 memory_limit=4G
 prefix_args=()
-make_args=()
 write_answer=n
-skip_make=n
 use_gdb=n
-suffix=
+
+init_day_args
+init_input_args
+init_target_args
+init_make_args
 
 first_iter=y
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -d|--debug)
-      bin_dir=build/debug
-      shift
-      ;;
-    -f|--fast)
-      bin_dir=build/fast
-      shift
-      ;;
     -t|--time)
       prefix_args=(/usr/bin/time)
-      shift
-      ;;
-    -q|--quiet|--silent)
-      make_args+=(--silent)
       shift
       ;;
     -m|--memory-limit)
@@ -46,31 +37,8 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -e|--example)
-      input_name=example1.txt
-      if [[ $# -gt 1 ]]; then
-        # example number given
-        input_name=example$2.txt
-        shift
-      fi
-      shift
-      ;;
-    -i|--input)
-      input_name=$2
-      shift
-      shift
-      ;;
     -w|--write-answer)
       write_answer=y
-      shift
-      ;;
-    -s|--suffix)
-      if [[ $2 == _* ]]; then
-        suffix=$2
-      else
-        suffix=_$2
-      fi
-      shift
       shift
       ;;
     --gdb)
@@ -84,64 +52,37 @@ while [[ $# -gt 0 ]]; do
       ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}detect_leaks=0:abort_on_error=1
       shift
       ;;
-    --no-make)
-      skip_make=y
-      shift
-      ;;
-    --no-make-wrapper)
-      make_args+=("$1")
-      shift
-      ;;
     -h|--help)
       usage
       exit 0
       ;;
     -*)
-      echo "Error: unrecognized option '$1'"
-      usage
-      exit 1
-      ;;
-    *)
-      if [[ $first_iter == y ]]; then
-        day=$1
-        shift
+      shift_count=0
+      if handle_input_arg "$@"; then
+        shift "$shift_count"
+      elif handle_target_arg "$@"; then
+        shift "$shift_count"
+      elif handle_make_arg "$@"; then
+        shift "$shift_count"
       else
-        echo "Error: day can only be in the first argument"
+        echo "Error: unrecognized option '$1'"
         usage
         exit 1
       fi
+      ;;
+    *)
+      handle_day_arg "$@"
+      # we either consumed the day number or exited with an error
+      shift
       ;;
   esac
   first_iter=n
 done
 
-day=$(pad_day_number "$day")
-
-input_path="input/day$day/$input_name"
-if ! [[ -e "$input_path" ]]; then
-  if [[ $input_name == input.txt ]]; then
-    bash "$TOOLS_DIR/get_input.sh" "$day" "$AOC_YEAR"
-  else
-    >&2 echo "ERROR: could not find input file at $input_path"
-    exit 2
-  fi
-fi
-
-# if --gdb was passed, use debug build, or profile build if --fast was also passed
-if [[ $use_gdb == y ]]; then
-  if [[ $bin_dir == build/fast ]]; then
-    bin_dir=build/profile
-  else
-    bin_dir=build/debug
-  fi
-fi
-
-binary=$bin_dir/day$day$suffix
-
-if [[ $skip_make != y ]]; then
-  # rebuild if make says it's necessary
-  make_quiet "${make_args[@]}" "$binary"
-fi
+finalize_day_args
+finalize_input_args
+finalize_target_args
+finalize_make_args
 
 if [[ $write_answer != y ]]; then
   echo "Day ${day#0}$suffix:"
@@ -186,4 +127,4 @@ else
     systemctl --user reset-failed aoc.service
   fi
 fi
-exit $exit_code
+exit "$exit_code"
