@@ -403,6 +403,17 @@ class as_number {
 };
 
 /**
+ * Advent of Code problem part number.
+ */
+enum class Part : unsigned char {
+    PART_1 = 1,
+    PART_2 = 2,
+};
+// make PART_1 and PART_2 available in the top-level namespace, for less typing
+// (I'm just using a scoped enum for type safety)
+using enum Part;
+
+/**
  * @brief  Parse command line arguments.
  * @return An istream for the specified input file.
  */
