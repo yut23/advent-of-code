@@ -50,7 +50,8 @@ class CityMap {
   public:
     explicit CityMap(std::vector<std::vector<unsigned char>> &&block_costs)
         : block_costs(std::move(block_costs)) {}
-    int find_shortest_path(bool ultra = false) const;
+    template <aoc::Part part>
+    int find_shortest_path() const;
     void print(std::ostream &, const std::vector<Key> &path = {}) const;
     static CityMap read(std::istream &is);
 };
@@ -109,12 +110,14 @@ int CityMap::get_distance(const Key &from, const Key &to) const {
     return total;
 }
 
-int CityMap::find_shortest_path(bool ultra) const {
+template <aoc::Part part>
+int CityMap::find_shortest_path() const {
+    constexpr ultra = part == PART_2;
     Key source{Pos(0, 0), Orientation::horizontal};
     const Pos target(block_costs.width - 1, block_costs.height - 1);
     std::function<void(const Key &, int)> visit = [](const Key &, int) {};
 #if 0
-    if (aoc::DEBUG && ultra) {
+    if constexpr (aoc::DEBUG && ultra) {
         visit = [this, ultra](const Key &key, int dist) {
             std::cerr << "visiting " << key << ", with distance=" << dist
                       << "\n";

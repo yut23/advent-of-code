@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 
     auto city_map = aoc::day17::CityMap::read(infile);
 
-    std::cout << city_map.find_shortest_path() << "\n";
-    std::cout << city_map.find_shortest_path(true) << "\n";
+    std::cout << city_map.find_shortest_path<aoc::PART_1>() << "\n";
+    std::cout << city_map.find_shortest_path<aoc::PART_2>() << "\n";
 
     return 0;
 }
