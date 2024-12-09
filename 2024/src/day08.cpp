@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
     aoc::day08::AntennaMap antenna_map{};
     infile >> antenna_map;
 
-    auto antinode_positions = antenna_map.find_antinodes();
-    std::cout << antinode_positions.size() << "\n";
+    std::cout << antenna_map.count_antinodes<aoc::PART_1>() << "\n";
+    std::cout << antenna_map.count_antinodes<aoc::PART_2>() << "\n";
 
     return 0;
 }

@@ -24,7 +24,8 @@ struct AntennaMap {
     int width;
     std::map<char, std::vector<Pos>> antennas{};
 
-    std::unordered_set<Pos> find_antinodes() const;
+    template <aoc::Part part>
+    int count_antinodes() const;
     bool in_bounds(const Pos &p) const {
         return p.y >= 0 && p.x >= 0 && p.y < height && p.x < width;
     }
@@ -46,27 +47,44 @@ std::istream &operator>>(std::istream &is, AntennaMap &am) {
     return is;
 }
 
-std::unordered_set<Pos> AntennaMap::find_antinodes() const {
+template <aoc::Part part>
+int AntennaMap::count_antinodes() const {
     std::unordered_set<Pos> antinodes;
-    const auto add_antinode = [&antinodes, *this](const Pos antinode) {
+
+    const auto add_antinode = [&antinodes, *this](const Pos &antinode) -> bool {
         if (in_bounds(antinode)) {
             antinodes.insert(antinode);
+            return true;
+        }
+        return false;
+    };
+
+    const auto add_all_antinodes = [&add_antinode](Pos p, const Delta &shift) {
+        while (add_antinode(p += shift)) {
+            if constexpr (part == PART_1) {
+                // stop after the first iteration
+                break;
+            }
         }
     };
+
     for (const auto &[_, positions] : antennas) {
         if (positions.size() < 2) {
             continue;
         }
         // loop over all combinations of pairs of antenna positions
         for (auto a = positions.begin(); a != positions.end(); ++a) {
+            if constexpr (part == PART_2) {
+                add_antinode(*a);
+            }
             for (auto b = a + 1; b != positions.end(); ++b) {
                 const Delta shift = *b - *a;
-                add_antinode(*a - shift);
-                add_antinode(*b + shift);
+                add_all_antinodes(*a, -shift);
+                add_all_antinodes(*b, shift);
             }
         }
     }
-    return antinodes;
+    return antinodes.size();
 }
 
 } // namespace aoc::day08
