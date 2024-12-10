@@ -33,11 +33,13 @@ class IslandMap : public aoc::ds::Grid<height_t> {
 
     explicit IslandMap(std::vector<std::vector<height_t>> &&height_map);
     void process_neighbors(const Pos &key, auto &&visit) const;
+    template <aoc::Part part>
     aoc::ds::Grid<int> calc_scores() const;
 
   public:
     static IslandMap read(std::istream &is);
-    int part_1() const;
+    template <aoc::Part part>
+    int trailhead_scores() const;
 };
 
 IslandMap IslandMap::read(std::istream &is) {
@@ -83,22 +85,24 @@ std::ostream &operator<<(std::ostream &os, const IslandMap &island) {
  * Calculate scores using DP, by walking down from each peak and incrementing
  * each visited tile's score by 1.
  */
+template <aoc::Part part>
 aoc::ds::Grid<int> IslandMap::calc_scores() const {
     // initialize all scores to 0
     aoc::ds::Grid<int> scores(width, height, 0);
 
     for (const Pos &peak : peaks) {
-        const auto visit = [&scores](const Pos &key, int /*distance*/) {
-            ++scores[key];
-        };
-        // only visit each tile once
-        constexpr bool use_seen = true;
-        aoc::graph::bfs<use_seen>(
+        const auto visit_with_parent =
+            [&scores](const Pos &key, const Pos & /*parent*/, int /*depth*/) {
+                ++scores[key];
+            };
+        // only visit each tile once for part 1
+        constexpr bool use_seen = part == PART_1;
+        aoc::graph::dfs_rec<use_seen>(
             peak,
             [this](const Pos &pos, auto &&visit) {
-                process_neighbors(pos, visit);
+                this->process_neighbors(pos, visit);
             },
-            visit);
+            visit_with_parent);
     }
 
     return scores;
@@ -119,9 +123,10 @@ void IslandMap::process_neighbors(const Pos &pos, auto &&visit) const {
     }
 }
 
-int IslandMap::part_1() const {
+template <aoc::Part part>
+int IslandMap::trailhead_scores() const {
     // calculate the scores for the entire map, then look up the trailheads
-    const auto scores = calc_scores();
+    const auto scores = calc_scores<part>();
 
     if constexpr (aoc::DEBUG) {
         std::cerr << "map:\n" << *this << "\n";

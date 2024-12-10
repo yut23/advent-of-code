@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 
     auto island = aoc::day10::IslandMap::read(infile);
 
-    auto score = island.part_1();
-    std::cout << score << "\n";
+    std::cout << island.trailhead_scores<aoc::PART_1>() << "\n";
+    std::cout << island.trailhead_scores<aoc::PART_2>() << "\n";
 
     return 0;
 }
