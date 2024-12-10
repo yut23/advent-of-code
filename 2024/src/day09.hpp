@@ -45,11 +45,11 @@ struct DiskLayout {
   private:
     std::list<FileSpan> spans;
 
-    /// returns an iterator to the span before `from`
-    std::list<FileSpan>::iterator move_file(std::list<FileSpan>::iterator from,
-                                            std::list<FileSpan>::iterator to);
+    void move_file(std::list<FileSpan>::iterator from,
+                   std::list<FileSpan>::iterator to);
 
-    void check_invariants() const;
+    void check_invariants(
+        const std::list<FileSpan>::const_iterator &max_adjacent) const;
 
   public:
     DiskLayout compact_fragmented() const;
@@ -98,20 +98,24 @@ std::ostream &operator<<(std::ostream &os, const DiskLayout &disk_layout) {
 }
 
 // check some invariants that should hold at all times
-void DiskLayout::check_invariants() const {
-    if constexpr (!aoc::DEBUG) {
-        return;
-    }
-    int curr_pos = 0;
-    for (auto it = spans.begin(); it != spans.end();
-         curr_pos += it->size, ++it) {
-        // no zero-length spans allowed
-        assert(it->size > 0);
-        // positions should match the sum of the previous sizes
-        assert(it->pos == curr_pos);
-        if (std::next(it) != spans.end()) {
-            // two adjacent spans should have different file IDs
-            assert(it->file_id != std::next(it)->file_id);
+void DiskLayout::check_invariants(
+    const std::list<FileSpan>::const_iterator &max_adjacent) const {
+    if constexpr (aoc::DEBUG) {
+        int curr_pos = 0;
+        bool check_adjacent = max_adjacent != spans.begin();
+        for (auto it = spans.begin(); it != spans.end();
+             curr_pos += it->size, ++it) {
+            // no zero-length spans allowed
+            assert(it->size > 0);
+            // positions should match the sum of the previous sizes
+            assert(it->pos == curr_pos);
+            if (std::next(it) == max_adjacent) {
+                check_adjacent = false;
+            }
+            if (check_adjacent) {
+                // two adjacent spans should have different file IDs
+                assert(it->file_id != std::next(it)->file_id);
+            }
         }
     }
 }
@@ -159,14 +163,13 @@ DiskLayout DiskLayout::compact_fragmented() const {
             curr_span = l.spans.insert(l.spans.end(), {file_id, i, 1});
         }
     }
-    l.check_invariants();
+    l.check_invariants(l.spans.end());
     return l;
 }
 
-std::list<FileSpan>::iterator
-DiskLayout::move_file(std::list<FileSpan>::iterator from,
-                      std::list<FileSpan>::iterator to) {
-    check_invariants();
+void DiskLayout::move_file(std::list<FileSpan>::iterator from,
+                           std::list<FileSpan>::iterator to) {
+    check_invariants(from);
     if constexpr (!aoc::FAST) {
         assert(to->empty());
         assert(!from->empty());
@@ -177,54 +180,35 @@ DiskLayout::move_file(std::list<FileSpan>::iterator from,
                   << " to empty space at " << to->pos << "\n";
     }
 
-    std::list<FileSpan>::iterator new_from;
-    if (std::prev(from)->empty()) {
-        // `from` is preceded by an empty span, so expand it to fill the space
-        new_from = std::prev(from);
-        new_from->size += from->size;
+    if (to->size == from->size) {
+        std::swap(to->file_id, from->file_id);
     } else {
-        // insert an empty span to take the place of *from
-        new_from = spans.insert(from, *from);
-        new_from->file_id = EMPTY;
+        auto size = from->size;
+        spans.insert(to, {from->file_id, to->pos, size});
+        from->file_id = EMPTY;
+        to->pos += size;
+        to->size -= size;
     }
-    // move *from to right before `to`
-    spans.splice(to, spans, from);
-    from->pos = to->pos;
-    // adjust *to
-    to->pos += from->size;
-    to->size -= from->size;
-    if (to->size == 0) {
-        // remove *to if necessary
-        spans.erase(to);
-    }
-    // `to` should now be treated as invalid
-
-    if (std::next(new_from)->empty()) {
-        // `new_from` is followed by an empty span, so combine them
-        new_from->size += std::next(new_from)->size;
-        spans.erase(std::next(new_from));
-    }
-
-    check_invariants();
-    return new_from;
+    check_invariants(from);
 }
 
 DiskLayout DiskLayout::compact_smart() const {
-    check_invariants();
+    check_invariants(spans.end());
     // simple O(n^2) algorithm: linear search for the first empty block where
     // the current file will fit
     DiskLayout l{*this};
     // keep track of which file we're looking for, so we move files in order of
     // decreasing file ID
-    int curr_file_id = EMPTY;
+    int curr_file_id;
+    {
+        auto it = l.spans.end();
+        do {
+            --it;
+        } while (it->empty());
+        curr_file_id = it->file_id;
+    }
     for (auto from_it = std::prev(l.spans.end()); from_it != l.spans.begin();
          --from_it) {
-        if (from_it->empty()) {
-            continue;
-        }
-        if (curr_file_id == EMPTY) {
-            curr_file_id = from_it->file_id;
-        }
         if (from_it->file_id != curr_file_id) {
             continue;
         }
@@ -234,14 +218,14 @@ DiskLayout DiskLayout::compact_smart() const {
             if (!to_it->empty() || to_it->size < from_it->size) {
                 continue;
             }
-            from_it = l.move_file(from_it, to_it);
+            l.move_file(from_it, to_it);
             break;
         }
         // decrement the current file ID
         --curr_file_id;
     }
 
-    l.check_invariants();
+    l.check_invariants(l.spans.begin());
     return l;
 }
 
