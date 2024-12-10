@@ -320,13 +320,17 @@ Grid(std::vector<std::vector<T>> &&) -> Grid<T>;
 template <class T>
 std::ostream &print_repr(std::ostream &os, const aoc::ds::Grid<T> &grid,
                          const bool result) {
+    // Get the current field width (from std::setw()) which we will use for the
+    // individual values. Also set it to 0, as it shouldn't apply to the
+    // initial '['.
+    auto field_width = os.width(0);
     for (int i = 0; const auto &row : grid) {
         os << (i == 0 ? '[' : ' ') << '[';
         for (int j = 0; const auto &value : row) {
             if (j != 0) {
                 os << " ";
             }
-            os << std::setw(12) << pretty_print::repr(value, result);
+            os << std::setw(field_width) << pretty_print::repr(value, result);
             ++j;
         }
         ++i;
