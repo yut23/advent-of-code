@@ -69,7 +69,7 @@ std::istream &operator>>(std::istream &is, DiskLayout &disk_layout) {
         int count = ch - '0';
         int value = is_empty ? EMPTY : file_id++;
         if (count > 0) {
-            disk_layout.spans.emplace_back(value, pos, count);
+            disk_layout.spans.push_back({value, pos, count});
         }
         pos += count;
         is_empty = !is_empty;
