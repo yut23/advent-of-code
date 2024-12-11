@@ -47,17 +47,13 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 /**
  * Holds the state of a particular group of stones.
+ *
+ * Even though it's specifically called out in the description, the order of
+ * the stones doesn't actually matter. Both answers are simply a stone count,
+ * and the update rules are context-free.
  */
 class StoneGroup {
-    std::list<Stone> stones{};
-
-  public:
-    using iterator = decltype(stones)::iterator;
-    using const_iterator = decltype(stones)::const_iterator;
-
-  private:
-    iterator insert(const_iterator pos, stone_value_t value,
-                    const HistoryData &history);
+    std::vector<Stone> stones{};
 
   public:
     /// Default constructor.
@@ -72,9 +68,7 @@ class StoneGroup {
      * Adds a stone with the given value to the end of the group. May be a
      * HistoryRef.
      */
-    void push_back(stone_value_t value, const HistoryData &history) {
-        insert(stones.end(), value, history);
-    };
+    void push_back(stone_value_t value, const HistoryData &history);
 
     void blink(const HistoryData &history);
     std::size_t count(const HistoryData &history) const;
@@ -132,9 +126,8 @@ HistoryData::HistoryData() {
     }
 }
 
-StoneGroup::iterator StoneGroup::insert(const_iterator it, stone_value_t value,
-                                        const HistoryData &history) {
-    return stones.insert(it, history.get_stone(value));
+void StoneGroup::push_back(stone_value_t value, const HistoryData &history) {
+    return stones.push_back(history.get_stone(value));
 }
 
 Stones Stones::read(std::istream &is) {
@@ -166,21 +159,24 @@ void HistoryData::set_stone(Stone &stone, stone_value_t value) const {
 
 // Main update routine.
 void StoneGroup::blink(const HistoryData &history) {
-    for (auto it = stones.begin(); it != stones.end(); ++it) {
-        if (std::holds_alternative<HistoryRef>(*it)) {
-            ++std::get<HistoryRef>(*it).blinks;
+    std::size_t orig_size = stones.size();
+    for (std::size_t i = 0; i < orig_size; ++i) {
+        Stone &stone = stones[i];
+        if (std::holds_alternative<HistoryRef>(stone)) {
+            ++std::get<HistoryRef>(stone).blinks;
             continue;
         }
-        stone_value_t value = std::get<stone_value_t>(*it);
+        stone_value_t value = std::get<stone_value_t>(stone);
         if (value == 0) {
-            history.set_stone(*it, 1);
+            stone = history.get_stone(1);
         } else if (std::string digits = std::to_string(value);
                    digits.size() % 2 == 0) {
             int half_size = digits.size() / 2;
-            insert(it, std::stoi(digits.substr(0, half_size)), history);
-            *it = history.get_stone(std::stoi(digits.substr(half_size)));
+            stone = history.get_stone(std::stoi(digits.substr(0, half_size)));
+            stones.push_back(
+                history.get_stone(std::stoi(digits.substr(half_size))));
         } else {
-            *it = history.get_stone(value * 2024);
+            stone = history.get_stone(value * 2024);
         }
     }
 }
