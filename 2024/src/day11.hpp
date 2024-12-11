@@ -39,6 +39,11 @@ template <class... Ts>
 struct overloaded : Ts... {
     using Ts::operator()...;
 };
+#if __cpp_deduction_guides < 201907L
+// explicit deduction guide (not needed as of C++20 and Clang 17+)
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+#endif
 
 /**
  * Holds the state of a particular group of stones.
@@ -147,14 +152,14 @@ Stones Stones::read(std::istream &is) {
 
 Stone HistoryData::get_stone(stone_value_t value) const {
     if (value >= 1 && value <= 9) {
-        return HistoryRef(value);
+        return HistoryRef{static_cast<int>(value)};
     }
     return value;
 }
 
 void HistoryData::set_stone(Stone &stone, stone_value_t value) const {
     if (value >= 1 && value <= 9) {
-        stone = HistoryRef(value);
+        stone = HistoryRef{static_cast<int>(value)};
     }
     stone = value;
 }
