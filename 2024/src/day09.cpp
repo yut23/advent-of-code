@@ -18,8 +18,7 @@ int main(int argc, char **argv) {
     const bool is_example =
         std::string{argv[1]}.find("example") != std::string::npos;
 
-    DiskLayout disk_layout;
-    infile >> disk_layout;
+    auto disk_layout = DiskLayout::read(infile);
     if constexpr (aoc::DEBUG) {
         if (is_example) {
             std::cerr << "initial:    " << disk_layout << "\n";

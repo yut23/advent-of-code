@@ -10,11 +10,14 @@
 
 #include "lib.hpp" // for FAST, DEBUG
 #include "unit_test/pretty_print.hpp"
+#include <array>    // for array
 #include <cassert>  // for assert
 #include <compare>  // for operator>= (iterator)
 #include <iostream> // for istream, ostream, cerr
-#include <iterator> // for next, prev
+#include <iterator> // for next, prev, distance
 #include <list>     // for list
+#include <map>      // for map
+#include <optional> // for optional
 #include <utility>  // for swap, move
 #include <vector>   // for vector
 
@@ -41,26 +44,44 @@ std::ostream &operator<<(std::ostream &os, const FileSpan &fs) {
     return os;
 }
 
+constexpr int MAX_FILE_SIZE = 9;
+
+class FreeSpaceHelper {
+    // store iterators to
+    std::array<std::map<int, std::list<FileSpan>::iterator>, MAX_FILE_SIZE + 1>
+        free_space;
+
+  public:
+    void mark_empty(std::list<FileSpan>::iterator it);
+    void unmark_empty(std::list<FileSpan>::iterator it);
+    std::optional<std::list<FileSpan>::iterator>
+    find_free_space(std::list<FileSpan>::iterator from_it) const;
+
+    friend struct DiskLayout;
+};
+
 struct DiskLayout {
   private:
     std::list<FileSpan> spans;
 
     void move_file(std::list<FileSpan>::iterator from,
-                   std::list<FileSpan>::iterator to);
+                   std::list<FileSpan>::iterator to, FreeSpaceHelper &helper);
 
-    void check_invariants(
-        const std::list<FileSpan>::const_iterator &max_adjacent) const;
+    void
+    check_invariants(const std::list<FileSpan>::const_iterator &max_adjacent,
+                     const FreeSpaceHelper &helper) const;
 
   public:
+    static DiskLayout read(std::istream &is);
     DiskLayout compact_fragmented() const;
     DiskLayout compact_smart() const;
     long calculate_checksum() const;
 
-    friend std::istream &operator>>(std::istream &, DiskLayout &);
     friend std::ostream &operator<<(std::ostream &, const DiskLayout &);
 };
 
-std::istream &operator>>(std::istream &is, DiskLayout &disk_layout) {
+DiskLayout DiskLayout::read(std::istream &is) {
+    DiskLayout l;
     char ch;
     int file_id = 0;
     bool is_empty = false;
@@ -69,15 +90,15 @@ std::istream &operator>>(std::istream &is, DiskLayout &disk_layout) {
         int count = ch - '0';
         int value = is_empty ? EMPTY : file_id++;
         if (count > 0) {
-            disk_layout.spans.push_back({value, pos, count});
+            l.spans.push_back({value, pos, count});
         }
         pos += count;
         is_empty = !is_empty;
     }
-    while (disk_layout.spans.back().empty()) {
-        disk_layout.spans.pop_back();
+    while (l.spans.back().empty()) {
+        l.spans.pop_back();
     }
-    return is;
+    return l;
 }
 
 std::ostream &operator<<(std::ostream &os, const DiskLayout &disk_layout) {
@@ -99,7 +120,8 @@ std::ostream &operator<<(std::ostream &os, const DiskLayout &disk_layout) {
 
 // check some invariants that should hold at all times
 void DiskLayout::check_invariants(
-    const std::list<FileSpan>::const_iterator &max_adjacent) const {
+    const std::list<FileSpan>::const_iterator &max_adjacent,
+    const FreeSpaceHelper &helper) const {
     if constexpr (aoc::DEBUG) {
         int curr_pos = 0;
         bool check_adjacent = max_adjacent != spans.begin();
@@ -115,6 +137,30 @@ void DiskLayout::check_invariants(
             if (check_adjacent) {
                 // two adjacent spans should have different file IDs
                 assert(it->file_id != std::next(it)->file_id);
+
+                for (int size = 1; size <= MAX_FILE_SIZE; ++size) {
+                    if (size > it->size || !it->empty()) {
+                        // entry size should be <= size for map, and files
+                        // should not appear in helper.free_space
+                        assert(!helper.free_space[size].contains(it->pos));
+                    } else {
+                        // an empty span should have corresponding entries in
+                        // helper.free_space
+                        assert(helper.free_space[size].at(it->pos) == it);
+                    }
+                }
+            }
+        }
+
+        // check helper invariants
+        for (int size = 1; size <= MAX_FILE_SIZE; ++size) {
+            for (const auto &[pos, it] : helper.free_space[size]) {
+                // entry should be empty
+                assert(it->empty());
+                // position should match
+                assert(it->pos == pos);
+                // entry size should be at least as large as this map's size
+                assert(it->size >= size);
             }
         }
     }
@@ -163,13 +209,41 @@ DiskLayout DiskLayout::compact_fragmented() const {
             curr_span = l.spans.insert(l.spans.end(), {file_id, i, 1});
         }
     }
-    l.check_invariants(l.spans.end());
     return l;
 }
 
+void FreeSpaceHelper::mark_empty(std::list<FileSpan>::iterator it) {
+    if constexpr (!aoc::FAST) {
+        assert(it->empty());
+    }
+    for (int i = 1; i <= it->size; ++i) {
+        free_space[i][it->pos] = it;
+    }
+}
+
+void FreeSpaceHelper::unmark_empty(std::list<FileSpan>::iterator it) {
+    for (int i = 1; i <= it->size; ++i) {
+        free_space[i].erase(it->pos);
+    }
+}
+
+std::optional<std::list<FileSpan>::iterator>
+FreeSpaceHelper::find_free_space(std::list<FileSpan>::iterator from_it) const {
+    if (free_space[from_it->size].empty()) {
+        return {};
+    }
+    auto to_it = free_space[from_it->size].begin()->second;
+    if (to_it->pos >= from_it->pos) {
+        // only move files towards the beginning of the disk
+        return {};
+    }
+    return to_it;
+}
+
 void DiskLayout::move_file(std::list<FileSpan>::iterator from,
-                           std::list<FileSpan>::iterator to) {
-    check_invariants(from);
+                           std::list<FileSpan>::iterator to,
+                           FreeSpaceHelper &helper) {
+    check_invariants(from, helper);
     if constexpr (!aoc::FAST) {
         assert(to->empty());
         assert(!from->empty());
@@ -180,6 +254,7 @@ void DiskLayout::move_file(std::list<FileSpan>::iterator from,
                   << " to empty space at " << to->pos << "\n";
     }
 
+    helper.unmark_empty(to);
     if (to->size == from->size) {
         std::swap(to->file_id, from->file_id);
     } else {
@@ -188,15 +263,22 @@ void DiskLayout::move_file(std::list<FileSpan>::iterator from,
         from->file_id = EMPTY;
         to->pos += size;
         to->size -= size;
+        helper.mark_empty(to);
     }
-    check_invariants(from);
+    check_invariants(from, helper);
 }
 
 DiskLayout DiskLayout::compact_smart() const {
-    check_invariants(spans.end());
-    // simple O(n^2) algorithm: linear search for the first empty block where
-    // the current file will fit
+    // O(n log n) implementation: empty spans are stored in free_space, grouped
+    // by the file sizes they can hold and ordered by position
     DiskLayout l{*this};
+    FreeSpaceHelper helper;
+    for (auto it = l.spans.begin(); it != l.spans.end(); ++it) {
+        if (it->empty()) {
+            helper.mark_empty(it);
+        }
+    }
+    l.check_invariants(l.spans.end(), helper);
     // keep track of which file we're looking for, so we move files in order of
     // decreasing file ID
     int curr_file_id;
@@ -212,20 +294,16 @@ DiskLayout DiskLayout::compact_smart() const {
         if (from_it->file_id != curr_file_id) {
             continue;
         }
-        // search for an empty space where *from_it will fit, starting from the
-        // beginning of the filesystem
-        for (auto to_it = l.spans.begin(); to_it != from_it; ++to_it) {
-            if (!to_it->empty() || to_it->size < from_it->size) {
-                continue;
-            }
-            l.move_file(from_it, to_it);
-            break;
+        // look up the first empty space where *from_it will fit
+        auto maybe_to = helper.find_free_space(from_it);
+        if (maybe_to.has_value()) {
+            l.move_file(from_it, *maybe_to, helper);
         }
         // decrement the current file ID
         --curr_file_id;
     }
 
-    l.check_invariants(l.spans.begin());
+    l.check_invariants(l.spans.begin(), helper);
     return l;
 }
 
