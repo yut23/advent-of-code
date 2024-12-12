@@ -6,7 +6,7 @@ ACTIONS_DIR = ROOT / ".github/actions"
 def test_get_dependencies_cpp():
     base_dir = ROOT / "2023"
     src = base_dir / "src"
-    aoc_lib = base_dir.parent / "aoc_lib"
+    aoc_lib = base_dir.parent / "aoc_lib/src"
     include_dirs = (src, aoc_lib)
     assert get_dependencies(src / "day01.cpp", *include_dirs) == {aoc_lib / "lib.hpp"}
     assert get_dependencies(src / "day05.cpp", *include_dirs) == {
@@ -67,6 +67,11 @@ def test_matrix():
     assert matrix_helper("2023/src/test05.cpp") == dict(
         build={"2023/test05"}, answer=set(), unit={"2023/test05"}
     )
+
+    # 2022 doesn't use aoc_lib/src/lib.hpp
+    matrix = Matrix("build")
+    matrix.process_changed_file(ROOT / "aoc_lib/src/lib.hpp")
+    assert all(target.base_dir != ROOT / "2022" for target in matrix.targets)
 
     # answer tests
     assert matrix_helper("2023/answer_tests/day01/example2.txt") == dict(
