@@ -96,7 +96,7 @@ class Target:
     def get_deps(self, mode: str) -> frozenset[Path]:
         deps = set()
         src = self.base_dir / "src"
-        aoc_lib = self.base_dir.parent / "aoc_lib"
+        aoc_lib = self.base_dir.parent / "aoc_lib/src"
         deps.add(src / f"{self}.cpp")
         for included_file in get_transitive_dependencies(
             src / f"{self}.cpp", src, aoc_lib
