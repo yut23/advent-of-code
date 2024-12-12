@@ -49,6 +49,12 @@ def get_dependencies(path: Path, *include_dirs: Path) -> frozenset[Path]:
                         yield curr_path
                         break
 
+    elif path.name == "Makefile":
+
+        def find_include_paths(line: str) -> Generator[Path, None, None]:
+            if line.strip().startswith("include "):
+                yield path.parent / line.strip().removeprefix("include ")
+
     else:
         return frozenset()
 
@@ -72,26 +78,35 @@ def get_transitive_dependencies(path: Path, *include_dirs: Path) -> frozenset[Pa
 @dataclass(order=True, frozen=True, kw_only=True)
 class Target:
     base_dir: Path
-    day: int
+    day: int | None
     prefix: str
     extra: str
 
     @property
+    def _day_str(self) -> str:
+        if self.day is None:
+            return ""
+        return f"{self.day:02d}"
+
+    @property
     def suffix(self) -> str:
-        return f"{self.day:02d}{self.extra}"
+        return f"{self._day_str}{self.extra}"
 
     def __str__(self) -> str:
-        return f"{self.prefix}{self.day:02d}{self.extra}"
+        return f"{self.prefix}{self._day_str}{self.extra}"
 
     @classmethod
     def from_file(cls, base_dir: Path, source_file: Path) -> Target:
         m = re.match(
-            r"(?P<prefix>day|test)(?P<day>\d+)(?P<extra>.*)$", source_file.stem
+            r"(?P<prefix>day|test)(?P<day>\d+)?(?P<extra>.*)$", source_file.stem
         )
         assert m is not None, source_file
-        return cls(
-            base_dir=base_dir, day=int(m["day"]), prefix=m["prefix"], extra=m["extra"]
-        )
+        if m["day"] is None:
+            assert m["prefix"] == "test", "only unit tests may omit a day number"
+            day = None
+        else:
+            day = int(m["day"])
+        return cls(base_dir=base_dir, day=day, prefix=m["prefix"], extra=m["extra"])
 
     def get_deps(self, mode: str) -> frozenset[Path]:
         deps = set()
