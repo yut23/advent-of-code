@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from gen_matrix import ROOT, WORKFLOWS_DIR, Matrix, get_dependencies
 
 ACTIONS_DIR = ROOT / ".github/actions"
@@ -41,7 +43,7 @@ def test_get_dependencies_workflows():
     }
 
 
-def matrix_helper(*changed_files: str) -> dict[str, set[str]]:
+def matrix_helper(*changed_files: str | Path) -> dict[str, set[str]]:
     result = {}
     for mode in ("build", "answer", "unit"):
         matrix = Matrix(mode)
@@ -55,7 +57,7 @@ def matrix_helper(*changed_files: str) -> dict[str, set[str]]:
 
 def test_matrix():
     # pylint: disable=use-dict-literal
-    everything = matrix_helper("2022/Makefile", "tools/cpp/Makefile")
+    everything = matrix_helper(*ROOT.glob("*/Makefile"), "tools/cpp/Makefile")
 
     # C++ source files
     assert matrix_helper("2023/src/day05.cpp") == dict(
