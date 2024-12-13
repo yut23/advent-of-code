@@ -6,7 +6,12 @@ on:
       ubuntu-version:
         required: true
         type: string
-      llvm-version:
+      gcc-versions:
+        description: 'Comma-separated list of GCC versions to install'
+        required: true
+        type: string
+      llvm-versions:
+        description: 'Comma-separated list of Clang and libc++ versions to install'
         required: true
         type: string
       rebuild:
@@ -21,11 +26,17 @@ on:
       ubuntu-version:
         required: true
         type: string
-        default: 22.04
-      llvm-version:
+        default: '24.04'
+      gcc-versions:
+        description: 'Comma-separated list of GCC versions to install'
         required: true
         type: string
-        default: 17
+        default: '13'
+      llvm-versions:
+        description: 'Comma-separated list of Clang and libc++ versions to install'
+        required: true
+        type: string
+        default: '15,17'
       rebuild:
         required: true
         type: boolean
@@ -36,11 +47,10 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}/test-container
-  IMAGE_VERSION: ubuntu-${{ inputs.ubuntu-version }}-llvm-${{ inputs.llvm-version }}
 
 jobs:
   check-registry:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Check ghcr.io for existing build
 
     steps:
@@ -56,6 +66,10 @@ jobs:
       - name: Check for existing build
         id: check-existing
         run: |
+          gcc_versions=${{ inputs.gcc-versions }}
+          llvm_versions=${{ inputs.llvm-versions }}
+          IMAGE_VERSION="ubuntu-${{ inputs.ubuntu-version }}-gcc-${gcc_versions/,/-}-llvm-${llvm_versions/,/-}"
+          echo "image-version=$IMAGE_VERSION" >> $GITHUB_OUTPUT
           if docker manifest inspect $REGISTRY/$IMAGE_NAME:$IMAGE_VERSION; then
             echo "in-registry=true" >> $GITHUB_OUTPUT
           else
@@ -64,10 +78,10 @@ jobs:
 
     outputs:
       in-registry: ${{ steps.check-existing.outputs.in-registry }}
-      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.check-existing.outputs.image-version }}
 
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     needs: check-registry
@@ -101,7 +115,8 @@ jobs:
           file: .github/workflows/Dockerfile
           build-args: |
             UBUNTU_VERSION=${{ inputs.ubuntu-version }}
-            LLVM_VERSION=${{ inputs.llvm-version }}
+            GCC_VERSIONS=${{ inputs.gcc-versions }}
+            LLVM_VERSIONS=${{ inputs.llvm-versions }}
           push: true
           tags: ${{ needs.check-registry.outputs.image }}
           cache-from: type=gha
