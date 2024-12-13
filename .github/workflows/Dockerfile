@@ -1,22 +1,25 @@
 # syntax=docker/dockerfile:1
 # based on https://hub.docker.com/layers/ldionne/libcxx-builder/latest/images/sha256-1dff4680e3a08c06befade387b3d95f8944dd949532eea3ddd7b9e66fea48dde?context=explore
-ARG UBUNTU_VERSION
+ARG UBUNTU_VERSION=24.04
 FROM ubuntu:$UBUNTU_VERSION
-ARG LLVM_VERSION
-ENV LLVM_VERSION ${LLVM_VERSION}
+# comma-separated version numbers
+ARG GCC_VERSIONS
+# comma-separated version numbers
+ARG LLVM_VERSIONS
 RUN apt-get update -qq && \
     apt-get install -qq -y \
       git \
-      build-essential \
-      lsb-release \
-      wget \
-      software-properties-common \
-      gnupg
-RUN wget https://apt.llvm.org/llvm.sh -O /tmp/llvm.sh
+      make \
+      lsb-release
 # install compilers and libc++
-RUN bash /tmp/llvm.sh $LLVM_VERSION
-RUN apt-get install -y \
-      libc++-$LLVM_VERSION-dev libc++abi-$LLVM_VERSION-dev \
-      clang \
-      g++
+RUN IFS=,; \
+    for gcc_version in $GCC_VERSIONS; do \
+      apt-get install -y g++-$gcc_version; \
+    done;
+RUN IFS=,; \
+    for llvm_version in $LLVM_VERSIONS; do \
+      apt-get install -y \
+        clang-${llvm_version} \
+        libc++-${llvm_version}-dev libc++abi-${llvm_version}-dev; \
+    done;
 CMD ["/bin/bash"]

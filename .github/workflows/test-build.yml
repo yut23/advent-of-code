@@ -13,8 +13,9 @@ jobs:
     permissions:
       packages: write
     with:
-      ubuntu-version: 22.04
-      llvm-version: 17
+      ubuntu-version: 24.04
+      gcc-versions: 13
+      llvm-versions: '15,17'
 
   matrix-job:
     runs-on: ubuntu-latest
@@ -34,7 +35,7 @@ jobs:
         id: clang
         uses: ./.github/actions/build-action
         with:
-          compiler: clang++
+          compiler: clang++-15
 
       - name: Build target (g++)
         id: gcc
@@ -42,7 +43,7 @@ jobs:
         if: success() || steps.clang.conclusion == 'failure'
         uses: ./.github/actions/build-action
         with:
-          compiler: g++
+          compiler: g++-13
 
       - name: Build target (clang++-17, libc++)
         # ignore failures in the previous two steps

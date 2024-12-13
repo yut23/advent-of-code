@@ -13,8 +13,9 @@ jobs:
     permissions:
       packages: write
     with:
-      ubuntu-version: 22.04
-      llvm-version: 17
+      ubuntu-version: 24.04
+      gcc-versions: 13
+      llvm-versions: '15,17'
 
   matrix-job:
     runs-on: ubuntu-latest
@@ -40,7 +41,7 @@ jobs:
         id: clang
         uses: ./.github/actions/answer-test-action
         with:
-          compiler: clang++
+          compiler: clang++-15
 
       - name: Run answer tests (g++)
         timeout-minutes: 2
@@ -49,7 +50,7 @@ jobs:
         if: success() || steps.clang.conclusion == 'failure'
         uses: ./.github/actions/answer-test-action
         with:
-          compiler: g++
+          compiler: g++-13
 
       - name: Run answer tests (clang++-17, libc++)
         timeout-minutes: 2
