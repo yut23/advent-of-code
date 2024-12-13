@@ -310,6 +310,32 @@ struct Grid {
 
     constexpr container_type &data() { return m_data; }
     constexpr const container_type &data() const { return m_data; }
+
+    /**
+     * Calls func(pos, value) for each position in the grid.
+     */
+    template <typename Func>
+    constexpr void for_each_with_pos(Func &&func) {
+        Pos p;
+        for (p.y = 0; p.y < height; ++p.y) {
+            for (p.x = 0; p.x < width; ++p.x) {
+                func(p, (*this)[p]);
+            }
+        }
+    }
+
+    /**
+     * Calls func(pos, value) for each position in the grid.
+     */
+    template <typename Func>
+    constexpr void for_each_with_pos(Func &&func) const {
+        Pos p;
+        for (p.y = 0; p.y < height; ++p.y) {
+            for (p.x = 0; p.x < width; ++p.x) {
+                func(p, (*this)[p]);
+            }
+        }
+    }
 };
 
 template <class T>
