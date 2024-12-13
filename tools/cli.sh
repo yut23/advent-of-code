@@ -59,9 +59,10 @@ init_target_args() {
 
   # add help section
   add_help "Target selection" "" \
-    2 "-d" "--debug"  0     "run the debug build" \
-    2 "-f" "--fast"   0     "run the fast build" \
-    2 "-s" "--suffix" 1 "S" "select a different source file with the given suffix"
+    2 "-d" "--debug"   0     "run the debug build" \
+    2 "-f" "--fast"    0     "run the fast build" \
+    2 "-p" "--profile" 0     "run the profiling build" \
+    2 "-s" "--suffix"  1 "S" "select a different source file with the given suffix"
 }
 handle_target_arg() {
   local init_nargs=$#
@@ -72,6 +73,10 @@ handle_target_arg() {
       ;;
     -f|--fast)
       bin_dir=build/fast
+      shift
+      ;;
+    -p|--profile)
+      bin_dir=build/profile
       shift
       ;;
     -s|--suffix)
