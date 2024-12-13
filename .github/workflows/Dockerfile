@@ -7,18 +7,18 @@ ARG GCC_VERSIONS
 # comma-separated version numbers
 ARG LLVM_VERSIONS
 RUN apt-get update -qq && \
-    apt-get install -qq -y \
+    apt-get install -qq -y --no-install-recommends \
       git \
       make \
       lsb-release
 # install compilers and libc++
 RUN IFS=,; \
     for gcc_version in $GCC_VERSIONS; do \
-      apt-get install -y g++-$gcc_version; \
+      apt-get install -y --no-install-recommends g++-$gcc_version; \
     done;
 RUN IFS=,; \
     for llvm_version in $LLVM_VERSIONS; do \
-      apt-get install -y \
+      apt-get install -y --no-install-recommends \
         clang-${llvm_version} \
         libc++-${llvm_version}-dev libc++abi-${llvm_version}-dev; \
     done;
