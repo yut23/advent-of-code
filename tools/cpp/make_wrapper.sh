@@ -7,8 +7,8 @@ source "$AOC_ROOT/tools/lib.sh"
 # cd to the base directory for this year
 cd -- "$AOC_ROOT/$AOC_YEAR"
 
-if ! command -v bear &> /dev/null; then
-  # just run make if bear isn't present
+if ! command -v bear &> /dev/null || [[ " $* " =~ " clean " ]]; then
+  # just run make if bear isn't present, or if cleaning
   make "$@"
   exit
 fi
