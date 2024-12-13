@@ -187,6 +187,47 @@ std::ostream &print_repr(std::ostream &os, B b, const bool /*result*/) {
     return os;
 }
 
+// (signed/unsigned) char
+template <util::concepts::same_as_any<char, signed char, unsigned char> C>
+struct pretty_print::has_custom_print_repr<C> : std::true_type {};
+
+template <util::concepts::same_as_any<char, signed char, unsigned char> C>
+std::ostream &print_repr(std::ostream &os, C ch, const bool /*result*/) {
+    os << '\'';
+    if (std::isprint(static_cast<unsigned char>(ch))) {
+        if (ch == '\\' || ch == '\'') {
+            os << '\\';
+        }
+        os << ch;
+    } else {
+        os << '\\';
+        switch (ch) {
+        case '\t':
+            os << 't';
+            break;
+        case '\n':
+            os << 'n';
+            break;
+        case '\r':
+            os << 'r';
+            break;
+        default: {
+            // hex escape
+            os << 'x';
+            auto orig_flags = os.flags(std::ios::hex | std::ios::right);
+            auto orig_width = os.width(2);
+            auto orig_fill = os.fill('0');
+            os << (static_cast<unsigned int>(ch) & 0xFF);
+            os.flags(orig_flags);
+            os.width(orig_width);
+            os.fill(orig_fill);
+        }
+        }
+    }
+    os << '\'';
+    return os;
+}
+
 // floating point values
 template <std::floating_point FP>
 struct pretty_print::has_custom_print_repr<FP> : std::true_type {};
