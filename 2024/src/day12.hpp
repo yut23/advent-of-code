@@ -67,7 +67,7 @@ void Garden::process_plot(const Pos &pos, char plant_type) {
         return;
     }
     int region_index = regions.size();
-    regions.emplace_back(region_index, plant_type);
+    regions.push_back({region_index, plant_type});
     Region &region = regions.back();
     const auto process_neighbors = [this, &plant_type,
                                     &region](const Pos &p, auto &&process) {
