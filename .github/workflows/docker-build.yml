@@ -50,7 +50,7 @@ env:
 
 jobs:
   check-registry:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Check ghcr.io for existing build
 
     steps:
@@ -81,7 +81,7 @@ jobs:
       image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.check-existing.outputs.image-version }}
 
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     needs: check-registry
