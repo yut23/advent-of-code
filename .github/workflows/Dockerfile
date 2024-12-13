@@ -10,7 +10,8 @@ RUN apt-get update -qq && \
     apt-get install -qq -y --no-install-recommends \
       git \
       make \
-      lsb-release
+      lsb-release \
+      ca-certificates
 # install compilers and libc++
 RUN IFS=,; \
     for gcc_version in $GCC_VERSIONS; do \
@@ -19,7 +20,7 @@ RUN IFS=,; \
 RUN IFS=,; \
     for llvm_version in $LLVM_VERSIONS; do \
       apt-get install -y --no-install-recommends \
-        clang-${llvm_version} \
+        clang-${llvm_version} libclang-rt-${llvm_version}-dev \
         libc++-${llvm_version}-dev libc++abi-${llvm_version}-dev; \
     done;
 CMD ["/bin/bash"]
