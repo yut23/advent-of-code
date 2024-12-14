@@ -6,9 +6,10 @@
  * Description: Tests for the unit test pretty-printing code.
  *****************************************************************************/
 
+#include "unit_test/pretty_print.hpp" // IWYU pragma: associated
+
 #include "unit_test/unit_test.hpp"
 
-#include "unit_test/pretty_print.hpp"
 #include <sstream> // for ostringstream
 
 namespace pretty_print::test {

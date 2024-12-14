@@ -1,29 +1,32 @@
 /******************************************************************************
- * File:        test11.cpp
+ * File:        test_math.cpp
  *
  * Author:      Eric T. Johnson (yut23)
  * Created:     2024-12-11
  *****************************************************************************/
 
-#include "day11.hpp"                  // IWYU pragma: associated
+#include "util/math.hpp" // IWYU pragma: associated
+
 #include "unit_test/pretty_print.hpp" // for repr
 #include "unit_test/unit_test.hpp"
 #include "util/util.hpp" // for demangle
 
-#include <cstddef> // for size_t
-#include <string>  // for string
+#include <cstddef>  // for size_t
+#include <cstdint>  // for int64_t, uint64_t
+#include <iostream> // for cout
+#include <string>   // for string
 // IWYU pragma: no_include <typeinfo>  // for type_info (util::demangle)
 
-namespace aoc::day11::test {
+namespace aoc::math::test {
 
 template <typename IntegerT>
 std::size_t test_powers_of_10() {
     const std::string type_name = util::demangle(typeid(IntegerT).name());
     unit_test::PureTest test(
-        "day11::test_powers_of_10<" + type_name + ">",
+        "aoc::math::gen_powers_of_10<" + type_name + ">",
         +[](IntegerT x) -> IntegerT { return x; });
 
-    constexpr auto POWERS_OF_10 = gen_powers_of_10<IntegerT>();
+    constexpr auto POWERS_OF_10 = aoc::math::gen_powers_of_10<IntegerT>();
     std::size_t size = POWERS_OF_10.size();
     IntegerT max = std::numeric_limits<IntegerT>::max();
     int i = 0;
@@ -51,29 +54,11 @@ std::size_t test_powers_of_10() {
     return test.num_failed();
 }
 
-template <typename IntegerT>
-IntegerT powi(IntegerT base, unsigned int exponent) {
-    if (exponent == 0) {
-        return 1;
-    } else if (exponent == 1) {
-        return base;
-    } else if (exponent == 2) {
-        return base * base;
-    } else {
-        IntegerT tmp = powi(base, exponent / 2);
-        tmp *= tmp;
-        if (exponent % 2 == 1) {
-            tmp *= base;
-        }
-        return tmp;
-    }
-}
-
 template <class IntegerT>
 std::size_t test_num_digits() {
     const std::string type_name = util::demangle(typeid(IntegerT).name());
-    unit_test::PureTest test("day11::test_num_digits<" + type_name + ">",
-                             &aoc::day11::num_digits<IntegerT>);
+    unit_test::PureTest test("aoc::math::num_digits<" + type_name + ">",
+                             &aoc::math::num_digits<IntegerT>);
 
     test(1, 1);
     for (unsigned int i = 0; i <= std::numeric_limits<IntegerT>::digits10;
@@ -91,17 +76,17 @@ std::size_t test_num_digits() {
     return test.done(), test.num_failed();
 }
 
-} // namespace aoc::day11::test
+} // namespace aoc::math::test
 
 int main() {
     std::size_t failed_count = 0;
-    failed_count += aoc::day11::test::test_powers_of_10<int>();
-    failed_count += aoc::day11::test::test_powers_of_10<unsigned int>();
-    failed_count += aoc::day11::test::test_powers_of_10<std::int64_t>();
-    failed_count += aoc::day11::test::test_powers_of_10<std::uint64_t>();
-    failed_count += aoc::day11::test::test_num_digits<int>();
-    failed_count += aoc::day11::test::test_num_digits<unsigned int>();
-    failed_count += aoc::day11::test::test_num_digits<std::int64_t>();
-    failed_count += aoc::day11::test::test_num_digits<std::uint64_t>();
+    failed_count += aoc::math::test::test_powers_of_10<int>();
+    failed_count += aoc::math::test::test_powers_of_10<unsigned int>();
+    failed_count += aoc::math::test::test_powers_of_10<std::int64_t>();
+    failed_count += aoc::math::test::test_powers_of_10<std::uint64_t>();
+    failed_count += aoc::math::test::test_num_digits<int>();
+    failed_count += aoc::math::test::test_num_digits<unsigned int>();
+    failed_count += aoc::math::test::test_num_digits<std::int64_t>();
+    failed_count += aoc::math::test::test_num_digits<std::uint64_t>();
     return unit_test::fix_exit_code(failed_count);
 }

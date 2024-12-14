@@ -6,7 +6,7 @@
  * Description: Tests of the unit test framework itself.
  *****************************************************************************/
 
-#include "unit_test/unit_test.hpp"
+#include "unit_test/unit_test.hpp" // IWYU pragma: associated
 
 #include <compare>       // for strong_ordering
 #include <cstddef>       // for size_t

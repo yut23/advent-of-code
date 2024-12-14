@@ -8,17 +8,17 @@
 #ifndef DAY11_HPP_UOIOTEZD
 #define DAY11_HPP_UOIOTEZD
 
-#include "lib.hpp"    // for DEBUG
-#include <algorithm>  // for count_if
-#include <array>      // for array
-#include <cstddef>    // for size_t
-#include <cstdint>    // for int64_t
-#include <functional> // for plus
-#include <iostream>   // for istream, ostream, cerr
-#include <numeric>    // for transform_reduce
-#include <string>     // for string, to_string, stoi
-#include <variant>    // for variant, get, holds_alternative, visit
-#include <vector>     // for vector
+#include "lib.hpp"       // for DEBUG
+#include "util/math.hpp" // for num_digits, powi
+#include <algorithm>     // for count_if
+#include <array>         // for array
+#include <cstddef>       // for size_t
+#include <cstdint>       // for int64_t
+#include <functional>    // for plus
+#include <iostream>      // for istream, ostream, cerr
+#include <numeric>       // for transform_reduce
+#include <variant>       // for variant, get, holds_alternative, visit
+#include <vector>        // for vector
 
 namespace aoc::day11 {
 
@@ -167,45 +167,6 @@ void HistoryData::set_stone(Stone &stone, stone_value_t value) const {
     }
 }
 
-template <typename IntegerT,
-          int max_digits = std::numeric_limits<IntegerT>::digits10>
-constexpr std::array<IntegerT, max_digits> gen_powers_of_10() {
-    std::array<IntegerT, max_digits> arr;
-    IntegerT x = 1;
-    for (std::size_t i = 0; i < max_digits; ++i) {
-        x *= 10;
-        arr[i] = x;
-    }
-    return arr;
-}
-
-template <std::integral IntegerT>
-int num_digits(IntegerT value) {
-    constexpr auto POWERS = gen_powers_of_10<IntegerT>();
-    return std::distance(
-               POWERS.begin(),
-               std::upper_bound(POWERS.begin(), POWERS.end(), value)) +
-           1;
-}
-
-template <typename IntegerT>
-IntegerT powi(IntegerT base, unsigned int exponent) {
-    if (exponent == 0) {
-        return 1;
-    } else if (exponent == 1) {
-        return base;
-    } else if (exponent == 2) {
-        return base * base;
-    } else {
-        IntegerT tmp = powi(base, exponent / 2);
-        tmp *= tmp;
-        if (exponent % 2 == 1) {
-            tmp *= base;
-        }
-        return tmp;
-    }
-}
-
 // Main update routine.
 void StoneGroup::blink(const HistoryData &history) {
     std::size_t orig_size = stones.size();
@@ -219,9 +180,10 @@ void StoneGroup::blink(const HistoryData &history) {
         if (value == 0) {
             stone = history.get_stone(1);
         } else {
-            int ndigits = num_digits(value);
+            int ndigits = math::num_digits(value);
             if (ndigits % 2 == 0) {
-                stone_value_t modulus = powi<stone_value_t>(10, ndigits / 2);
+                stone_value_t modulus =
+                    math::powi<stone_value_t>(10, ndigits / 2);
                 stone = history.get_stone(value / modulus);
                 stones.push_back(history.get_stone(value % modulus));
             } else {

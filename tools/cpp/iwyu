@@ -45,4 +45,4 @@ done
 # add remaining arguments to include-what-you-use args
 iwyu_args+=("$@")
 
-iwyu-tool -p "../compile_commands_$AOC_YEAR.json" "${tool_args[@]}" "${sources[@]}" -- --no-warnings -Xiwyu --quoted_includes_first -Xiwyu --max_line_length=300 -Xiwyu --mapping_file="$TOOLS_DIR/cpp/iwyu_mappings.imp" -resource-dir "$(clang -print-resource-dir)" "${iwyu_args[@]}"
+iwyu-tool -p "../compile_commands.json" "${tool_args[@]}" "${sources[@]}" -- --no-warnings -Xiwyu --quoted_includes_first -Xiwyu --max_line_length=300 -Xiwyu --mapping_file="$TOOLS_DIR/cpp/iwyu_mappings.imp" -resource-dir "$(clang -print-resource-dir)" "${iwyu_args[@]}"
