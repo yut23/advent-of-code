@@ -8,15 +8,16 @@
 #ifndef DAY07_HPP_BVIUF38H
 #define DAY07_HPP_BVIUF38H
 
-#include "lib.hpp"  // for expect_input
-#include <cassert>  // for assert
-#include <cmath>    // for ceil, log10, pow
-#include <cstddef>  // for size_t
-#include <iostream> // for istream
-#include <sstream>  // for istringstream, stringstream
-#include <string>   // for string, getline
-#include <utility>  // for move
-#include <vector>   // for vector
+#include "lib.hpp"       // for expect_input
+#include "util/math.hpp" // for gen_powers_of_10
+#include <algorithm>     // for upper_bound
+#include <cstddef>       // for size_t
+#include <iostream>      // for istream
+#include <sstream>       // for istringstream, stringstream
+#include <string>        // for string, getline
+#include <utility>       // for move
+#include <vector>        // for vector
+// IWYU pragma: no_include <array>  // for array (gen_powers_of_10)
 
 namespace aoc::day07 {
 
@@ -33,21 +34,12 @@ struct Equation {
     }
 };
 
-long concat(long x, long y) {
-    return x * std::pow(10, std::ceil(std::log10(y + 1))) + y;
+long next_power_of_10(long value) {
+    constexpr auto POWERS = aoc::math::gen_powers_of_10<long>();
+    return *std::upper_bound(POWERS.begin(), POWERS.end(), value);
 }
 
-long concat_slow(long x, long y) {
-    std::stringstream ss;
-    ss << x << y;
-    long result;
-    ss >> result;
-    if constexpr (aoc::DEBUG) {
-        std::cerr << "concat(" << x << ", " << y << "): " << result << "\n";
-    }
-    assert(result == concat(x, y));
-    return result;
-}
+long concat(long x, long y) { return x * next_power_of_10(y) + y; }
 
 bool Equation::is_valid_helper(bool use_concat, long acc,
                                std::size_t idx) const {
