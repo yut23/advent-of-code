@@ -23,4 +23,6 @@
 { symbol: ["std::ostream", "private", "<iostream>", "public" ] },
 # this is internal
 { include: ["<bits/std_abs.h>", "private", "<cstdlib>", "public" ] },
+# IWYU thinks this is from <variant> if it's included from anywhere
+{ symbol: ["std::tuple", "private", "<tuple>", "public" ] },
 ]
