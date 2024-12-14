@@ -9,15 +9,13 @@
 #define DAY07_HPP_BVIUF38H
 
 #include "lib.hpp"       // for expect_input
-#include "util/math.hpp" // for gen_powers_of_10
-#include <algorithm>     // for upper_bound
+#include "util/math.hpp" // for next_power_of_10
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream
 #include <sstream>       // for istringstream, stringstream
 #include <string>        // for string, getline
 #include <utility>       // for move
 #include <vector>        // for vector
-// IWYU pragma: no_include <array>  // for array (gen_powers_of_10)
 
 namespace aoc::day07 {
 
@@ -34,12 +32,7 @@ struct Equation {
     }
 };
 
-long next_power_of_10(long value) {
-    constexpr auto POWERS = aoc::math::gen_powers_of_10<long>();
-    return *std::upper_bound(POWERS.begin(), POWERS.end(), value);
-}
-
-long concat(long x, long y) { return x * next_power_of_10(y) + y; }
+long concat(long x, long y) { return x * math::next_power_of_10(y) + y; }
 
 bool Equation::is_valid_helper(bool use_concat, long acc,
                                std::size_t idx) const {

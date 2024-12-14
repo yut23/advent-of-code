@@ -9,12 +9,11 @@
 #ifndef MATH_HPP_VHRQFHXN
 #define MATH_HPP_VHRQFHXN
 
-#include <algorithm> // for upper_bound
-#include <array>     // for array
-#include <concepts>  // for integral
-#include <cstddef>   // for size_t
-#include <iterator>  // for distance  // IWYU pragma: keep
-#include <limits>    // for numeric_limits
+#include <array>    // for array
+#include <cassert>  // for assert
+#include <concepts> // for integral
+#include <cstddef>  // for size_t
+#include <limits>   // for numeric_limits
 
 namespace aoc::math {
 
@@ -33,10 +32,26 @@ constexpr std::array<IntegerT, max_digits> gen_powers_of_10() {
 template <std::integral IntegerT>
 int num_digits(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
-    return std::distance(
-               POWERS.begin(),
-               std::upper_bound(POWERS.begin(), POWERS.end(), value)) +
-           1;
+    int i;
+    for (i = 0; i < static_cast<int>(POWERS.size()); ++i) {
+        if (POWERS[i] > value) {
+            break;
+        }
+    }
+    return i + 1;
+}
+
+template <std::integral IntegerT>
+IntegerT next_power_of_10(IntegerT value) {
+    constexpr auto POWERS = gen_powers_of_10<IntegerT>();
+    // this array is small, so a linear search performs better
+    for (const auto &pow : POWERS) {
+        // cppcheck-suppress useStlAlgorithm
+        if (pow > value) {
+            return pow;
+        }
+    }
+    assert(false);
 }
 
 template <typename IntegerT>
