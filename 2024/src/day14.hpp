@@ -8,12 +8,14 @@
 #ifndef DAY14_HPP_5W9MWUPG
 #define DAY14_HPP_5W9MWUPG
 
-#include "lib.hpp"  // for Pos, Delta, expect_input
-#include <array>    // for array
-#include <iostream> // for istream
-#include <string>   // for string, getline
-#include <utility>  // for move
-#include <vector>   // for vector
+#include "ds/grid.hpp" // for Grid
+#include "lib.hpp"     // for Pos, Delta, expect_input, DIRECTIONS
+#include <algorithm>   // for max_element
+#include <array>       // for array
+#include <iostream>    // for istream, ostream, noskipws, ws
+#include <utility>     // for move
+#include <vector>      // for vector
+// IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
 
 namespace aoc::day14 {
 
@@ -33,15 +35,6 @@ std::istream &operator>>(std::istream &is, Robot &robot) {
     return is;
 }
 
-auto read_input(std::istream &is) {
-    Robot robot;
-    std::vector<Robot> robots;
-    while (is >> robot) {
-        robots.push_back(std::move(robot));
-    }
-    return robots;
-}
-
 void Robot::update(const Pos &bounds) {
     pos += vel;
     if (pos.x < 0) {
@@ -56,7 +49,43 @@ void Robot::update(const Pos &bounds) {
     }
 }
 
-int safety_factor(const std::vector<Robot> &robots, const Pos &bounds) {
+class Robots {
+    std::vector<Robot> robots;
+    Pos bounds;
+
+    aoc::ds::Grid<int> robot_counts;
+
+    explicit Robots(const Pos &bounds)
+        : robots(), bounds(bounds), robot_counts(bounds.x, bounds.y, 0) {}
+
+  public:
+    static Robots read(std::istream &is, const Pos &bounds);
+    void update();
+    int safety_factor() const;
+    int largest_clump() const;
+
+    friend std::ostream &operator<<(std::ostream &os, const Robots &robots);
+};
+
+Robots Robots::read(std::istream &is, const Pos &bounds) {
+    Robot robot;
+    Robots robots(bounds);
+    while (is >> robot) {
+        ++robots.robot_counts[robot.pos];
+        robots.robots.push_back(std::move(robot));
+    }
+    return robots;
+}
+
+void Robots::update() {
+    for (auto &robot : robots) {
+        --robot_counts[robot.pos];
+        robot.update(bounds);
+        ++robot_counts[robot.pos];
+    }
+}
+
+int Robots::safety_factor() const {
     std::array<int, 4> quadrants{};
     for (const auto &robot : robots) {
         int quad_idx = 0;
@@ -75,6 +104,53 @@ int safety_factor(const std::vector<Robot> &robots, const Pos &bounds) {
     }
 
     return quadrants[0] * quadrants[1] * quadrants[2] * quadrants[3];
+}
+
+int Robots::largest_clump() const {
+    std::vector<int> clumps;
+    aoc::ds::Grid<int> clump_indices(robot_counts, -1);
+    for (const Robot &robot : robots) {
+        // This isn't actually correct, and mislabels shapes with indents like
+        //  ..##
+        //  .##.
+        // but it's good enough to find a Christmas tree. See day 12 for a
+        // proper (and slower) implementation.
+        if (clump_indices[robot.pos] == -1) {
+            for (const auto &dir : DIRECTIONS) {
+                Pos neighbor = robot.pos + aoc::Delta(dir, true);
+                if (robot_counts.in_bounds(neighbor) &&
+                    robot_counts[neighbor] > 0) {
+                    if (clump_indices[neighbor] != -1) {
+                        clump_indices[robot.pos] = clump_indices[neighbor];
+                        ++clumps[clump_indices[robot.pos]];
+                        break;
+                    }
+                }
+            }
+            if (clump_indices[robot.pos] == -1) {
+                // new clump
+                clump_indices[robot.pos] = clumps.size();
+                clumps.push_back(1);
+            }
+        }
+    }
+    return *std::max_element(clumps.begin(), clumps.end());
+}
+
+std::ostream &operator<<(std::ostream &os, const Robots &robots) {
+    for (const auto &row : robots.robot_counts) {
+        for (const auto &count : row) {
+            if (count == 0) {
+                os << ' ';
+            } else if (count < 10) {
+                os << count;
+            } else {
+                os << '*';
+            }
+        }
+        os << "\n";
+    }
+    return os;
 }
 
 } // namespace aoc::day14
