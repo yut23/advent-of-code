@@ -10,9 +10,10 @@
 #define LIB_HPP_0IZKV7KG
 
 #include "util/hash.hpp"    // for make_hash
-#include <algorithm>        // for max, min
+#include <algorithm>        // for max, min  // IWYU pragma: keep
 #include <cassert>          // for assert
 #include <compare>          // for strong_ordering
+#include <concepts>         // for integral
 #include <cstdlib>          // for abs, size_t, exit
 #include <fstream>          // for ifstream  // IWYU pragma: keep
 #include <functional>       // for hash
@@ -141,12 +142,15 @@ RelDirection relative_to(AbsDirection old_dir, AbsDirection new_dir) {
 }
 } // namespace directions
 
-struct Delta {
-    int dx;
-    int dy;
+template <std::integral T = int>
+struct GenericDelta {
+    using int_type = T;
+    int_type dx;
+    int_type dy;
 
-    constexpr Delta(int dx, int dy) : dx(dx), dy(dy) {}
-    explicit constexpr Delta(AbsDirection dir, bool invert_vertical = false)
+    constexpr GenericDelta(int_type dx, int_type dy) : dx(dx), dy(dy) {}
+    explicit constexpr GenericDelta(AbsDirection dir,
+                                    bool invert_vertical = false)
         : dx(0), dy(0) {
         switch (dir) {
         case AbsDirection::north:
@@ -167,132 +171,163 @@ struct Delta {
         }
     }
 
-    constexpr int chebyshev_distance() const {
+    constexpr int_type chebyshev_distance() const {
         return std::max(std::abs(dx), std::abs(dy));
     }
 
-    constexpr int manhattan_distance() const {
+    constexpr int_type manhattan_distance() const {
         return std::abs(dx) + std::abs(dy);
     }
 
     // two Deltas can be added together
-    Delta &operator+=(const Delta &rhs) {
+    GenericDelta &operator+=(const GenericDelta &rhs) {
         dx += rhs.dx;
         dy += rhs.dy;
         return *this;
     }
 
     // two Deltas can be subtracted
-    Delta &operator-=(const Delta &rhs) {
+    GenericDelta &operator-=(const GenericDelta &rhs) {
         dx -= rhs.dx;
         dy -= rhs.dy;
         return *this;
     }
 
     // can be scaled by an integer
-    Delta &operator*=(int rhs) {
+    GenericDelta &operator*=(int_type rhs) {
         dx *= rhs;
         dy *= rhs;
         return *this;
     }
-    Delta &operator/=(int rhs) {
+    GenericDelta &operator/=(int_type rhs) {
         dx /= rhs;
         dy /= rhs;
         return *this;
     }
 };
 // this takes lhs by copy, so it doesn't modify the original lhs
-inline Delta operator+(Delta lhs, const Delta &rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator+(GenericDelta<int_type> lhs,
+                                        const GenericDelta<int_type> &rhs) {
     lhs += rhs;
     return lhs;
 }
-inline Delta operator-(Delta lhs, const Delta &rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator-(GenericDelta<int_type> lhs,
+                                        const GenericDelta<int_type> &rhs) {
     lhs -= rhs;
     return lhs;
 }
-inline Delta operator*(Delta lhs, int rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator*(GenericDelta<int_type> lhs,
+                                        int_type rhs) {
     lhs *= rhs;
     return lhs;
 }
-inline Delta operator*(int lhs, Delta rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator*(int_type lhs,
+                                        GenericDelta<int_type> rhs) {
     rhs *= lhs;
     return rhs;
 }
-inline Delta operator/(Delta lhs, int rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator/(GenericDelta<int_type> lhs,
+                                        int_type rhs) {
     lhs /= rhs;
     return lhs;
 }
 // negation operator
-inline Delta operator-(Delta delta) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator-(GenericDelta<int_type> delta) {
     delta.dx *= -1;
     delta.dy *= -1;
     return delta;
 }
 
-std::ostream &operator<<(std::ostream &os, const Delta &delta) {
-    os << "Delta(" << delta.dx << ", " << delta.dy << ")";
+template <std::integral int_type>
+std::ostream &operator<<(std::ostream &os,
+                         const GenericDelta<int_type> &delta) {
+    os << "GenericDelta(" << delta.dx << ", " << delta.dy << ")";
     return os;
 }
 
-struct Pos {
-    int x;
-    int y;
+template <std::integral T = int>
+struct GenericPos {
+    using int_type = T;
+    int_type x;
+    int_type y;
 
-    constexpr Pos() : x(0), y(0) {}
-    constexpr Pos(int x, int y) : x(x), y(y) {}
+    constexpr GenericPos() : x(0), y(0) {}
+    constexpr GenericPos(int_type x, int_type y) : x(x), y(y) {}
 
     // we can add a Delta to a Pos, but not another Pos
-    Pos &operator+=(const Delta &rhs) {
+    GenericPos &operator+=(const GenericDelta<int_type> &rhs) {
         x += rhs.dx;
         y += rhs.dy;
         return *this;
     }
-    Pos &operator-=(const Delta &rhs) {
+    GenericPos &operator-=(const GenericDelta<int_type> &rhs) {
         x -= rhs.dx;
         y -= rhs.dy;
         return *this;
     }
 
     // can scale by an integer
-    Pos &operator*=(int rhs) {
+    GenericPos &operator*=(int_type rhs) {
         x *= rhs;
         y *= rhs;
         return *this;
     }
-    Pos &operator/=(int rhs) {
+    GenericPos &operator/=(int_type rhs) {
         x /= rhs;
         y /= rhs;
         return *this;
     }
 
-    constexpr std::strong_ordering operator<=>(const Pos &) const = default;
+    constexpr std::strong_ordering
+    operator<=>(const GenericPos<int_type> &) const = default;
 };
 // this takes lhs by copy, so it doesn't modify the original lhs
-inline Pos operator+(Pos lhs, const Delta &rhs) {
+template <std::integral int_type>
+inline GenericPos<int_type> operator+(GenericPos<int_type> lhs,
+                                      const GenericDelta<int_type> &rhs) {
     lhs += rhs;
     return lhs;
 }
-inline Pos operator-(Pos lhs, const Delta &rhs) {
+template <std::integral int_type>
+inline GenericPos<int_type> operator-(GenericPos<int_type> lhs,
+                                      const GenericDelta<int_type> &rhs) {
     lhs -= rhs;
     return lhs;
 }
-inline Pos operator*(Pos lhs, int rhs) {
+template <std::integral int_type>
+inline GenericPos<int_type> operator*(GenericPos<int_type> lhs, int rhs) {
     lhs *= rhs;
     return lhs;
 }
-inline Pos operator/(Pos lhs, int rhs) {
+template <std::integral int_type>
+inline GenericPos<int_type> operator/(GenericPos<int_type> lhs, int rhs) {
     lhs /= rhs;
     return lhs;
 }
 // can subtract two Pos, yielding a Delta
-inline Delta operator-(const Pos &lhs, const Pos &rhs) {
+template <std::integral int_type>
+inline GenericDelta<int_type> operator-(const GenericPos<int_type> &lhs,
+                                        const GenericPos<int_type> &rhs) {
     return {lhs.x - rhs.x, lhs.y - rhs.y};
 }
 
-std::ostream &operator<<(std::ostream &os, const Pos &pos) {
-    os << "Pos(" << pos.x << ", " << pos.y << ")";
+template <std::integral int_type>
+std::ostream &operator<<(std::ostream &os, const GenericPos<int_type> &pos) {
+    os << "GenericPos(" << pos.x << ", " << pos.y << ")";
     return os;
 }
+
+using Delta = GenericDelta<int>;
+using Pos = GenericPos<int>;
+
+using LongDelta = GenericDelta<long>;
+using LongPos = GenericPos<long>;
 
 template <class T>
 T intersect_ranges(const T &range_1, const T &range_2) {
@@ -436,9 +471,10 @@ std::string read_whole_stream(std::istream &is) {
 
 } // namespace aoc
 
-template <>
-struct std::hash<aoc::Pos> {
-    std::size_t operator()(const aoc::Pos &pos) const noexcept {
+template <std::integral int_type>
+struct std::hash<aoc::GenericPos<int_type>> {
+    std::size_t
+    operator()(const aoc::GenericPos<int_type> &pos) const noexcept {
         // random number
         std::size_t seed = 0xbedb5bb0b473b6b7ull;
         util::make_hash(seed, pos.x, pos.y);
