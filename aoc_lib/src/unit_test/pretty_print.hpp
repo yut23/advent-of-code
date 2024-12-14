@@ -3,6 +3,7 @@
 
 #include "util/concepts.hpp"
 #include <array>       // for array
+#include <cctype>      // for isprint
 #include <compare>     // for strong_ordering
 #include <concepts>    // for same_as, floating_point
 #include <cstddef>     // for size_t
@@ -124,8 +125,7 @@ std::ostream &print_repr(std::ostream &os, const C<Ts...> &args,
         ((os << (I == 0 ? "" : ", ")
              << pretty_print::repr(std::get<I>(args), result)),
          ...);
-    }
-    (std::index_sequence_for<Ts...>{});
+    }(std::index_sequence_for<Ts...>{});
     os << "]";
     return os;
 }
