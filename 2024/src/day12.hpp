@@ -28,8 +28,17 @@ struct Region {
     char plant_type;
     int area = 0;
     int perimeter = 0;
+    int corners = 0;
 
-    int fence_price() const { return area * perimeter; }
+    template <aoc::Part part>
+    int fence_price() const {
+        if constexpr (part == PART_1) {
+            return area * perimeter;
+        } else {
+            // number of sides == number of corners
+            return area * corners;
+        }
+    }
 };
 
 class Garden {
@@ -40,10 +49,18 @@ class Garden {
     explicit Garden(Grid<char> &&plots)
         : plots(std::move(plots)), region_indices(plots, -1), regions() {}
 
-    void process_plot(const aoc::Pos &pos, char plant_type);
+    char get(const Pos &pos) const {
+        if (plots.in_bounds(pos)) {
+            return plots[pos];
+        }
+        return '.';
+    }
+
+    void process_plot(const Pos &pos, char plant_type);
 
   public:
     static Garden read(std::istream &is);
+    template <aoc::Part part>
     int fence_price() const;
 };
 
@@ -71,15 +88,25 @@ void Garden::process_plot(const Pos &pos, char plant_type) {
     Region &region = regions.back();
     const auto process_neighbors = [this, &plant_type,
                                     &region](const Pos &p, auto &&process) {
-        Pos neighbor;
         for (const auto &dir : DIRECTIONS) {
-            if (plots.in_bounds(neighbor = p + Delta(dir)) &&
-                plots[neighbor] == plant_type) {
+            Pos neighbor = p + Delta(dir);
+            Delta shift_right =
+                Delta(directions::turn(dir, RelDirection::right));
+            if (get(neighbor) == plant_type) {
+                // check for a concave corner
+                if (get(p + shift_right) == plant_type &&
+                    get(neighbor + shift_right) != plant_type) {
+                    ++region.corners;
+                }
                 process(neighbor);
             } else {
                 // neighboring plot is either outside the garden or growing
                 // a different plant
                 ++region.perimeter;
+                // check for a convex corner
+                if (get(p + shift_right) != plant_type) {
+                    ++region.corners;
+                }
             }
         }
     };
@@ -96,6 +123,7 @@ void Garden::process_plot(const Pos &pos, char plant_type) {
     aoc::graph::bfs_manual_dedupe(pos, process_neighbors, visit);
 }
 
+template <aoc::Part part>
 int Garden::fence_price() const {
     int total_price = 0;
     if constexpr (aoc::DEBUG) {
@@ -106,10 +134,12 @@ int Garden::fence_price() const {
     for (const Region &region : regions) {
         if constexpr (aoc::DEBUG) {
             std::cerr << region.index << ": plant=" << region.plant_type
-                      << ", area=" << region.area
-                      << ", perimeter=" << region.perimeter << "\n";
+                      << ", price=" << region.fence_price<part>()
+                      << "; area=" << region.area
+                      << ", perimeter=" << region.perimeter
+                      << ", corners=" << region.corners << "\n";
         }
-        total_price += region.fence_price();
+        total_price += region.fence_price<part>();
     }
     return total_price;
 }
