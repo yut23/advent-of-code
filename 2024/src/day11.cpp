@@ -26,10 +26,11 @@ int main(int argc, char **argv) {
         if constexpr (aoc::DEBUG) {
             if (i <= 6) {
                 std::cerr << "After " << i << " blinks: (" << stones.count()
-                          << " stones)\n";
+                          << " stones, " << stones.eval_count() << " evals)\n";
                 std::cerr << stones << "\n\n";
             } else {
-                std::cerr << i << ": " << stones.count() << "\n";
+                std::cerr << i << ": " << stones.count() << ", "
+                          << stones.eval_count() << "\n";
             }
         }
     }
@@ -39,7 +40,8 @@ int main(int argc, char **argv) {
     for (; i <= 75; ++i) {
         stones.blink();
         if constexpr (aoc::DEBUG) {
-            std::cerr << i << ": " << stones.count() << "\n";
+            std::cerr << i << ": " << stones.count() << ", "
+                      << stones.eval_count() << "\n";
         }
     }
     std::cout << stones.count() << "\n";

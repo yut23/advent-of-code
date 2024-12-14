@@ -8,14 +8,17 @@
 #ifndef DAY11_HPP_UOIOTEZD
 #define DAY11_HPP_UOIOTEZD
 
-#include <array>    // for array
-#include <cstddef>  // for size_t
-#include <cstdint>  // for int64_t
-#include <iostream> // for istream, ostream
-#include <list>     // for list
-#include <string>   // for string, to_string, stoi
-#include <variant>  // for variant, get, holds_alternative, visit
-#include <vector>   // for vector
+#include "lib.hpp"   // for DEBUG
+#include <algorithm> // for count_if
+#include <array>     // for array
+#include <cstddef>   // for size_t
+#include <cstdint>   // for int64_t
+#include <iostream>  // for istream, ostream
+#include <list>      // for list
+#include <numeric>   // for transform_reduce
+#include <string>    // for string, to_string, stoi
+#include <variant>   // for variant, get, holds_alternative, visit
+#include <vector>    // for vector
 
 namespace aoc::day11 {
 
@@ -72,6 +75,8 @@ class StoneGroup {
 
     void blink(const HistoryData &history);
     std::size_t count(const HistoryData &history) const;
+    /// returns the total count of non-reference stones, for debugging purposes
+    std::size_t eval_count() const;
 
     friend std::ostream &operator<<(std::ostream &, const StoneGroup &);
 };
@@ -91,6 +96,8 @@ class HistoryData {
   public:
     HistoryData();
     std::size_t count(const HistoryRef &ref) const;
+    /// returns the total count of non-reference stones, for debugging purposes
+    std::size_t eval_count() const;
 
     void blink();
     Stone get_stone(stone_value_t value) const;
@@ -108,6 +115,8 @@ class Stones {
   public:
     void blink();
     std::size_t count() const;
+    /// returns the total count of non-reference stones, for debugging purposes
+    std::size_t eval_count() const;
 
     static Stones read(std::istream &is);
 
@@ -183,8 +192,16 @@ void StoneGroup::blink(const HistoryData &history) {
 
 void HistoryData::blink() {
     // update each of the tracked groups
-    for (auto &group : single_digits) {
+    for (std::size_t i = 1; i < single_digits.size(); ++i) {
+        auto &group = single_digits[i];
+        auto old_eval_count = group.eval_count();
         group.blink(*this);
+        if constexpr (aoc::DEBUG) {
+            if (group.eval_count() == 0 && old_eval_count != 0) {
+                std::cerr << "single digit " << i
+                          << " reached fixed point: " << group << "\n";
+            }
+        }
     }
     // record stone counts
     for (std::size_t i = 1; i < single_digits.size(); ++i) {
@@ -218,6 +235,22 @@ std::size_t HistoryData::count(const HistoryRef &ref) const {
 }
 
 std::size_t Stones::count() const { return group.count(history); }
+
+std::size_t StoneGroup::eval_count() const {
+    return std::count_if(
+        stones.begin(), stones.end(),
+        std::holds_alternative<stone_value_t, stone_value_t, HistoryRef>);
+}
+
+std::size_t HistoryData::eval_count() const {
+    return std::transform_reduce(
+        single_digits.begin(), single_digits.end(), 0L, std::plus<>{},
+        [](const StoneGroup &group) { return group.eval_count(); });
+}
+
+std::size_t Stones::eval_count() const {
+    return group.eval_count() + history.eval_count();
+}
 
 /***********************
  *  printing routines  *
