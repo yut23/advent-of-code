@@ -15,21 +15,19 @@ int main(int argc, char **argv) {
 
     auto claw_machines = aoc::day13::read_input(infile);
 
-    int part_1 = 0;
-    for (const auto &claw : claw_machines) {
+    long part_1 = 0, part_2 = 0;
+    aoc::LongDelta part_2_offset{10000000000000, 10000000000000};
+    for (auto &claw : claw_machines) {
         if constexpr (aoc::DEBUG) {
             std::cerr << claw;
         }
-        const auto &[a_presses, b_presses] = claw.min_presses();
-        if (a_presses > 0 && b_presses > 0) {
-            int tokens = a_presses * 3 + b_presses * 1;
-            if constexpr (aoc::DEBUG) {
-                std::cerr << "  winnable with " << tokens << " tokens\n";
-            }
-            part_1 += tokens;
-        }
+        part_1 += claw.min_tokens();
+
+        claw.prize += part_2_offset;
+        part_2 += claw.min_tokens();
     }
     std::cout << part_1 << "\n";
+    std::cout << part_2 << "\n";
 
     return 0;
 }

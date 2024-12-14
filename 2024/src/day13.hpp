@@ -16,11 +16,11 @@
 namespace aoc::day13 {
 
 struct ClawMachine {
-    Pos a{0, 0};
-    Pos b{0, 0};
-    Pos prize{0, 0};
+    LongPos a{0, 0};
+    LongPos b{0, 0};
+    LongPos prize{0, 0};
 
-    std::pair<int, int> min_presses() const;
+    long min_tokens() const;
 };
 
 std::istream &operator>>(std::istream &is, ClawMachine &claw) {
@@ -48,13 +48,13 @@ std::ostream &operator<<(std::ostream &os, const ClawMachine &claw) {
 }
 
 // this is just a 2x2 matrix solve, use Cramer's rule
-std::pair<int, int> ClawMachine::min_presses() const {
-    const auto determinant = [](const Pos &p, const Pos &q) -> int {
+long ClawMachine::min_tokens() const {
+    const auto determinant = [](const LongPos &p, const LongPos &q) {
         return p.x * q.y - q.x * p.y;
     };
-    int denom = determinant(a, b);
-    int a_numer = determinant(prize, b);
-    int b_numer = determinant(a, prize);
+    long denom = determinant(a, b);
+    long a_numer = determinant(prize, b);
+    long b_numer = determinant(a, prize);
     if constexpr (aoc::DEBUG) {
         std::cerr << "  a = " << a_numer << "/" << denom << " = "
                   << static_cast<double>(a_numer) / denom << ", b = " << b_numer
@@ -62,9 +62,17 @@ std::pair<int, int> ClawMachine::min_presses() const {
                   << static_cast<double>(b_numer) / denom << "\n";
     }
     if (a_numer % denom == 0 && b_numer % denom == 0) {
-        return {a_numer / denom, b_numer / denom};
+        long tokens = a_numer / denom * 3 + b_numer / denom;
+        if constexpr (aoc::DEBUG) {
+            std::cerr << "winnable with " << a_numer / denom
+                      << " A presses and " << b_numer / denom
+                      << " B presses, for a total of " << tokens << " tokens\n";
+        }
+        return tokens;
+    } else if constexpr (aoc::DEBUG) {
+        std::cerr << "not winnable\n";
     }
-    return {-1, -1};
+    return 0;
 }
 
 auto read_input(std::istream &is) {
