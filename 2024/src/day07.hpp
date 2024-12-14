@@ -12,7 +12,7 @@
 #include "util/math.hpp" // for next_power_of_10
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream
-#include <sstream>       // for istringstream, stringstream
+#include <sstream>       // for istringstream
 #include <string>        // for string, getline
 #include <utility>       // for move
 #include <vector>        // for vector
@@ -24,35 +24,40 @@ struct Equation {
     std::vector<long> operands;
 
   private:
-    bool is_valid_helper(bool use_concat, long acc, std::size_t idx) const;
+    bool is_valid_helper(bool use_concat, long target, std::size_t idx) const;
 
   public:
     bool is_valid(bool use_concat) const {
-        return is_valid_helper(use_concat, 0, 0);
+        return is_valid_helper(use_concat, test_value, operands.size() - 1);
     }
 };
 
-long concat(long x, long y) { return x * math::next_power_of_10(y) + y; }
-
-bool Equation::is_valid_helper(bool use_concat, long acc,
+bool Equation::is_valid_helper(bool use_concat, long target,
                                std::size_t idx) const {
-    // try all possible operator combinations using recursion
-    if (acc > test_value) {
-        // all operators make the number larger
+    // work backwards from the test value
+    if (idx == 0) {
+        return target == operands[idx];
+    }
+    long operand = operands[idx];
+    if (operand > target) {
+        // all operands make the number larger
         return false;
     }
-    if (idx >= operands.size()) {
-        // base case: check the value in the accumulator
-        return acc == test_value;
+    // multiplication
+    if (target % operand == 0 &&
+        is_valid_helper(use_concat, target / operand, idx - 1)) {
+        return true;
     }
-    // this will short-circuit if we find a valid operator combination
-    bool result = is_valid_helper(use_concat, acc + operands[idx], idx + 1) ||
-                  is_valid_helper(use_concat, acc * operands[idx], idx + 1);
-    if (!result && use_concat) {
-        result =
-            is_valid_helper(use_concat, concat(acc, operands[idx]), idx + 1);
+    // concatenation
+    if (use_concat) {
+        long pow10 = math::next_power_of_10(operand);
+        if (target % pow10 == operand &&
+            is_valid_helper(use_concat, target / pow10, idx - 1)) {
+            return true;
+        }
     }
-    return result;
+    // addition
+    return is_valid_helper(use_concat, target - operand, idx - 1);
 }
 
 std::istream &operator>>(std::istream &is, Equation &eqn) {
