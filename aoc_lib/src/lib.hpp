@@ -247,7 +247,7 @@ inline GenericDelta<int_type> operator-(GenericDelta<int_type> delta) {
 template <std::integral int_type>
 std::ostream &operator<<(std::ostream &os,
                          const GenericDelta<int_type> &delta) {
-    os << "GenericDelta(" << delta.dx << ", " << delta.dy << ")";
+    os << "Delta(" << delta.dx << ", " << delta.dy << ")";
     return os;
 }
 
@@ -319,7 +319,7 @@ inline GenericDelta<int_type> operator-(const GenericPos<int_type> &lhs,
 
 template <std::integral int_type>
 std::ostream &operator<<(std::ostream &os, const GenericPos<int_type> &pos) {
-    os << "GenericPos(" << pos.x << ", " << pos.y << ")";
+    os << "Pos(" << pos.x << ", " << pos.y << ")";
     return os;
 }
 
