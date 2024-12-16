@@ -159,7 +159,7 @@ template <>
 struct std::hash<aoc::day16::GraphHelper_Key> {
     std::size_t
     operator()(const aoc::day16::GraphHelper_Key &key) const noexcept {
-        // random number
+        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
         std::size_t seed = 0x57456df670c76ed8ull;
         util::make_hash(seed, key.pos.x, key.pos.y, key.dir);
         return seed;

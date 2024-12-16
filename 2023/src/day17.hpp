@@ -213,7 +213,7 @@ CityMap CityMap::read(std::istream &is) {
 template <>
 struct std::hash<aoc::day17::CityMap::Key> {
     std::size_t operator()(const aoc::day17::CityMap::Key &key) const noexcept {
-        // random number
+        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
         std::size_t seed = 0x580ac2097baf0cb7ull;
         util::make_hash(seed, key.pos.x, key.pos.y,
                         key.orient == aoc::day17::Orientation::horizontal);

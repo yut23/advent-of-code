@@ -495,7 +495,7 @@ template <std::integral int_type>
 struct std::hash<aoc::GenericPos<int_type>> {
     std::size_t
     operator()(const aoc::GenericPos<int_type> &pos) const noexcept {
-        // random number
+        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
         std::size_t seed = 0xbedb5bb0b473b6b7ull;
         util::make_hash(seed, pos.x, pos.y);
         return seed;

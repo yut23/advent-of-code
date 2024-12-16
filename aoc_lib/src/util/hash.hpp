@@ -44,6 +44,9 @@ void murmurhash2_finalize(std::size_t &h) {
     h ^= h >> r;
 }
 
+/**
+ * Generate a seed with `hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"' </dev/urandom`
+ */
 template <util::concepts::Hashable... Ts>
 void make_hash(std::size_t &seed, const Ts... components) {
     (hash::murmurhash2_combine(seed, std::hash<Ts>{}(components)), ...);
