@@ -13,12 +13,10 @@
 
 int main(int argc, char **argv) {
     using namespace aoc::day09;
-    std::ifstream infile = aoc::parse_args(argc, argv);
-    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
-    const bool is_example =
-        std::string{argv[1]}.find("example") != std::string::npos;
+    auto args = aoc::parse_args(argc, argv);
+    const bool is_example = args.input_type == aoc::InputType::EXAMPLE;
 
-    auto disk_layout = DiskLayout::read(infile);
+    auto disk_layout = DiskLayout::read(args.infile);
     if constexpr (aoc::DEBUG) {
         if (is_example) {
             std::cerr << "initial:    " << disk_layout << "\n";

@@ -14,7 +14,7 @@
 #include <string>   // for string, getline
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     // read file line-by-line
     int part_1 = 0, part_2 = 0;

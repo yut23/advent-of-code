@@ -11,7 +11,7 @@
 #include <iostream> // for cout, cerr
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto laser_grid = aoc::day16::LaserGrid::read(infile);
 

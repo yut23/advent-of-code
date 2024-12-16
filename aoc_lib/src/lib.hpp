@@ -449,21 +449,41 @@ enum class Part : unsigned char {
 // (I'm just using a scoped enum for type safety)
 using enum Part;
 
+enum class InputType {
+    OTHER,
+    EXAMPLE,
+    MAIN,
+};
+struct Arguments {
+    std::ifstream infile;
+    std::string filename;
+    InputType input_type;
+};
+
 /**
- * @brief  Parse command line arguments.
- * @return An istream for the specified input file.
+ * @brief Parse command line arguments.
  */
-std::ifstream parse_args(int argc, char **argv) {
+Arguments parse_args(int argc, char **argv) {
     if (argc != 2) {
         assert(argc >= 1);
         std::cout << "Usage: " << argv[0] << " <input file path>" << std::endl;
         std::exit(1);
     }
-    return std::ifstream{argv[1]};
+    Arguments args{
+        .infile = std::ifstream{argv[1]},
+        .filename = std::string{argv[1]},
+        .input_type = InputType::OTHER,
+    };
+    if (args.filename.ends_with("input.txt")) {
+        args.input_type = InputType::MAIN;
+    } else if (args.filename.find("example") != std::string::npos) {
+        args.input_type = InputType::EXAMPLE;
+    }
+    return args;
 }
 
 /**
- * @brief  Reads an entire stream into a string.
+ * @brief Reads an entire stream into a string.
  */
 std::string read_whole_stream(std::istream &is) {
     return std::string{std::istreambuf_iterator<char>(is), {}};

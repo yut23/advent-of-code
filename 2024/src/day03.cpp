@@ -12,7 +12,7 @@
 #include <string>   // for string, stoi
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     std::string memory = aoc::read_whole_stream(infile);
 

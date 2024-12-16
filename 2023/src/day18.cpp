@@ -33,7 +33,7 @@ long calc_volume(const std::vector<aoc::day18::DigInstruction> &instructions) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     const auto [instructions1, instructions2] =
         aoc::day18::read_instructions(infile);

@@ -88,7 +88,7 @@ std::int64_t part_2(const std::vector<aoc::day24::Hailstone> &stones) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     std::vector<aoc::day24::Hailstone> stones = aoc::day24::read_stones(infile);
 

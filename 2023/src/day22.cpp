@@ -72,7 +72,7 @@ int part_2(const aoc::day22::BrickStack &stack) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto stack = aoc::day22::BrickStack::read(infile);
 

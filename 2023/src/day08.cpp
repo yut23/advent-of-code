@@ -96,7 +96,7 @@ long part_2(const std::string &directions, const aoc::day08::Network &network) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     std::string directions;
     infile >> directions;

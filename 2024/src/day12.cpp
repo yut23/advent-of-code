@@ -11,7 +11,7 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto garden = aoc::day12::Garden::read(infile);
     std::cout << garden.fence_price<aoc::PART_1>() << "\n";

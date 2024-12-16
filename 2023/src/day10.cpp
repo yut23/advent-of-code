@@ -15,7 +15,7 @@
 #include <iostream> // for cout, cerr
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     using namespace aoc::day10;
     using aoc::Pos;

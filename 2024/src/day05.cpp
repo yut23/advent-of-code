@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 #if DEBUG_MODE
     using pretty_print::repr;
 #endif
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto [rules, orderings] = aoc::day05::Rules::read(infile);
 

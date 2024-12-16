@@ -13,7 +13,7 @@
 // IWYU pragma: no_include <functional>  // for identity (ranges::count_if)
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto reports = aoc::day02::read_input(infile);
 

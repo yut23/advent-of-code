@@ -22,7 +22,7 @@ long sum_paths(const std::vector<aoc::Pos> &galaxies) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     std::vector<aoc::Pos> galaxies = aoc::day11::read_image(infile);
 

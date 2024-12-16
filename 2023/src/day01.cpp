@@ -32,7 +32,7 @@ int parse_digit(std::string match, const bool reverse = false) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     // part 1
     const std::string digits{"123456789"};

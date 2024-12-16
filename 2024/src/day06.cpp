@@ -11,7 +11,7 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     aoc::day06::GuardSim guard_sim = aoc::day06::read_input(infile);
 

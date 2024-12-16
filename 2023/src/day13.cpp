@@ -17,7 +17,7 @@ void print_grid(std::ostream &os, const aoc::day13::Grid &grid) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto grids = aoc::day13::read_grids(infile);
 

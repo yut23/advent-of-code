@@ -14,7 +14,7 @@
 // IWYU pragma: no_include <functional>  // for identity, less (ranges::sort)
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto [left, right] = aoc::day01::read_input(infile);
     std::ranges::sort(left);

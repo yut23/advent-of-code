@@ -83,7 +83,7 @@ long part_2(const std::vector<int> &times, const std::vector<int> &records) {
 int main(int argc, char **argv) {
     std::vector<int> times, records;
     {
-        std::ifstream infile = aoc::parse_args(argc, argv);
+        std::ifstream infile = aoc::parse_args(argc, argv).infile;
         aoc::day06::parse(infile, times, records);
     }
 

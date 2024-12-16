@@ -38,7 +38,7 @@ int part_1(const aoc::day19::PartCategorizer &cat,
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     const auto &[cat, parts] = aoc::day19::read_input(infile);
 

@@ -11,7 +11,7 @@
 #include <iostream> // for cout
 
 void solve(int argc, char **argv, bool print) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto trail_map = aoc::day23::TrailMap::read(infile);
 

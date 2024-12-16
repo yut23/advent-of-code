@@ -11,7 +11,7 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto grid = aoc::day04::read_input(infile);
 

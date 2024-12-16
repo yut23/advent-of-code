@@ -31,7 +31,7 @@ int part_2(std::vector<aoc::day07::Hand> hands) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     using namespace aoc::day07;
     auto hands = read_hands(infile);

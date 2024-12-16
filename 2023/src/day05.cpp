@@ -65,7 +65,7 @@ long part_2(const std::vector<long> &seeds,
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     // read input
     auto seeds = aoc::day05::read_seeds(infile);

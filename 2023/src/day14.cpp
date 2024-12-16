@@ -13,7 +13,7 @@
 // IWYU pragma: no_include <functional>  // for hash (unordered_map)
 
 void solve(int argc, char **argv, bool print) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     std::unordered_map<std::vector<bool>, long> states;
     auto platform = aoc::day14::read_platform(infile);

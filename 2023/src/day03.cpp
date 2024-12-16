@@ -118,7 +118,7 @@ std::istream &operator>>(std::istream &is, Grid &grid) {
 } // namespace aoc::day03
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     aoc::day03::Grid grid;
     infile >> grid;

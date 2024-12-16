@@ -46,7 +46,7 @@ long part_2(aoc::day20::MessageBus &bus) {
 }
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto bus = aoc::day20::MessageBus::read_modules(infile);
 
