@@ -63,7 +63,9 @@ class TrailMap {
 
   public:
     explicit TrailMap(const std::vector<std::string> &grid_);
-    static TrailMap read(std::istream &);
+    static TrailMap read(std::istream &is) {
+        return TrailMap{aoc::read_lines(is)};
+    }
     int part_1() const;
     int part_2() const;
 };
@@ -81,15 +83,6 @@ TrailMap::Key TrailMap::pos_to_key(const Pos &pos) {
 }
 
 Pos TrailMap::key_to_pos(const Key key) const { return key_positions[key]; }
-
-TrailMap TrailMap::read(std::istream &is) {
-    std::vector<std::string> grid;
-    std::string line;
-    while (std::getline(is, line)) {
-        grid.push_back(std::move(line));
-    }
-    return TrailMap{grid};
-}
 
 TrailMap::TrailMap(const std::vector<std::string> &grid_) : grid(grid_) {
     assert(grid.height > 2 && grid.width > 2);

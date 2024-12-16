@@ -65,13 +65,7 @@ class Garden {
 };
 
 Garden Garden::read(std::istream &is) {
-    // read file line-by-line
-    std::vector<std::string> plot_data;
-    std::string line;
-    while (std::getline(is, line)) {
-        plot_data.push_back(line);
-    }
-    Garden garden{aoc::ds::Grid<char>{plot_data}};
+    Garden garden{aoc::ds::Grid<char>{aoc::read_lines(is)}};
     garden.plots.for_each_with_pos(
         std::bind_front(&Garden::process_plot, &garden));
     return garden;

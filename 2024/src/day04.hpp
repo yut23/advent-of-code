@@ -78,12 +78,7 @@ bool check_mas(const Grid<char> &grid, const Pos &p) {
 }
 
 Grid<char> read_input(std::istream &is) {
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(is, line)) {
-        lines.push_back(std::move(line));
-    }
-    return Grid<char>{std::move(lines)};
+    return Grid<char>{aoc::read_lines(is)};
 }
 
 } // namespace aoc::day04

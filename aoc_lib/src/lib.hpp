@@ -23,6 +23,7 @@
 #include <string>           // for string, operator==
 #include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 #include <utility> // for move
+#include <vector>  // for vector
 
 namespace aoc {
 
@@ -487,6 +488,18 @@ Arguments parse_args(int argc, char **argv) {
  */
 std::string read_whole_stream(std::istream &is) {
     return std::string{std::istreambuf_iterator<char>(is), {}};
+}
+
+/**
+ * @brief Reads lines from a stream.
+ */
+std::vector<std::string> read_lines(std::istream &is) {
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(is, line)) {
+        lines.push_back(std::move(line));
+    }
+    return lines;
 }
 
 } // namespace aoc
