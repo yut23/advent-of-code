@@ -202,7 +202,6 @@ void Maze::print(std::ostream &os, const std::vector<Key> &path) const {
         path_lookup[key.pos] = &key;
     }
 
-    Pos pos;
     grid.custom_print(os, [&path_lookup](auto &os, const Pos &pos, char value) {
         auto it = path_lookup.find(pos);
         if (it != path_lookup.end()) {
