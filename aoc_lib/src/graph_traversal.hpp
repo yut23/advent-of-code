@@ -41,6 +41,19 @@ namespace aoc::graph {
 
 namespace detail {
 
+// placeholder type for optional handler functions
+struct optional_func {
+    // the compiler should optimize these out
+    template <class Key>
+    constexpr bool operator()(const Key &) {
+        return false;
+    };
+    template <class Key>
+    constexpr void operator()(const Key &, int){};
+    template <class Key>
+    constexpr void operator()(const Key &, const Key &, int){};
+};
+
 template <class Key>
 using maybe_unordered_set =
     std::conditional_t<util::concepts::Hashable<Key>, std::unordered_set<Key>,
@@ -58,28 +71,38 @@ concept ProcessNeighbors =
         process_neighbors(key, visitor);
     };
 
+// cppcheck fails to parse this if the || comes after the requires statement
 template <class Func, class Key>
-concept IsTarget = requires(Func is_target, const Key &key) {
+concept IsTarget = std::same_as<Func, optional_func> ||
+                   requires(Func is_target, const Key &key) {
                        { is_target(key) } -> std::same_as<bool>;
                    };
 
 template <class Func, class Key>
-concept Visit = requires(Func visit, const Key &key, int distance) {
+concept Visit = std::same_as<Func, optional_func> ||
+                requires(Func visit, const Key &key, int distance) {
                     {
                         visit(key, distance)
-                        } -> util::concepts::same_as_any<void, bool>;
+                    } -> util::concepts::same_as_any<void, bool>;
                 };
 
 template <class Func, class Key>
-concept VisitWithParent = requires(Func visit_with_parent, const Key &key,
+concept VisitWithParent = std::same_as<Func, optional_func> ||
+                          requires(Func visit_with_parent, const Key &key,
                                    const Key &parent, int depth) {
                               {
                                   visit_with_parent(key, parent, depth)
-                                  } -> util::concepts::same_as_any<void, bool>;
+                              } -> util::concepts::same_as_any<void, bool>;
                           };
 
 template <class Key, class Func>
 struct visit_invoke_result;
+
+template <class Key>
+struct visit_invoke_result<Key, optional_func> {
+    using type = void;
+};
+
 template <class Key, Visit<Key> Func>
 struct visit_invoke_result<Key, Func> {
     using type = std::invoke_result_t<Func &&, const Key &, int>;
@@ -92,24 +115,27 @@ struct visit_invoke_result<Key, Func> {
 
 template <class Func, class Key>
 concept GetDistance = requires(Func get_distance, const Key &u, const Key &v) {
-                          { get_distance(u, v) } -> std::integral;
-                      };
+    { get_distance(u, v) } -> std::integral;
+};
 
 template <class Func, class Key>
 concept Heuristic = requires(Func heuristic, const Key &key) {
-                        { heuristic(key) } -> std::integral;
-                    };
+    { heuristic(key) } -> std::integral;
+};
+
+template <class T>
+concept FuncPassed = !std::same_as<T, optional_func>;
 
 } // namespace detail
 
 /**
  * Generic BFS on an arbitrary graph.
  *
- * At least one of `is_target` and `visit` must be passed.
+ * At least one of `is_target` and `visit` must be implemented.
  *
- * If passed, `visit(node, distance)` will be called for each node. It may
- * optionally return a bool, which if false, will stop processing that node
- * (before it is checked for being a target).
+ * `visit(node, distance)` will be called for each node. It may optionally
+ * return a bool, which if false, will stop processing that node (before it is
+ * checked for being a target).
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to false if the graph has
@@ -120,9 +146,12 @@ concept Heuristic = requires(Func heuristic, const Key &key) {
  */
 template <bool use_seen = true, class Key,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
+          detail::IsTarget<Key> IsTarget = detail::optional_func,
+          detail::Visit<Key> Visit = detail::optional_func>
 int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
         IsTarget &&is_target, Visit &&visit) {
+    static_assert(detail::FuncPassed<IsTarget> || detail::FuncPassed<Visit>,
+                  "is_target and visit must not both be defaulted");
     using visit_ret_t = typename detail::visit_invoke_result<Key, Visit>::type;
     detail::maybe_unordered_set<Key> queue = {source};
     detail::maybe_unordered_set<Key> next_queue{};
@@ -160,42 +189,28 @@ int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
     return -1;
 }
 
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget>
-int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
-        IsTarget &&is_target) {
-    return bfs<use_seen>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        std::forward<IsTarget>(is_target), [](const Key &, int) -> void {});
-}
-
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::Visit<Key> Visit>
-int bfs(const Key &source, ProcessNeighbors &&process_neighbors,
-        Visit &&visit) {
-    return bfs<use_seen>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        [](const Key &) { return false; }, std::forward<Visit>(visit));
-}
-
 /**
  * Generic BFS on an arbitrary graph, with no duplicate checking.
  *
- * At least one of `is_target` and `visit` must be passed.
+ * Functionally equivalent to bfs<false>(...), but uses more efficient data
+ * structures to store the pending nodes.
  *
- * If passed, `visit(node, distance)` will be called for each node. It may
- * optionally return a bool, which if false, will stop processing that node
- * (before it is checked for being a target).
+ * At least one of `is_target` and `visit` must be implemented.
+ *
+ * `visit(node, distance)` will be called for each node. It may optionally
+ * return a bool, which if false, will stop processing that node (before it is
+ * checked for being a target).
  *
  * Returns the distance from the source to the first target found, or -1 if not
  * found.
  */
 template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget, detail::Visit<Key> Visit>
+          detail::IsTarget<Key> IsTarget = detail::optional_func,
+          detail::Visit<Key> Visit = detail::optional_func>
 int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
                       IsTarget &&is_target, Visit &&visit) {
+    static_assert(detail::FuncPassed<IsTarget> || detail::FuncPassed<Visit>,
+                  "is_target and visit must not both be defaulted");
     using visit_ret_t = typename detail::visit_invoke_result<Key, Visit>::type;
     std::vector<Key> queue = {source};
     std::vector<Key> next_queue{};
@@ -221,32 +236,14 @@ int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
     return -1;
 }
 
-template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget>
-int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
-                      IsTarget &&is_target) {
-    return bfs_manual_dedupe(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        std::forward<IsTarget>(is_target), [](const Key &, int) -> void {});
-}
-
-template <class Key, detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::Visit<Key> Visit>
-int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
-                      Visit &&visit) {
-    return bfs_manual_dedupe(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        [](const Key &) { return false; }, std::forward<Visit>(visit));
-}
-
 /**
  * Generic DFS on an arbitrary graph, non-recursive version.
  *
- * At least one of `is_target` and `visit_with_parent` must be passed.
+ * At least one of `is_target` and `visit_with_parent` must be implemented.
  *
- * If passed, `visit_with_parent(node, parent, depth)` will be called for each
- * node. It may optionally return a bool, which if false, will stop processing
- * that node (before it is checked for being a target).
+ * `visit_with_parent(node, parent, depth)` will be called for each node. It
+ * may optionally return a bool, which if false, will stop processing that node
+ * (before it is checked for being a target).
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to false if the graph has
@@ -257,10 +254,13 @@ int bfs_manual_dedupe(const Key &source, ProcessNeighbors &&process_neighbors,
  */
 template <bool use_seen = true, class Key,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget,
-          detail::VisitWithParent<Key> VisitWithParent>
+          detail::IsTarget<Key> IsTarget = detail::optional_func,
+          detail::VisitWithParent<Key> VisitWithParent = detail::optional_func>
 int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
         IsTarget &&is_target, VisitWithParent &&visit_with_parent) {
+    static_assert(detail::FuncPassed<IsTarget> ||
+                      detail::FuncPassed<VisitWithParent>,
+                  "is_target and visit_with_parent must not both be defaulted");
     using visit_ret_t =
         typename detail::visit_invoke_result<Key, VisitWithParent>::type;
     std::stack<std::tuple<Key, Key, int>> stack{};
@@ -299,39 +299,17 @@ int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
     return -1;
 }
 
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget>
-int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
-        IsTarget &&is_target) {
-    return dfs<use_seen>(source,
-                         std::forward<ProcessNeighbors>(process_neighbors),
-                         std::forward<IsTarget>(is_target),
-                         [](const Key &, const Key &, int) -> void {});
-}
-
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::VisitWithParent<Key> VisitWithParent>
-int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
-        VisitWithParent &&visit_with_parent) {
-    return dfs<use_seen>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        [](const Key &) { return false; },
-        std::forward<VisitWithParent>(visit_with_parent));
-}
-
 /**
  * Generic DFS on an arbitrary graph, recursive version.
  *
  * Uses less memory than the non-recursive version, but requires
  * `process_neighbors` to be reentrant.
  *
- * At least one of `is_target` and `visit_with_parent` must be passed.
+ * At least one of `is_target` and `visit_with_parent` must be implemented.
  *
- * If passed, `visit_with_parent(node, parent, depth)` will be called for each
- * node. It may optionally return a bool, which if false, will stop processing
- * that node (before it is checked for being a target).
+ * `visit_with_parent(node, parent, depth)` will be called for each node. It
+ * may optionally return a bool, which if false, will stop processing that node
+ * (before it is checked for being a target).
  *
  * If `use_seen` is true, nodes will only be visited once (i.e. a DAG will be
  * visited as a tree). `use_seen` should only be set to false if the graph has
@@ -342,10 +320,13 @@ int dfs(const Key &source, ProcessNeighbors &&process_neighbors,
  */
 template <bool use_seen = true, class Key,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget,
-          detail::VisitWithParent<Key> VisitWithParent>
+          detail::IsTarget<Key> IsTarget = detail::optional_func,
+          detail::VisitWithParent<Key> VisitWithParent = detail::optional_func>
 int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
             IsTarget &&is_target, VisitWithParent &&visit_with_parent) {
+    static_assert(detail::FuncPassed<IsTarget> ||
+                      detail::FuncPassed<VisitWithParent>,
+                  "is_target and visit_with_parent must not both be defaulted");
     using visit_ret_t =
         typename detail::visit_invoke_result<Key, VisitWithParent>::type;
     detail::maybe_unordered_set<Key> seen{};
@@ -390,28 +371,6 @@ int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
     };
 
     return helper(source, 0, source, helper);
-}
-
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::IsTarget<Key> IsTarget>
-int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
-            IsTarget &&is_target) {
-    return dfs_rec<use_seen>(source,
-                             std::forward<ProcessNeighbors>(process_neighbors),
-                             std::forward<IsTarget>(is_target),
-                             [](const Key &, const Key &, int) -> void {});
-}
-
-template <bool use_seen = true, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::VisitWithParent<Key> VisitWithParent>
-int dfs_rec(const Key &source, ProcessNeighbors &&process_neighbors,
-            VisitWithParent &&visit_with_parent) {
-    return dfs_rec<use_seen>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        [](const Key &) { return false; },
-        std::forward<VisitWithParent>(visit_with_parent));
 }
 
 /**
@@ -580,7 +539,7 @@ longest_path_dag(const Key &source, ProcessNeighbors &&process_neighbors,
     incoming_neighbors[source] = {};
     constexpr bool use_seen = false;
     dfs<use_seen>(
-        source, process_neighbors,
+        source, process_neighbors, /*is_target*/ {},
         [&incoming_neighbors](const Key &node, const Key &parent, int) {
             if (node != parent) {
                 incoming_neighbors[node].emplace(parent);
@@ -638,7 +597,7 @@ longest_path_dag(const Key &source, ProcessNeighbors &&process_neighbors,
 template <bool use_visited = false, class Key,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
-          detail::Visit<Key> Visit>
+          detail::Visit<Key> Visit = detail::optional_func>
 std::pair<int, std::vector<Key>>
 dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
          GetDistance &&get_distance, IsTarget &&is_target, Visit &&visit) {
@@ -691,8 +650,10 @@ dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
             if (it == distances.end() || new_distance < it->second.first) {
                 std::pair<int, Key> value{new_distance, current};
                 if (it != distances.end()) {
+                    // this path has a shorter distance than one we found before
                     it->second = std::move(value);
                 } else {
+                    // we've never seen this node before
                     distances.try_emplace(neighbor, std::move(value));
                 }
                 frontier.emplace(new_distance, neighbor);
@@ -703,18 +664,6 @@ dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
         }
     }
     return {-1, {}};
-}
-
-template <bool use_visited = false, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget>
-std::pair<int, std::vector<Key>>
-dijkstra(const Key &source, ProcessNeighbors &&process_neighbors,
-         GetDistance &&get_distance, IsTarget &&is_target) {
-    return dijkstra<use_visited>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        std::forward<GetDistance>(get_distance),
-        std::forward<IsTarget>(is_target), [](const Key &, int) {});
 }
 
 namespace detail {
@@ -741,7 +690,8 @@ struct a_star_entry {
 template <bool use_visited = false, class Key,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
-          detail::Heuristic<Key> Heuristic, detail::Visit<Key> Visit>
+          detail::Heuristic<Key> Heuristic,
+          detail::Visit<Key> Visit = detail::optional_func>
 std::pair<int, std::vector<Key>>
 a_star(const Key &source, ProcessNeighbors &&process_neighbors,
        GetDistance &&get_distance, IsTarget &&is_target, Heuristic &&heuristic,
@@ -800,20 +750,6 @@ a_star(const Key &source, ProcessNeighbors &&process_neighbors,
     }
     return {-1, {}};
 }
-template <bool use_visited = false, class Key,
-          detail::ProcessNeighbors<Key> ProcessNeighbors,
-          detail::GetDistance<Key> GetDistance, detail::IsTarget<Key> IsTarget,
-          detail::Heuristic<Key> Heuristic>
-std::pair<int, std::vector<Key>>
-a_star(const Key &source, ProcessNeighbors &&process_neighbors,
-       GetDistance &&get_distance, IsTarget &&is_target,
-       Heuristic &&heuristic) {
-    return a_star<use_visited>(
-        source, std::forward<ProcessNeighbors>(process_neighbors),
-        std::forward<GetDistance>(get_distance),
-        std::forward<IsTarget>(is_target), std::forward<Heuristic>(heuristic),
-        [](const Key &, int) {});
-}
 
 /**
  * Shortest distances from a single node using Dijkstra's algorithm.
@@ -868,42 +804,42 @@ void _lint_helper_template(
     std::function<bool(const Key &, const Key &, int)> visit_with_parent_bool,
     std::function<int(const Key &, const Key &)> get_distance,
     std::function<int(const Key &)> heuristic) {
-    bfs<true>(source, process_neighbors, is_target);
-    bfs<true>(source, process_neighbors, visit);
-    bfs<true>(source, process_neighbors, visit_bool);
+    bfs<true>(source, process_neighbors, is_target, {});
+    bfs<true>(source, process_neighbors, {}, visit);
+    bfs<true>(source, process_neighbors, {}, visit_bool);
     bfs<true>(source, process_neighbors, is_target, visit);
     bfs<true>(source, process_neighbors, is_target, visit_bool);
-    bfs<false>(source, process_neighbors, is_target);
-    bfs<false>(source, process_neighbors, visit);
-    bfs<false>(source, process_neighbors, visit_bool);
+    bfs<false>(source, process_neighbors, is_target, {});
+    bfs<false>(source, process_neighbors, {}, visit);
+    bfs<false>(source, process_neighbors, {}, visit_bool);
     bfs<false>(source, process_neighbors, is_target, visit);
     bfs<false>(source, process_neighbors, is_target, visit_bool);
 
-    bfs_manual_dedupe(source, process_neighbors, is_target);
-    bfs_manual_dedupe(source, process_neighbors, visit);
-    bfs_manual_dedupe(source, process_neighbors, visit_bool);
+    bfs_manual_dedupe(source, process_neighbors, is_target, {});
+    bfs_manual_dedupe(source, process_neighbors, {}, visit);
+    bfs_manual_dedupe(source, process_neighbors, {}, visit_bool);
     bfs_manual_dedupe(source, process_neighbors, is_target, visit);
     bfs_manual_dedupe(source, process_neighbors, is_target, visit_bool);
 
-    dfs<true>(source, process_neighbors, is_target);
-    dfs<true>(source, process_neighbors, visit_with_parent);
-    dfs<true>(source, process_neighbors, visit_with_parent_bool);
+    dfs<true>(source, process_neighbors, is_target, {});
+    dfs<true>(source, process_neighbors, {}, visit_with_parent);
+    dfs<true>(source, process_neighbors, {}, visit_with_parent_bool);
     dfs<true>(source, process_neighbors, is_target, visit_with_parent);
     dfs<true>(source, process_neighbors, is_target, visit_with_parent_bool);
-    dfs<false>(source, process_neighbors, is_target);
-    dfs<false>(source, process_neighbors, visit_with_parent);
-    dfs<false>(source, process_neighbors, visit_with_parent_bool);
+    dfs<false>(source, process_neighbors, is_target, {});
+    dfs<false>(source, process_neighbors, {}, visit_with_parent);
+    dfs<false>(source, process_neighbors, {}, visit_with_parent_bool);
     dfs<false>(source, process_neighbors, is_target, visit_with_parent);
     dfs<false>(source, process_neighbors, is_target, visit_with_parent_bool);
 
-    dfs_rec<true>(source, process_neighbors, is_target);
-    dfs_rec<true>(source, process_neighbors, visit_with_parent);
-    dfs_rec<true>(source, process_neighbors, visit_with_parent_bool);
+    dfs_rec<true>(source, process_neighbors, is_target, {});
+    dfs_rec<true>(source, process_neighbors, {}, visit_with_parent);
+    dfs_rec<true>(source, process_neighbors, {}, visit_with_parent_bool);
     dfs_rec<true>(source, process_neighbors, is_target, visit_with_parent);
     dfs_rec<true>(source, process_neighbors, is_target, visit_with_parent_bool);
-    dfs_rec<false>(source, process_neighbors, is_target);
-    dfs_rec<false>(source, process_neighbors, visit_with_parent);
-    dfs_rec<false>(source, process_neighbors, visit_with_parent_bool);
+    dfs_rec<false>(source, process_neighbors, is_target, {});
+    dfs_rec<false>(source, process_neighbors, {}, visit_with_parent);
+    dfs_rec<false>(source, process_neighbors, {}, visit_with_parent_bool);
     dfs_rec<false>(source, process_neighbors, is_target, visit_with_parent);
     dfs_rec<false>(source, process_neighbors, is_target,
                    visit_with_parent_bool);
@@ -916,16 +852,17 @@ void _lint_helper_template(
 
     longest_path_dag(source, process_neighbors, get_distance, is_target);
 
-    dijkstra<false>(source, process_neighbors, get_distance, is_target);
+    dijkstra<false>(source, process_neighbors, get_distance, is_target, {});
     dijkstra<false>(source, process_neighbors, get_distance, is_target, visit);
-    dijkstra<true>(source, process_neighbors, get_distance, is_target);
+    dijkstra<true>(source, process_neighbors, get_distance, is_target, {});
     dijkstra<true>(source, process_neighbors, get_distance, is_target, visit);
 
-    a_star<false>(source, process_neighbors, get_distance, is_target,
-                  heuristic);
+    a_star<false>(source, process_neighbors, get_distance, is_target, heuristic,
+                  {});
     a_star<false>(source, process_neighbors, get_distance, is_target, heuristic,
                   visit);
-    a_star<true>(source, process_neighbors, get_distance, is_target, heuristic);
+    a_star<true>(source, process_neighbors, get_distance, is_target, heuristic,
+                 {});
     a_star<true>(source, process_neighbors, get_distance, is_target, heuristic,
                  visit);
 

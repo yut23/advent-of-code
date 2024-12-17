@@ -293,6 +293,7 @@ long Part2Solver::solve() {
     aoc::graph::dfs<use_seen>(
         source,
         [this](const Key &key, auto &&visit) { process_neighbors(key, visit); },
+        /*is_target*/ {},
         std::bind_front(&Part2Solver::visit_with_parent, this));
 
     if constexpr (aoc::DEBUG) {

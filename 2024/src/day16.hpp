@@ -88,7 +88,7 @@ int Maze::find_shortest_path() const {
         [this](const Key &key, auto &&visit_neighbor) {
             this->process_neighbors(key, visit_neighbor);
         },
-        std::bind_front(&Maze::get_distance, this), is_target);
+        std::bind_front(&Maze::get_distance, this), is_target, /*visit*/ {});
 
     if constexpr (aoc::DEBUG) {
         if (distance >= 0) {

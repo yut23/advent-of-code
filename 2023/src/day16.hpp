@@ -258,7 +258,7 @@ int GraphHelper::count_energized(const GraphHelper::Key &source) const {
         [this](int id, auto &&handler) {
             process_component_neighbors(id, handler);
         },
-        visit_with_parent);
+        /*is_target*/ {}, visit_with_parent);
 
     return std::count(energized.data().begin(), energized.data().end(), true);
 }

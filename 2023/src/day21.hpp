@@ -62,7 +62,8 @@ struct Garden {
             return true;
         };
 
-        aoc::graph::bfs_manual_dedupe(source, process_neighbors, visit);
+        aoc::graph::bfs_manual_dedupe(source, process_neighbors,
+                                      /*is_target*/ {}, visit);
 
         return distances;
     }

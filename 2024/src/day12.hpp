@@ -114,7 +114,8 @@ void Garden::process_plot(const Pos &pos, char plant_type) {
         ++region.area;
         return true;
     };
-    aoc::graph::bfs_manual_dedupe(pos, process_neighbors, visit);
+    aoc::graph::bfs_manual_dedupe(pos, process_neighbors, /*is_target*/ {},
+                                  visit);
 }
 
 template <aoc::Part part>

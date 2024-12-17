@@ -102,7 +102,7 @@ aoc::ds::Grid<int> IslandMap::calc_scores() const {
             [this](const Pos &pos, auto &&visit) {
                 this->process_neighbors(pos, visit);
             },
-            visit_with_parent);
+            /*is_target*/ {}, visit_with_parent);
     }
 
     return scores;
