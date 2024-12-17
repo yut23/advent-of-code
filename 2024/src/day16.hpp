@@ -11,19 +11,22 @@
 #define DAY16_HPP_WM3C4GBV
 
 #include "ds/grid.hpp"         // for Grid
-#include "graph_traversal.hpp" // for dijkstra
+#include "graph_traversal.hpp" // for bfs
 #include "lib.hpp" // for Pos, Delta, AbsDirection, RelDirection, DEBUG, read_lines
 #include "util/hash.hpp" // for make_hash
 
-#include <cassert>       // for assert
-#include <compare>       // for strong_ordering
-#include <cstddef>       // for size_t
-#include <functional>    // for bind_front, hash
-#include <iostream>      // for istream, ostream, cerr
-#include <string>        // for string
-#include <unordered_map> // for unordered_map
-#include <utility>       // for move
-#include <vector>        // for vector
+#include <algorithm>        // for for_each, count
+#include <cassert>          // for assert
+#include <compare>          // for strong_ordering
+#include <cstddef>          // for size_t
+#include <functional>       // for greater, hash
+#include <initializer_list> // for initializer_list
+#include <iostream>         // for istream, ostream
+#include <queue>            // for priority_queue
+#include <string>           // for string
+#include <unordered_map>    // for unordered_map
+#include <utility>          // for move, pair
+#include <vector>           // for vector
 
 namespace aoc::day16 {
 
@@ -43,14 +46,43 @@ class Maze {
 
     void process_neighbors(const Key &key, auto &&visit) const;
     int get_distance(const Key &from, const Key &to) const;
+    bool is_target(const Key &key) const { return key.pos == end_pos; }
 
   public:
-    int find_shortest_path() const;
+    struct DijkstraBackref {
+        int distance;
+        std::vector<Key> incoming;
+
+        DijkstraBackref() : distance(0), incoming() {}
+        DijkstraBackref(int distance, const Key &node)
+            : distance(distance), incoming({node}) {}
+    };
+
+  private:
+    std::unordered_map<Key, DijkstraBackref>
+    dijkstra_multi(const Key &source) const;
+
+  public:
+    std::pair<int, int> find_shortest_paths() const;
     void print(std::ostream &, const std::vector<Key> &path = {}) const;
 
     explicit Maze(std::vector<std::string> &&grid_);
     static Maze read(std::istream &is) { return Maze{aoc::read_lines(is)}; }
 };
+
+} // namespace aoc::day16
+
+template <>
+struct std::hash<aoc::day16::Maze::Key> {
+    std::size_t operator()(const aoc::day16::Maze::Key &key) const noexcept {
+        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
+        std::size_t seed = 0x2b139d1412006c1dull;
+        util::make_hash(seed, key.pos.x, key.pos.y, key.dir);
+        return seed;
+    }
+};
+
+namespace aoc::day16 {
 
 std::ostream &operator<<(std::ostream &os, const Maze::Key &key) {
     os << "{" << key.pos << ", " << key.dir << "}";
@@ -78,35 +110,90 @@ int Maze::get_distance(const Key &from, const Key &to) const {
     }
 }
 
-int Maze::find_shortest_path() const {
-    const auto is_target = [&end_pos = end_pos](const Key &key) -> bool {
-        return key.pos == end_pos;
-    };
+/**
+ * Modified version of aoc::graph::dijkstra() that records all the incoming
+ * nodes with the same distance instead of just the first, so we can rebuild
+ * all possible shortest paths.
+ */
+std::unordered_map<Maze::Key, Maze::DijkstraBackref>
+Maze::dijkstra_multi(const Key &source) const {
+    std::unordered_map<Key, DijkstraBackref> distances{};
 
-    const auto &[distance, path] = aoc::graph::dijkstra(
-        Key{start_pos, AbsDirection::east},
-        [this](const Key &key, auto &&visit_neighbor) {
-            this->process_neighbors(key, visit_neighbor);
-        },
-        std::bind_front(&Maze::get_distance, this), is_target, /*visit*/ {});
+    using pq_key = std::pair<int, Key>;
+    std::priority_queue<pq_key, std::vector<pq_key>, std::greater<pq_key>>
+        frontier{};
 
-    if constexpr (aoc::DEBUG) {
-        if (distance >= 0) {
-            std::cerr << "found path with distance " << distance << ", length "
-                      << path.size() << ":\n";
-        } else {
-            std::cerr << "no path found from " << start_pos << " to " << end_pos
-                      << "\n";
+    distances[source] = {0, source};
+    frontier.emplace(0, source);
+
+    while (!frontier.empty()) {
+        auto [dist, current] = std::move(frontier.top());
+        frontier.pop();
+        if (dist != distances.at(current).distance) {
+            continue;
         }
-        for (const Key &key : path) {
-            std::cerr << "  " << key << "\n";
+        if (is_target(current)) {
+            break;
         }
-        std::cerr << "\n";
-        print(std::cerr, path);
-        std::cerr << "\n";
+        process_neighbors(current, [this, &distances, &frontier, dist = dist,
+                                    &current = current](const Key &neighbor) {
+            int new_distance = dist + get_distance(current, neighbor);
+            auto it = distances.find(neighbor);
+            if (it == distances.end() || new_distance <= it->second.distance) {
+                if (it != distances.end()) {
+                    if (new_distance < it->second.distance) {
+                        // this path has a shorter distance than one we found
+                        // before
+                        it->second = DijkstraBackref(new_distance, current);
+                    } else if (new_distance == it->second.distance) {
+                        // this path has the same distance as the existing one
+                        it->second.incoming.push_back(current);
+                    }
+                } else {
+                    // we've never seen this node before
+                    distances.try_emplace(
+                        neighbor, DijkstraBackref(new_distance, current));
+                }
+                frontier.emplace(new_distance, neighbor);
+            }
+        });
     }
+    return distances;
+}
 
-    return distance;
+// returns {path length, number of tiles visited} (part 1, part 2)
+std::pair<int, int> Maze::find_shortest_paths() const {
+    aoc::ds::Grid<bool> visited_tiles{grid, false};
+    const auto distances = dijkstra_multi(Key{start_pos, AbsDirection::east});
+
+    // reconstruct all possible paths
+    const auto process_neighbors_back = [&distances](const Key &key,
+                                                     auto &&process) {
+        const DijkstraBackref &backref = distances.at(key);
+        std::for_each(backref.incoming.begin(), backref.incoming.end(),
+                      process);
+    };
+    const auto visit = [&visited_tiles](const Key &key, int /*distance*/) {
+        visited_tiles[key.pos] = true;
+    };
+    std::vector<Key> end_keys{};
+    int distance = -1;
+    for (auto dir : DIRECTIONS) {
+        Key key{end_pos, dir};
+        auto it = distances.find(key);
+        if (it != distances.end()) {
+            end_keys.push_back(key);
+            distance = it->second.distance;
+        }
+    }
+    aoc::graph::bfs(
+        end_keys, process_neighbors_back, [](const Key &) { return false; },
+        visit);
+
+    // count up all the visited tiles
+    int visit_count = std::count(visited_tiles.data().begin(),
+                                 visited_tiles.data().end(), true);
+    return {distance, visit_count};
 }
 
 void Maze::print(std::ostream &os, const std::vector<Key> &path) const {
@@ -157,14 +244,5 @@ Maze::Maze(std::vector<std::string> &&grid_)
 
 } // namespace aoc::day16
 
-template <>
-struct std::hash<aoc::day16::Maze::Key> {
-    std::size_t operator()(const aoc::day16::Maze::Key &key) const noexcept {
-        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
-        std::size_t seed = 0x2b139d1412006c1dull;
-        util::make_hash(seed, key.pos.x, key.pos.y, key.dir);
-        return seed;
-    }
-};
-
+// vim: sw=4
 #endif /* end of include guard: DAY16_HPP_WM3C4GBV */

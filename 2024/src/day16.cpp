@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 
     auto maze = aoc::day16::Maze::read(args.infile);
 
-    int distance = maze.find_shortest_path();
-    std::cout << distance << "\n";
+    auto [distance, tile_count] = maze.find_shortest_paths();
+    std::cout << distance << "\n" << tile_count << "\n";
     if (args.input_type == aoc::InputType::MAIN) {
         assert(distance < 76404);
     }
