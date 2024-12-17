@@ -149,7 +149,7 @@ concept AnySourceCollection =
  * not found.
  */
 template <bool use_seen = true, detail::AnySourceCollection ASC,
-          class Key = ASC::value_type,
+          class Key = typename ASC::value_type,
           detail::ProcessNeighbors<Key> ProcessNeighbors,
           detail::IsTarget<Key> IsTarget = detail::optional_func,
           detail::Visit<Key> Visit = detail::optional_func>
@@ -454,7 +454,7 @@ struct tarjan_entry {
  * Components are returned in topological order, along with a set of the
  * directed edges between the components.
  */
-template <detail::AnySourceCollection ASC, class Key = ASC::value_type,
+template <detail::AnySourceCollection ASC, class Key = typename ASC::value_type,
           detail::ProcessNeighbors<Key> ProcessNeighbors>
 std::pair<std::vector<std::vector<Key>>, std::set<std::pair<int, int>>>
 tarjan_scc(const ASC &sources, ProcessNeighbors &&process_neighbors) {
