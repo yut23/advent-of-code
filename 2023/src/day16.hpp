@@ -205,7 +205,7 @@ struct GraphHelper {
         }
 
         std::set<std::pair<int, int>> edges;
-        std::tie(components, edges) = aoc::graph::tarjan_scc<Key>(
+        std::tie(components, edges) = aoc::graph::tarjan_scc(
             sources, [this](const Key &key, auto &&handler) {
                 process_neighbors(key, handler);
             });
