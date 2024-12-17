@@ -8,15 +8,17 @@
 #ifndef DAY11_HPP_UOIOTEZD
 #define DAY11_HPP_UOIOTEZD
 
-#include "lib.hpp"       // for DEBUG
+#include "lib.hpp"       // for DEBUG, FAST
 #include "util/math.hpp" // for num_digits, powi
 #include <algorithm>     // for count_if
-#include <array>         // for array
+#include <cassert>       // for assert
 #include <cstddef>       // for size_t
 #include <cstdint>       // for int64_t
 #include <functional>    // for plus
 #include <iostream>      // for istream, ostream, cerr
+#include <map>           // for map
 #include <numeric>       // for transform_reduce
+#include <utility>       // for move
 #include <variant>       // for variant, get, holds_alternative, visit
 #include <vector>        // for vector
 
@@ -71,9 +73,9 @@ class StoneGroup {
      * Adds a stone with the given value to the end of the group. May be a
      * HistoryRef.
      */
-    void push_back(stone_value_t value, const HistoryData &history);
+    void push_back(stone_value_t value, HistoryData &history);
 
-    void blink(const HistoryData &history);
+    void blink(HistoryData &history);
     std::size_t count(const HistoryData &history) const;
     /// returns the total count of non-reference stones, for debugging purposes
     std::size_t eval_count() const;
@@ -86,12 +88,15 @@ class StoneGroup {
  * single number.
  */
 class HistoryData {
-    // This currently only tracks the single digit numbers 1-9, but the public
-    // interface is generic enough to allow for extension if needed.
-    // 0 is skipped, as it immediately turns into 1. It still gets an
-    // entry in the array so we don't have to shift indices.
-    std::array<StoneGroup, 10> single_digits{};
-    std::array<std::vector<std::size_t>, 10> counts{};
+    struct HistoryEntry {
+        StoneGroup group{};
+        std::vector<std::size_t> counts{};
+    };
+    std::map<int, HistoryEntry> entries{};
+    std::map<int, HistoryEntry> pending_entries{};
+    bool updating_self = false;
+
+    void add_entry(stone_value_t value);
 
   public:
     HistoryData();
@@ -100,8 +105,7 @@ class HistoryData {
     std::size_t eval_count() const;
 
     void blink();
-    Stone get_stone(stone_value_t value) const;
-    void set_stone(Stone &stone, stone_value_t value) const;
+    Stone get_stone(stone_value_t value);
 };
 
 /**
@@ -128,14 +132,13 @@ class Stones {
  ***************************/
 
 HistoryData::HistoryData() {
-    // initialize the digits skipping 0
+    // initialize single digits, skipping 0 as it immediately turns into 1
     for (stone_value_t i = 1; i <= 9; ++i) {
-        single_digits[i].push_back(i);
-        counts[i].push_back(1);
+        add_entry(i);
     }
 }
 
-void StoneGroup::push_back(stone_value_t value, const HistoryData &history) {
+void StoneGroup::push_back(stone_value_t value, HistoryData &history) {
     return stones.push_back(history.get_stone(value));
 }
 
@@ -152,23 +155,31 @@ Stones Stones::read(std::istream &is) {
  *  update routines  *
  *********************/
 
-Stone HistoryData::get_stone(stone_value_t value) const {
-    if (value >= 1 && value <= 9) {
+void HistoryData::add_entry(stone_value_t value) {
+    StoneGroup group{};
+    group.push_back(value);
+    HistoryEntry entry{std::move(group), {1}};
+    if (updating_self) {
+        pending_entries[value] = std::move(entry);
+    } else {
+        entries[value] = std::move(entry);
+    }
+}
+
+Stone HistoryData::get_stone(stone_value_t value) {
+    if (entries.contains(value) || pending_entries.contains(value)) {
+        return HistoryRef{static_cast<int>(value)};
+    }
+    if (value >= 100 && value < 1000) {
+        // store 3 digit numbers as we encounter them
+        add_entry(value);
         return HistoryRef{static_cast<int>(value)};
     }
     return value;
 }
 
-void HistoryData::set_stone(Stone &stone, stone_value_t value) const {
-    if (value >= 1 && value <= 9) {
-        stone = HistoryRef{static_cast<int>(value)};
-    } else {
-        stone = value;
-    }
-}
-
 // Main update routine.
-void StoneGroup::blink(const HistoryData &history) {
+void StoneGroup::blink(HistoryData &history) {
     std::size_t orig_size = stones.size();
     for (std::size_t i = 0; i < orig_size; ++i) {
         Stone &stone = stones[i];
@@ -195,22 +206,31 @@ void StoneGroup::blink(const HistoryData &history) {
 
 void HistoryData::blink() {
     // update each of the tracked groups
-    for (std::size_t i = 1; i < single_digits.size(); ++i) {
-        auto &group = single_digits[i];
-        auto old_eval_count = group.eval_count();
-        group.blink(*this);
+    updating_self = true;
+    for (auto &[key, entry] : entries) {
+        auto old_eval_count = entry.group.eval_count();
+        entry.group.blink(*this);
+        // record stone counts
+        entry.counts.push_back(entry.group.count(*this));
         if constexpr (aoc::DEBUG) {
-            if (group.eval_count() == 0 && old_eval_count != 0) {
-                std::cerr << "single digit " << i
-                          << " reached fixed point: " << group << "\n";
+            if (entry.group.eval_count() == 0 && old_eval_count != 0) {
+                std::cerr << "tracked group " << key
+                          << " reached static state after "
+                          << entry.counts.size() - 2
+                          << " blinks: " << entry.group << "\n";
             }
         }
     }
-    // record stone counts
-    for (std::size_t i = 1; i < single_digits.size(); ++i) {
-        std::size_t c = single_digits[i].count(*this);
-        counts[i].push_back(c);
+    updating_self = false;
+    // blink new entries once to break dependencies -- otherwise the program
+    // may crash if a smaller number references a newly-added larger number,
+    // since the smaller number would need the larger number to be updated
+    // first
+    for (auto &[key, entry] : pending_entries) {
+        entry.group.blink(*this);
+        entry.counts.push_back(entry.group.count(*this));
     }
+    entries.merge(pending_entries);
 }
 
 void Stones::blink() {
@@ -234,7 +254,14 @@ std::size_t StoneGroup::count(const HistoryData &history) const {
 }
 
 std::size_t HistoryData::count(const HistoryRef &ref) const {
-    return counts[ref.initial_value].at(ref.blinks);
+    if (auto it = entries.find(ref.initial_value); it != entries.end()) {
+        return it->second.counts.at(ref.blinks);
+    }
+    if constexpr (!aoc::FAST) {
+        assert(ref.blinks == 0);
+        assert(pending_entries.contains(ref.initial_value));
+    }
+    return 1;
 }
 
 std::size_t Stones::count() const { return group.count(history); }
@@ -247,8 +274,8 @@ std::size_t StoneGroup::eval_count() const {
 
 std::size_t HistoryData::eval_count() const {
     return std::transform_reduce(
-        single_digits.begin(), single_digits.end(), 0L, std::plus<>{},
-        [](const StoneGroup &group) { return group.eval_count(); });
+        entries.begin(), entries.end(), 0L, std::plus<>{},
+        [](const auto &value) { return value.second.group.eval_count(); });
 }
 
 std::size_t Stones::eval_count() const {
