@@ -19,6 +19,7 @@
 #include <functional>        // for function, greater
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for cerr
+#include <iterator>         // for begin, end
 #include <map>              // for map
 #include <queue>            // for priority_queue
 #include <set>              // for set

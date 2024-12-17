@@ -16,6 +16,7 @@
 #include <utility>     // for move
 #include <vector>      // for vector
 // IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
+// IWYU pragma: no_include <string>  // for operator== (expect_input)
 
 namespace aoc::day14 {
 

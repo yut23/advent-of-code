@@ -15,7 +15,6 @@
 #include <functional> // for bind_front
 #include <iomanip>    // for setw
 #include <iostream>   // for istream
-#include <string>     // for string, getline
 #include <utility>    // for move
 #include <vector>     // for vector
 // IWYU pragma: no_include <initializer_list>  // for DIRECTIONS

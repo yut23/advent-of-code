@@ -12,6 +12,7 @@
 #include <iostream> // for istream, ostream, cerr, noskipws, ws
 #include <utility>  // for pair
 #include <vector>   // for vector
+// IWYU pragma: no_include <string>  // for operator== (expect_input)
 
 namespace aoc::day13 {
 

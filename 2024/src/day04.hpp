@@ -14,8 +14,6 @@
 #include <cstddef>          // for size_t
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream
-#include <string>           // for string, getline
-#include <utility>          // for move
 #include <vector>           // for vector
 
 namespace aoc::day04 {

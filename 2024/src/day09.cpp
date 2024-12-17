@@ -9,7 +9,6 @@
 #include "lib.hpp"
 #include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
-#include <string>   // for string
 
 int main(int argc, char **argv) {
     using namespace aoc::day09;
