@@ -203,30 +203,27 @@ void Maze::print(std::ostream &os, const std::vector<Key> &path) const {
     }
 
     Pos pos;
-    for (pos.y = 0; pos.y < grid.height; ++pos.y) {
-        for (pos.x = 0; pos.x < grid.width; ++pos.x) {
-            auto it = path_lookup.find(pos);
-            if (it != path_lookup.end()) {
-                switch (it->second->dir) {
-                case AbsDirection::north:
-                    os << '^';
-                    break;
-                case AbsDirection::east:
-                    os << '>';
-                    break;
-                case AbsDirection::south:
-                    os << 'v';
-                    break;
-                case AbsDirection::west:
-                    os << '<';
-                    break;
-                }
-            } else {
-                os << grid[pos];
+    grid.custom_print(os, [&path_lookup](auto &os, const Pos &pos, char value) {
+        auto it = path_lookup.find(pos);
+        if (it != path_lookup.end()) {
+            switch (it->second->dir) {
+            case AbsDirection::north:
+                os << '^';
+                break;
+            case AbsDirection::east:
+                os << '>';
+                break;
+            case AbsDirection::south:
+                os << 'v';
+                break;
+            case AbsDirection::west:
+                os << '<';
+                break;
             }
+        } else {
+            os << value;
         }
-        os << '\n';
-    }
+    });
 }
 
 Maze::Maze(std::vector<std::string> &&grid_)

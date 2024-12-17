@@ -336,6 +336,21 @@ struct Grid {
             }
         }
     }
+
+    /**
+     * Calls formatter(os, pos, value) for each position in the grid in
+     * row-major order, and outputs a newline at the end of each row.
+     */
+    template <typename Formatter>
+    constexpr void custom_print(std::ostream &os, Formatter &&formatter) const {
+        Pos pos;
+        for (pos.y = 0; pos.y < height; ++pos.y) {
+            for (pos.x = 0; pos.x < width; ++pos.x) {
+                formatter(os, pos, (*this)[pos]);
+            }
+            os << '\n';
+        }
+    }
 };
 
 template <class T>
