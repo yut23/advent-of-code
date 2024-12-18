@@ -9,18 +9,19 @@
 #ifndef LIB_HPP_0IZKV7KG
 #define LIB_HPP_0IZKV7KG
 
-#include "util/hash.hpp"    // for make_hash
-#include <algorithm>        // for max, min  // IWYU pragma: keep
-#include <cassert>          // for assert
-#include <compare>          // for strong_ordering
-#include <concepts>         // for integral
-#include <cstdlib>          // for abs, size_t, exit
-#include <fstream>          // for ifstream  // IWYU pragma: keep
-#include <functional>       // for hash
-#include <initializer_list> // for initializer_list
-#include <iostream>         // for cout
-#include <iterator>         // for istreambuf_iterator
-#include <string>           // for string, operator==
+#include "util/concepts.hpp" // for same_as_any
+#include "util/hash.hpp"     // for make_hash
+#include <algorithm>         // for max, min  // IWYU pragma: keep
+#include <cassert>           // for assert
+#include <compare>           // for strong_ordering
+#include <concepts>          // for integral
+#include <cstdlib>           // for abs, size_t, exit
+#include <fstream>           // for ifstream  // IWYU pragma: keep
+#include <functional>        // for hash
+#include <initializer_list>  // for initializer_list
+#include <iostream>          // for cout
+#include <iterator>          // for istreambuf_iterator
+#include <string>            // for string, operator==
 #include <type_traits> // for underlying_type_t, is_same_v, is_signed_v, conditional_t, is_const_v
 #include <utility> // for move
 #include <vector>  // for vector
@@ -407,7 +408,7 @@ class as_number {
         static_assert(!std::is_const_v<T>,
                       "Cannot extract into a const reference");
         constexpr bool is_char =
-            std::is_same_v<T, char> || std::is_same_v<T, unsigned char>;
+            util::concepts::same_as_any<T, char, signed char, unsigned char>;
         if constexpr (is_char) {
             using int_type =
                 std::conditional_t<std::is_signed_v<T>, short, unsigned short>;
@@ -423,8 +424,8 @@ class as_number {
 
     friend std::ostream &operator<<(std::ostream &os, const as_number &h) {
         constexpr bool is_char =
-            std::is_same_v<std::remove_const_t<T>, char> ||
-            std::is_same_v<std::remove_const_t<T>, unsigned char>;
+            util::concepts::same_as_any<std::remove_const_t<T>, char,
+                                        signed char, unsigned char>;
         if constexpr (is_char) {
             using int_type =
                 std::conditional_t<std::is_signed_v<T>, short, unsigned short>;
