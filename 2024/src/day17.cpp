@@ -11,18 +11,35 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv).infile;
+    auto args = aoc::parse_args(argc, argv);
 
-    auto computer = aoc::day17::ChronoComputer::read(infile);
+    using namespace aoc::day17;
+    auto [program, regs] = read_input(args.infile);
 
-    auto output = computer.execute();
-    for (auto it = output.begin(); it != output.end(); ++it) {
-        if (it != output.begin()) {
-            std::cout << ',';
-        }
-        std::cout << aoc::as_number(*it);
+    // part 1
+    std::ostringstream oss{};
+    run_program(program, regs,
+                [&oss](code_t value) { oss << ',' << aoc::as_number(value); });
+    std::cout << oss.str().substr(1) << "\n";
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "\n";
     }
-    std::cout << "\n";
+
+    // part 2
+    if (auto reason = is_possible_quine(program)) {
+        std::cerr << "skipping part 2: " << *reason << "\n";
+        return 0;
+    }
+    std::uint64_t quine_input = solve_quine(program);
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "checking for quine with A=" << quine_input << "...\n";
+        std::vector<code_t> output;
+        regs.A = quine_input;
+        run_program(program, regs,
+                    [&output](code_t value) { output.push_back(value); });
+        assert(output == program);
+    }
+    std::cout << quine_input << "\n";
 
     return 0;
 }
