@@ -35,5 +35,9 @@ int main(int argc, char **argv) {
 
     std::cout << aoc::day18::shortest_path_distance(grid) << "\n";
 
+    aoc::Pos cutoff_pos = aoc::day18::find_cutoff_pos(
+        grid, corrupted_bytes.begin(), corrupted_bytes.end());
+    std::cout << cutoff_pos.x << ',' << cutoff_pos.y << "\n";
+
     return 0;
 }

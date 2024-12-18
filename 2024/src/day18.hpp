@@ -35,6 +35,18 @@ int shortest_path_distance(const aoc::ds::Grid<bool> &grid) {
                            process_neighbors, is_target, {});
 }
 
+Pos find_cutoff_pos(aoc::ds::Grid<bool> &grid, auto begin, auto end) {
+    for (auto it = begin; it != end; ++it) {
+        if (grid[*it]) {
+            grid[*it] = false;
+            if (shortest_path_distance(grid) == -1) {
+                return *it;
+            }
+        }
+    }
+    return {-1, -1};
+}
+
 std::vector<Pos> read_input(std::istream &is) {
     std::vector<Pos> corrupted_bytes;
     Pos pos;
