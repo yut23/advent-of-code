@@ -9,15 +9,18 @@
 #define DAY18_HPP_GLFIEBZT
 
 #include "ds/grid.hpp"
-#include "graph_traversal.hpp" // for bfs
+#include "graph_traversal.hpp" // for dijkstra
 #include "lib.hpp"             // for expect_input, Pos, Delta, DIRECTIONS
+#include <functional>          // for hash (unordered_set)
 #include <iostream>            // for istream
+#include <unordered_set>       // for unordered_set
+#include <utility>             // for pair (unordered_set)
 #include <vector>              // for vector
 // IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
 
 namespace aoc::day18 {
 
-int shortest_path_distance(const aoc::ds::Grid<bool> &grid) {
+std::unordered_set<Pos> shortest_path(const aoc::ds::Grid<bool> &grid) {
     const auto process_neighbors = [&grid](const Pos &pos, auto &&process) {
         for (auto dir : DIRECTIONS) {
             Pos neighbor = pos + Delta(dir, true);
@@ -31,15 +34,29 @@ int shortest_path_distance(const aoc::ds::Grid<bool> &grid) {
         return pos.x == 0 && pos.y == 0;
     };
 
-    return aoc::graph::bfs(Pos{grid.width - 1, grid.height - 1},
-                           process_neighbors, is_target, {});
+    const auto get_distance = [](const Pos &, const Pos &) { return 1; };
+
+    auto path =
+        aoc::graph::dijkstra(Pos{grid.width - 1, grid.height - 1},
+                             process_neighbors, get_distance, is_target, {})
+            .second;
+
+    return std::unordered_set<Pos>(path.begin(), path.end());
 }
 
 Pos find_cutoff_pos(aoc::ds::Grid<bool> &grid, auto begin, auto end) {
+    std::unordered_set<Pos> path = shortest_path(grid);
+
     for (auto it = begin; it != end; ++it) {
-        if (grid[*it]) {
-            grid[*it] = false;
-            if (shortest_path_distance(grid) == -1) {
+        if (!grid[*it]) {
+            continue;
+        }
+        grid[*it] = false;
+        if (path.contains(*it)) {
+            // this byte blocked the current shortest path, so recalculate it
+            path = shortest_path(grid);
+            if (path.empty()) {
+                // this position cut off the path to the exit
                 return *it;
             }
         }
