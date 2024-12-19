@@ -79,15 +79,15 @@ class DesignChecker {
     Node *root_ptr() { return &nodes.front(); }
     const Node *root_ptr() const { return &nodes.front(); }
 
-    bool check_helper(const ColorString &design,
-                      std::vector<std::optional<bool>> &memo,
+    long check_helper(const ColorString &design,
+                      std::vector<std::optional<long>> &memo,
                       std::size_t start) const;
 
   public:
     DesignChecker() : nodes(1) {}
 
     void add_pattern(const ColorString &pattern);
-    bool check(const ColorString &design) const;
+    long check(const ColorString &design) const;
 };
 
 DesignChecker::Node &DesignChecker::get_child(DesignChecker::Node &parent,
@@ -107,15 +107,15 @@ void DesignChecker::add_pattern(const ColorString &pattern) {
     node->is_terminal = true;
 }
 
-bool DesignChecker::check(const ColorString &design) const {
-    std::vector<std::optional<bool>> memo(design.size());
+long DesignChecker::check(const ColorString &design) const {
+    std::vector<std::optional<long>> memo(design.size());
     return check_helper(design, memo, 0);
 }
 
 // check a design against all possible towel combinations by recursing when
 // reaching a terminal node
-bool DesignChecker::check_helper(const ColorString &design,
-                                 std::vector<std::optional<bool>> &memo,
+long DesignChecker::check_helper(const ColorString &design,
+                                 std::vector<std::optional<long>> &memo,
                                  std::size_t start) const {
     // base case
     if (start == design.size()) {
@@ -125,20 +125,18 @@ bool DesignChecker::check_helper(const ColorString &design,
         return *cached;
     }
     const Node *node = root_ptr();
-    bool valid = false;
+    long count = 0;
     for (std::size_t i = start; i < design.size(); ++i) {
         node = node->at(design[i]);
         if (node == nullptr) {
-            valid = false;
             break;
         }
-        if (node->is_terminal && check_helper(design, memo, i + 1)) {
-            valid = true;
-            break;
+        if (node->is_terminal) {
+            count += check_helper(design, memo, i + 1);
         }
     }
-    memo[start] = valid;
-    return valid;
+    memo[start] = count;
+    return count;
 }
 
 std::pair<DesignChecker, std::vector<ColorString>>
