@@ -37,6 +37,7 @@ class ComputerGraph {
 
   public:
     int count_t_triangles();
+    std::vector<std::string> find_password() const;
     static ComputerGraph read(std::istream &is);
 };
 
@@ -68,16 +69,72 @@ int ComputerGraph::count_t_triangles() {
         // check all edges connected to neighbors of v, and output a triangle
         // if both ends are marked
         for (const auto &u : marks) {
-            for (const auto &w : edges.at(u)) {
-                if (u < w && marks.contains(w) &&
-                    (v[0] == 't' || u[0] == 't' || w[0] == 't')) {
-                    ++triangle_count;
-                }
-            }
+            triangle_count += std::ranges::count_if(
+                edges.at(u), [&marks, &v, &u](const std::string &w) {
+                    return u < w &&
+                           (v[0] == 't' || u[0] == 't' || w[0] == 't') &&
+                           marks.contains(w);
+                });
         }
         remove_vertex(v);
     }
     return triangle_count;
+}
+
+/**
+ * Find maximum clique through brute force. Bounded by the observation that
+ * every vertex in the full input has degree 13.
+ */
+std::vector<std::string> ComputerGraph::find_password() const {
+    // repeatedly find a maximal clique using the greedy algorithm
+    std::unordered_set<std::string> pending_vertices, current_clique,
+        maximum_clique;
+
+    for (const auto &[v, _] : edges) {
+        pending_vertices.insert(v);
+    }
+
+    while (!pending_vertices.empty()) {
+        current_clique.clear();
+        // add an arbitrary vertex to the current clique
+        const std::string vertex = *pending_vertices.begin();
+        current_clique.insert(vertex);
+        pending_vertices.erase(vertex);
+        // loop through the neighbors of this vertex, adding them to the clique
+        // if they are adjacent to all vertices already in the clique
+        for (const auto &u : edges.at(vertex)) {
+            const auto &u_neighbors = edges.at(u);
+            if (std::all_of(current_clique.begin(), current_clique.end(),
+                            [&u_neighbors](const std::string &v) {
+                                return u_neighbors.contains(v);
+                            })) {
+                // add u to the current clique
+                current_clique.insert(u);
+                // remove u from pending vertices
+                pending_vertices.erase(u);
+            }
+        }
+
+        if constexpr (aoc::DEBUG) {
+            std::cerr << "found clique of size " << current_clique.size()
+                      << ":\n";
+            for (const std::string &u : current_clique) {
+                std::cerr << " " << u;
+            }
+            std::cerr << "\n";
+        }
+        if (current_clique.size() > maximum_clique.size()) {
+            if constexpr (aoc::DEBUG) {
+                std::cerr << " new maximum!\n";
+            }
+            maximum_clique = current_clique;
+        }
+    }
+
+    std::vector<std::string> password_parts(maximum_clique.begin(),
+                                            maximum_clique.end());
+    std::sort(password_parts.begin(), password_parts.end());
+    return password_parts;
 }
 
 ComputerGraph ComputerGraph::read(std::istream &is) {

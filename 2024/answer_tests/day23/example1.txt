@@ -1,2 +1,3 @@
 Day 23:
 7
+co,de,ka,ta
