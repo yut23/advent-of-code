@@ -203,12 +203,12 @@ struct Grid {
     constexpr Grid(size_type width, size_type height, R &&range)
         : height(height), width(width),
           m_data(std::begin(range), std::end(range)) {
-        assert(static_cast<int>(m_data.size()) == height * width);
+        assert(static_cast<size_type>(m_data.size()) == height * width);
     }
     // move-construct from a flat data container
     constexpr Grid(size_type width, size_type height, container_type &&data)
         : height(height), width(width), m_data(std::move(data)) {
-        assert(data.size() == height * width);
+        assert(static_cast<size_type>(m_data.size()) == height * width);
     }
     // construct from nested ranges
     template <std::ranges::range V>
