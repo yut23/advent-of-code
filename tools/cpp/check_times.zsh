@@ -1,5 +1,4 @@
 #!/usr/bin/env zsh
-set -eu
 # benchmark all days and output a summary
 
 make -q fast || make -j24 fast

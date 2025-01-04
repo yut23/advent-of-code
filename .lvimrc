@@ -3,4 +3,5 @@ let &path = lh#path#munge(&path, lh#path#fix(g:localvimrc_script_dir . '/aoc_lib
 
 if &filetype ==# 'cpp'
   let b:surround_{char2nr('D')} = "if constexpr (aoc::DEBUG) {\n\r\n}"
+  setlocal shiftwidth=4
 endif
