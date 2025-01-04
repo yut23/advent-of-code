@@ -5,20 +5,20 @@
 #include <array>       // for array
 #include <cctype>      // for isprint
 #include <compare>     // for strong_ordering
-#include <concepts>    // for same_as, floating_point
+#include <concepts>    // for same_as, convertible_to, floating_point
 #include <cstddef>     // for size_t
-#include <iomanip>     // for quoted
-#include <iostream>    // for ostream, defaultfloat, hexfloat
-#include <iterator>    // for begin, end
+#include <iostream>    // for ostream, ios, defaultfloat, hexfloat
+#include <iterator>    // for begin, end, iter_value_t
 #include <list>        // for list
 #include <map>         // for map
 #include <optional>    // for optional
 #include <set>         // for set
 #include <string>      // for string
+#include <string_view> // for string_view
 #include <tuple>       // for tuple, get
-#include <type_traits> // for true_type, false_type
-#include <utility>     // for pair
-#include <vector>      // for vector
+#include <type_traits> // for true_type, false_type, remove_cvref_t, integral_constant
+#include <utility> // for declval, index_sequence, index_sequence_for, pair
+#include <vector>  // for vector
 
 // Additional ostream formatters needed for printing arguments/return values
 // for failing test cases
@@ -32,8 +32,9 @@ struct has_custom_print_repr : std::false_type {};
 
 template <class T>
 struct has_any_print_repr
-    : std::integral_constant<bool, util::concepts::stream_insertable<T> ||
-                                       has_custom_print_repr<T>::value> {};
+    : std::integral_constant<
+          bool, util::concepts::stream_insertable<T> ||
+                    has_custom_print_repr<std::remove_cvref_t<T>>::value> {};
 
 template <class T>
 concept has_print_repr = has_any_print_repr<T>::value;
@@ -47,13 +48,15 @@ concept has_print_repr = has_any_print_repr<T>::value;
 template <template <class, class...> class C, class T>
     requires util::concepts::any_iterable_collection<C<T>, T> &&
              pretty_print::has_print_repr<
-                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>>
+                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>> &&
+             (!std::convertible_to<C<T>, std::string_view>)
 struct pretty_print::has_custom_print_repr<C<T>> : std::true_type {};
 
 template <template <class, class...> class C, class T>
     requires util::concepts::any_iterable_collection<C<T>, T> &&
              pretty_print::has_print_repr<
-                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>>
+                 std::iter_value_t<decltype(std::declval<C<T>>().begin())>> &&
+             (!std::convertible_to<C<T>, std::string_view>)
 std::ostream &print_repr(std::ostream &os, const C<T> &container,
                          const bool result) {
     os << "{";
@@ -167,16 +170,6 @@ std::ostream &print_repr(std::ostream &os, const std::strong_ordering &value,
     return os;
 }
 
-// strings
-template <>
-struct pretty_print::has_custom_print_repr<std::string> : std::true_type {};
-
-std::ostream &print_repr(std::ostream &os, const std::string &s,
-                         const bool /*result*/) {
-    os << std::quoted(s);
-    return os;
-}
-
 // exactly bool
 template <>
 struct pretty_print::has_custom_print_repr<bool> : std::true_type {};
@@ -187,15 +180,11 @@ std::ostream &print_repr(std::ostream &os, B b, const bool /*result*/) {
     return os;
 }
 
-// (signed/unsigned) char
+// helper function to add backslash escapes for characters
 template <util::concepts::same_as_any<char, signed char, unsigned char> C>
-struct pretty_print::has_custom_print_repr<C> : std::true_type {};
-
-template <util::concepts::same_as_any<char, signed char, unsigned char> C>
-std::ostream &print_repr(std::ostream &os, C ch, const bool /*result*/) {
-    os << '\'';
+void write_escaped_char(std::ostream &os, C ch, char quote_char) {
     if (std::isprint(static_cast<unsigned char>(ch))) {
-        if (ch == '\\' || ch == '\'') {
+        if (ch == '\\' || ch == quote_char) {
             os << '\\';
         }
         os << ch;
@@ -224,6 +213,30 @@ std::ostream &print_repr(std::ostream &os, C ch, const bool /*result*/) {
         }
         }
     }
+}
+
+// strings (anything that's implicitly convertible to a string_view)
+template <std::convertible_to<std::string_view> S>
+struct pretty_print::has_custom_print_repr<S> : std::true_type {};
+
+std::ostream &print_repr(std::ostream &os, std::string_view sv,
+                         const bool /*result*/) {
+    os << '"';
+    for (char ch : sv) {
+        write_escaped_char(os, ch, '"');
+    }
+    os << '"';
+    return os;
+}
+
+// (signed/unsigned) char
+template <util::concepts::same_as_any<char, signed char, unsigned char> C>
+struct pretty_print::has_custom_print_repr<C> : std::true_type {};
+
+template <util::concepts::same_as_any<char, signed char, unsigned char> C>
+std::ostream &print_repr(std::ostream &os, C ch, const bool /*result*/) {
+    os << '\'';
+    write_escaped_char(os, ch, '\'');
     os << '\'';
     return os;
 }
@@ -243,8 +256,9 @@ std::ostream &print_repr(std::ostream &os, FP x, const bool result) {
 
 // anything else
 template <class T>
-    requires(util::concepts::stream_insertable<T> &&
-             !pretty_print::has_custom_print_repr<T>::value)
+    requires(
+        util::concepts::stream_insertable<T> &&
+        !pretty_print::has_custom_print_repr<std::remove_cvref_t<T>>::value)
 std::ostream &print_repr(std::ostream &os, const T &t, const bool /*result*/) {
     os << t;
     return os;

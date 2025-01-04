@@ -32,6 +32,7 @@ concept Hashable =
     };
 // clang-format on
 
+// from https://stackoverflow.com/a/62242411
 template <typename C, typename T>
 // clang-format off
 concept any_iterable_collection =
