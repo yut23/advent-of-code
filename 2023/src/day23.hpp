@@ -146,7 +146,7 @@ bool TrailMap::get_grid_neighbors(const Pos &pos, const Pos &prev_pos,
                 dir != allowed_directions.at(new_terrain)) {
                 continue;
             }
-            neighbors.push_back(new_pos);
+            neighbors.push_back(std::move(new_pos));
         }
         assert(neighbors.size() <= 2);
         break;

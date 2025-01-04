@@ -139,19 +139,15 @@ int Robots::largest_clump() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const Robots &robots) {
-    for (const auto &row : robots.robot_counts) {
-        for (const auto &count : row) {
-            if (count == 0) {
-                os << ' ';
-            } else if (count < 10) {
-                os << count;
-            } else {
-                os << '*';
-            }
+    return robots.robot_counts.custom_print(os, [&os](auto count) {
+        if (count == 0) {
+            os << ' ';
+        } else if (count < 10) {
+            os << count;
+        } else {
+            os << '*';
         }
-        os << "\n";
-    }
-    return os;
+    });
 }
 
 } // namespace aoc::day14

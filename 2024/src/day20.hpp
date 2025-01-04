@@ -10,7 +10,7 @@
 
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for bfs
-#include "lib.hpp"             // for Pos, Delta, DIRECTIONS, read_lines, DEBUG
+#include "lib.hpp"             // for Pos, Delta, read_lines, DEBUG
 #include "util/hash.hpp"       // for make_hash
 #include <algorithm>           // for sort
 #include <assert.h>            // for assert
@@ -76,12 +76,11 @@ namespace aoc::day20 {
 
 std::vector<Cheat> Racetrack::find_cheats(int cheat_time_limit) const {
     const auto process_neighbors = [this](const Pos &pos, auto &&process) {
-        grid.manhattan_kernel(pos, 1,
-                              [&process](char tile, const Pos &neighbor) {
-                                  if (tile != '#') {
-                                      process(neighbor);
-                                  }
-                              });
+        grid.manhattan_kernel(pos, [&process](char tile, const Pos &neighbor) {
+            if (tile != '#') {
+                process(neighbor);
+            }
+        });
     };
     struct Dists {
         int source_distance;
@@ -160,7 +159,7 @@ int count_cheats(std::vector<Cheat> &cheats, int threshold) {
 
 Racetrack::Racetrack(std::vector<std::string> &&grid_)
     : grid(std::move(grid_)), start_pos(-1, -1), end_pos(-1, -1) {
-    grid.for_each_with_pos([this](const Pos &pos, char value) {
+    grid.for_each([this](char value, const Pos &pos) {
         if (value == 'S') {
             this->start_pos = pos;
         } else if (value == 'E') {

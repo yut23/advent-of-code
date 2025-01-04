@@ -29,8 +29,8 @@ int main(int argc, char **argv) {
     }
 
     if constexpr (aoc::DEBUG) {
-        grid.custom_print(std::cerr, [](auto &os, auto &, bool passable) {
-            os << (passable ? '.' : '#');
+        grid.custom_print(std::cerr, [](bool passable) {
+            std::cerr << (passable ? '.' : '#');
         });
     }
 

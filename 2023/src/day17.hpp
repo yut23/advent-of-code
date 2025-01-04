@@ -175,9 +175,8 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
         path_lookup[key.pos] = &key;
     }
 
-    Pos pos;
-    for (pos.y = 0; pos.y < block_costs.height; ++pos.y) {
-        for (pos.x = 0; pos.x < block_costs.width; ++pos.x) {
+    block_costs.custom_print(
+        os, [&os, &path_lookup](unsigned int cost, const Pos &pos) {
             auto it = path_lookup.find(pos);
             if (it != path_lookup.end()) {
                 switch (it->second->orient) {
@@ -189,11 +188,9 @@ void CityMap::print(std::ostream &os, const std::vector<Key> &path) const {
                     break;
                 }
             } else {
-                os << as_number{block_costs[pos]};
+                os << aoc::as_number{cost};
             }
-        }
-        os << '\n';
-    }
+        });
 }
 
 CityMap CityMap::read(std::istream &is) {

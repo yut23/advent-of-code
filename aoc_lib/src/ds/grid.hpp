@@ -168,6 +168,11 @@ struct RowIterator {
     friend struct RowIterator<const T>;
 };
 
+template <typename Func, typename T>
+concept KernelFunc = std::invocable<Func, const T &, const Pos &, int> ||
+                     std::invocable<Func, const T &, const Pos &> ||
+                     std::invocable<Func, const T &>;
+
 /**
  * Two-dimensional grid of values, indexable by aoc::Pos.
  */
@@ -185,9 +190,9 @@ struct Grid {
     // work around std::vector<bool> specialization
     // thanks to Dwayne Robinson on Stack Overflow for the basic_string idea:
     // <https://stackoverflow.com/a/75409768>
-    using container_type =
-        std::conditional_t<std::same_as<T, bool>, std::basic_string<value_type>,
-                           std::vector<value_type>>;
+    using container_type = std::conditional_t<std::same_as<value_type, bool>,
+                                              std::basic_string<value_type>,
+                                              std::vector<value_type>>;
 
     const size_type height;
     const size_type width;
@@ -315,32 +320,6 @@ struct Grid {
     constexpr const container_type &data() const { return m_data; }
 
     /**
-     * Calls func(pos, value) for each position in the grid.
-     */
-    template <std::invocable<const Pos &, const value_type &> Func>
-    constexpr void for_each_with_pos(Func &&func) {
-        Pos p;
-        for (p.y = 0; p.y < height; ++p.y) {
-            for (p.x = 0; p.x < width; ++p.x) {
-                func(p, (*this)[p]);
-            }
-        }
-    }
-
-    /**
-     * Calls func(pos, value) for each position in the grid.
-     */
-    template <std::invocable<const Pos &, const value_type &> Func>
-    constexpr void for_each_with_pos(Func &&func) const {
-        Pos p;
-        for (p.y = 0; p.y < height; ++p.y) {
-            for (p.x = 0; p.x < width; ++p.x) {
-                func(p, (*this)[p]);
-            }
-        }
-    }
-
-    /**
      * Calls func(value[, pos]) for each position in the grid.
      */
     template <typename Func>
@@ -361,28 +340,34 @@ struct Grid {
     }
 
     /**
-     * Calls formatter(os, pos, value) for each position in the grid in
-     * row-major order, and outputs a newline at the end of each row.
+     * Calls formatter(value[, pos]) for each position in the grid in row-major
+     * order, and outputs a newline at the end of each row.
      */
-    template <std::invocable<std::ostream &, const Pos &, const value_type &>
-                  Formatter>
-    constexpr void custom_print(std::ostream &os, Formatter &&formatter) const {
+    template <typename Formatter>
+        requires std::invocable<Formatter, const value_type &, const Pos &> ||
+                 std::invocable<Formatter, const value_type &>
+    constexpr std::ostream &custom_print(std::ostream &os,
+                                         Formatter &&formatter) const {
         Pos pos;
         for (pos.y = 0; pos.y < height; ++pos.y) {
             for (pos.x = 0; pos.x < width; ++pos.x) {
-                formatter(os, pos, (*this)[pos]);
+                if constexpr (std::invocable<Formatter, const value_type &,
+                                             const Pos &>) {
+                    formatter((*this)[pos], pos);
+                } else {
+                    formatter((*this)[pos]);
+                }
             }
             os << '\n';
         }
+        return os;
     }
 
     /**
      * Calls func(value[, pos]) for each position within the given Chebyshev
      * (8-way) distance from center.
      */
-    template <typename Func>
-        requires std::invocable<Func, const value_type &, const Pos &> ||
-                 std::invocable<Func, const value_type &>
+    template <KernelFunc<value_type> Func>
     constexpr void chebyshev_kernel(const Pos &center, int distance,
                                     Func &&func) const {
         Pos pos;
@@ -392,7 +377,12 @@ struct Grid {
                  ++pos.x) {
                 if (in_bounds(pos)) {
                     if constexpr (std::invocable<Func, const value_type &,
-                                                 const Pos &>) {
+                                                 const Pos &, int>) {
+                        func((*this)[pos], pos,
+                             (pos - center).chebyshev_distance());
+                    } else if constexpr (std::invocable<Func,
+                                                        const value_type &,
+                                                        const Pos &>) {
                         func((*this)[pos], pos);
                     } else {
                         func((*this)[pos]);
@@ -402,14 +392,16 @@ struct Grid {
         }
     }
 
+    template <KernelFunc<value_type> Func>
+    constexpr void chebyshev_kernel(const Pos &center, Func &&func) const {
+        chebyshev_kernel(center, 1, std::forward<Func>(func));
+    }
+
     /**
      * Calls func(value[, pos[, distance]]) for each position within the given
      * Manhattan (4-way) distance from center.
      */
-    template <typename Func>
-        requires std::invocable<Func, const value_type &, const Pos &, int> ||
-                 std::invocable<Func, const value_type &, const Pos &> ||
-                 std::invocable<Func, const value_type &>
+    template <KernelFunc<value_type> Func>
     constexpr void manhattan_kernel(const Pos &center, int distance,
                                     Func &&func) const {
         Delta offset{0, 0};
@@ -431,6 +423,11 @@ struct Grid {
                 }
             }
         }
+    }
+
+    template <KernelFunc<value_type> Func>
+    constexpr void manhattan_kernel(const Pos &center, Func &&func) const {
+        manhattan_kernel(center, 1, std::forward<Func>(func));
     }
 };
 

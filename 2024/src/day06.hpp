@@ -191,46 +191,39 @@ int GuardSim::count_visited() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const GuardSim &sim) {
-    Pos pos(0, 0);
-    for (pos.y = 0; const auto &row : sim) {
-        for (pos.x = 0; const auto &tile : row) {
-            char ch = '.';
-            if (tile.is_visited()) {
-                using enum AbsDirection;
-                bool vert = tile.is_visited(north) || tile.is_visited(south);
-                bool horz = tile.is_visited(east) || tile.is_visited(west);
-                if (vert && horz) {
-                    ch = '+';
-                } else {
-                    ch = vert ? '|' : '-';
-                }
+    return sim.custom_print(os, [&os, &sim](auto &tile, const Pos &pos) {
+        char ch = '.';
+        if (tile.is_visited()) {
+            using enum AbsDirection;
+            bool vert = tile.is_visited(north) || tile.is_visited(south);
+            bool horz = tile.is_visited(east) || tile.is_visited(west);
+            if (vert && horz) {
+                ch = '+';
+            } else {
+                ch = vert ? '|' : '-';
             }
-            if (tile.blocked) {
-                ch = tile.blocked == 2 ? 'O' : '#';
-            }
-            if (sim.guard_pos == pos) {
-                switch (sim.guard_dir) {
-                case AbsDirection::north:
-                    ch = '^';
-                    break;
-                case AbsDirection::east:
-                    ch = '>';
-                    break;
-                case AbsDirection::south:
-                    ch = 'v';
-                    break;
-                case AbsDirection::west:
-                    ch = '<';
-                    break;
-                }
-            }
-            os << ch;
-            ++pos.x;
         }
-        os << "\n";
-        ++pos.y;
-    }
-    return os;
+        if (tile.blocked) {
+            ch = tile.blocked == 2 ? 'O' : '#';
+        }
+        if (sim.guard_pos == pos) {
+            switch (sim.guard_dir) {
+            case AbsDirection::north:
+                ch = '^';
+                break;
+            case AbsDirection::east:
+                ch = '>';
+                break;
+            case AbsDirection::south:
+                ch = 'v';
+                break;
+            case AbsDirection::west:
+                ch = '<';
+                break;
+            }
+        }
+        os << ch;
+    });
 }
 
 } // namespace aoc::day06

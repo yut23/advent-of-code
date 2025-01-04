@@ -18,7 +18,7 @@
 
 namespace aoc::day04 {
 
-using aoc::ds::Grid, aoc::Pos, aoc::Delta;
+using aoc::ds::Grid;
 
 constexpr std::initializer_list<Delta> ADJ_DELTAS = {
     // clang-format off

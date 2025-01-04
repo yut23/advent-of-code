@@ -124,22 +124,13 @@ LaserGrid LaserGrid::read(std::istream &is) {
 }
 
 void LaserGrid::print_energized(std::ostream &os) const {
-    for (const auto &row : *this) {
-        for (const auto &tile : row) {
-            os << (tile.energized ? '#' : '.');
-        }
-        os << '\n';
-    }
+    custom_print(
+        os, [&os](const Tile &tile) { os << (tile.energized ? '#' : '.'); });
 }
 
 std::ostream &operator<<(std::ostream &os, const LaserGrid &laser_grid) {
-    for (const auto &row : laser_grid) {
-        for (const auto &tile : row) {
-            os << static_cast<char>(tile.type);
-        }
-        os << '\n';
-    }
-    return os;
+    return laser_grid.custom_print(
+        os, [&os](const Tile &tile) { os << static_cast<char>(tile.type); });
 }
 
 ///
@@ -177,11 +168,11 @@ struct GraphHelper {
     std::vector<std::vector<int>> component_successors;
     std::unordered_map<Key, int> source_components;
 
-    void process_neighbors(const Key &key, auto &&handler) const {
+    void process_neighbors(const Key &key, auto &&process) const {
         for (AbsDirection dir : grid[key.pos].get_out_dir(key.dir)) {
             Pos new_pos = key.pos + Delta(dir, true);
             if (grid.in_bounds(new_pos)) {
-                handler({new_pos, dir});
+                process({new_pos, dir});
             }
         }
     }
@@ -255,8 +246,8 @@ int GraphHelper::count_energized(const GraphHelper::Key &source) const {
     constexpr bool use_seen = false;
     aoc::graph::dfs<use_seen>(
         source_components.at(source),
-        [this](int id, auto &&handler) {
-            process_component_neighbors(id, handler);
+        [this](int id, auto &&process) {
+            process_component_neighbors(id, process);
         },
         /*is_target*/ {}, visit_with_parent);
 

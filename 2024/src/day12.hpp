@@ -55,7 +55,7 @@ class Garden {
         return '.';
     }
 
-    void process_plot(const Pos &pos, char plant_type);
+    void process_plot(char plant_type, const Pos &pos);
 
   public:
     static Garden read(std::istream &is);
@@ -65,12 +65,11 @@ class Garden {
 
 Garden Garden::read(std::istream &is) {
     Garden garden{aoc::ds::Grid<char>{aoc::read_lines(is)}};
-    garden.plots.for_each_with_pos(
-        std::bind_front(&Garden::process_plot, &garden));
+    garden.plots.for_each(std::bind_front(&Garden::process_plot, &garden));
     return garden;
 }
 
-void Garden::process_plot(const Pos &pos, char plant_type) {
+void Garden::process_plot(char plant_type, const Pos &pos) {
     // flood-fill plots with matching plant types
     if (region_indices[pos] != -1) {
         // this plot is already part of a region

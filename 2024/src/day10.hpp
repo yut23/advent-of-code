@@ -10,7 +10,7 @@
 
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for bfs
-#include "lib.hpp"             // for Pos, as_number, DEBUG, DIRECTIONS, Delta
+#include "lib.hpp"             // for Pos, as_number, DEBUG
 
 #include <algorithm> // for transform
 #include <cstddef>   // for size_t
@@ -20,7 +20,6 @@
 #include <string>    // for string, getline
 #include <utility>   // for move
 #include <vector>    // for vector
-// IWYU pragma: no_include <initializer_list>  // for aoc::DIRECTIONS
 
 namespace aoc::day10 {
 
@@ -68,17 +67,13 @@ IslandMap::IslandMap(std::vector<std::vector<height_t>> &&height_map)
 }
 
 std::ostream &operator<<(std::ostream &os, const IslandMap &island) {
-    for (const auto &row : island) {
-        for (const auto tile : row) {
-            if (tile == IMPASSABLE) {
-                os << '.';
-            } else {
-                os << aoc::as_number(tile);
-            }
+    return island.custom_print(os, [&os](const auto tile) {
+        if (tile == IMPASSABLE) {
+            os << '.';
+        } else {
+            os << aoc::as_number(tile);
         }
-        os << '\n';
-    }
-    return os;
+    });
 }
 
 /**
@@ -114,13 +109,13 @@ void IslandMap::process_neighbors(const Pos &pos, auto &&process) const {
     if (curr_height == 0) {
         return;
     }
-    // loop over cardinal directions
-    for (const auto &dir : DIRECTIONS) {
-        Pos neighbor = pos + Delta(dir, true);
-        if (in_bounds(neighbor) && (*this)[neighbor] == curr_height - 1) {
-            process(neighbor);
-        }
-    }
+    // loop over neighboring positions
+    manhattan_kernel(
+        pos, [&process, curr_height](height_t new_height, const Pos &neighbor) {
+            if (new_height == curr_height - 1) {
+                process(neighbor);
+            }
+        });
 }
 
 template <aoc::Part part>
@@ -131,16 +126,13 @@ int IslandMap::trailhead_scores() const {
     if constexpr (aoc::DEBUG) {
         std::cerr << "map:\n" << *this << "\n";
         std::cerr << "scores:\n";
-        for (const auto &row : scores) {
-            for (const auto score : row) {
-                if (score == 0) {
-                    std::cerr << '.';
-                } else {
-                    std::cerr << score;
-                }
+        scores.custom_print(std::cerr, [](const auto score) {
+            if (score == 0) {
+                std::cerr << '.';
+            } else {
+                std::cerr << score;
             }
-            std::cerr << '\n';
-        }
+        });
     }
     int total_score = 0;
     for (const Pos &pos : trailheads) {

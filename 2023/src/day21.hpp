@@ -10,17 +10,14 @@
 
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for bfs
-#include "lib.hpp"          // for AbsDirection, Pos, Delta, DIRECTIONS, DEBUG
-#include <array>            // for array
-#include <cassert>          // for assert
-#include <compare>          // for strong_ordering
-#include <cstdlib>          // for abs, size_t
-#include <initializer_list> // for initializer_list
-#include <iostream>         // for istream, noskipws, cerr
-#include <limits>           // for numeric_limits
-#include <utility>          // for move
-#include <vector>           // for vector
-// IWYU pragma: no_include <algorithm>  // for copy
+#include "lib.hpp"             // for Pos, DEBUG
+#include <array>               // for array
+#include <cassert>             // for assert
+#include <compare>             // for strong_ordering
+#include <cstdlib>             // for abs, size_t
+#include <iostream>            // for istream, noskipws, cerr
+#include <limits>              // for numeric_limits
+#include <vector>              // for vector
 
 namespace aoc::day21 {
 
@@ -43,13 +40,11 @@ struct Garden {
 
         const auto process_neighbors = [this, &distances](const Key &key,
                                                           auto &&process) {
-            for (const AbsDirection &dir : aoc::DIRECTIONS) {
-                Pos pos = key + Delta(dir, true);
-                if (stones.in_bounds(pos) && stones[pos] &&
-                    distances[pos] == std::numeric_limits<int>::max()) {
-                    process(std::move(pos));
+            stones.manhattan_kernel(key, [&](bool open, const Pos &pos) {
+                if (open && distances[pos] == std::numeric_limits<int>::max()) {
+                    process(pos);
                 }
-            }
+            });
         };
         const auto visit = [&source, &distances](const Key &key,
                                                  int distance) -> bool {

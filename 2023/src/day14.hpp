@@ -9,6 +9,7 @@
 #define DAY14_HPP_A7H2MCKZ
 
 #include "ds/grid.hpp" // for Grid
+#include "lib.hpp"     // for Pos
 #include <cstddef>     // for size_t
 #include <iostream>    // for istream
 #include <string>      // for string, getline
@@ -115,13 +116,11 @@ void Platform::tilt() {
 
 int Platform::calculate_load() const {
     int load = 0;
-    for (int y = 0; y < rocks.height; ++y) {
-        for (int x = 0; x < rocks.width; ++x) {
-            if (rocks.at_unchecked(x, y) == Rock::round) {
-                load += rocks.width - x;
-            }
+    rocks.for_each([&load, width = rocks.width](Rock rock, const Pos &pos) {
+        if (rock == Rock::round) {
+            load += width - pos.x;
         }
-    }
+    });
     return load;
 }
 
@@ -136,13 +135,8 @@ std::vector<bool> Platform::round_rocks() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const Platform &platform) {
-    for (const auto &row : platform.rocks) {
-        for (Rock rock : row) {
-            os << static_cast<char>(rock);
-        }
-        os << "\n";
-    }
-    return os;
+    return platform.rocks.custom_print(
+        os, [&os](Rock rock) { os << static_cast<char>(rock); });
 }
 
 Platform read_platform(std::istream &is) {

@@ -10,24 +10,22 @@
 
 #include "ds/grid.hpp"
 #include "graph_traversal.hpp" // for dijkstra
-#include "lib.hpp"             // for expect_input, Pos, Delta, DIRECTIONS
+#include "lib.hpp"             // for expect_input, Pos, Delta
 #include <functional>          // for hash (unordered_set)
 #include <iostream>            // for istream
 #include <unordered_set>       // for unordered_set
 #include <utility>             // for pair (unordered_set)
 #include <vector>              // for vector
-// IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
 
 namespace aoc::day18 {
 
 std::unordered_set<Pos> shortest_path(const aoc::ds::Grid<bool> &grid) {
     const auto process_neighbors = [&grid](const Pos &pos, auto &&process) {
-        for (auto dir : DIRECTIONS) {
-            Pos neighbor = pos + Delta(dir, true);
-            if (grid.in_bounds(neighbor) && grid[neighbor]) {
+        grid.manhattan_kernel(pos, [&](bool open, const Pos &neighbor) {
+            if (open && neighbor != pos) {
                 process(neighbor);
             }
-        }
+        });
     };
 
     const auto is_target = [](const Pos &pos) {

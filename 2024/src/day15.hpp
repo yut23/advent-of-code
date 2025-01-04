@@ -35,7 +35,7 @@ class Warehouse {
 
 Warehouse::Warehouse(const std::vector<std::string> &lines)
     : grid(lines), robot_pos(-1, -1) {
-    grid.for_each_with_pos([this](const Pos &pos, char tile) {
+    grid.for_each([this](char tile, const Pos &pos) {
         if (tile == '@') {
             this->robot_pos = pos;
         }
@@ -102,7 +102,7 @@ void Warehouse::move_robot(AbsDirection dir) {
 
 int Warehouse::gps_sum() const {
     int sum = 0;
-    grid.for_each_with_pos([&sum](const Pos &pos, char tile) {
+    grid.for_each([&sum](char tile, const Pos &pos) {
         if (tile == 'O') {
             sum += 100 * pos.y + pos.x;
         }
@@ -143,9 +143,7 @@ std::pair<Warehouse, std::vector<AbsDirection>> read_input(std::istream &is) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Warehouse &warehouse) {
-    warehouse.grid.custom_print(
-        os, [](auto &os, const Pos & /*pos*/, char tile) { os << tile; });
-    return os;
+    return warehouse.grid.custom_print(os, [&os](char tile) { os << tile; });
 }
 
 } // namespace aoc::day15
