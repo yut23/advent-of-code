@@ -20,7 +20,10 @@ RUN IFS=,; \
 RUN IFS=,; \
     for llvm_version in $LLVM_VERSIONS; do \
       apt-get install -y --no-install-recommends \
-        clang-${llvm_version} libclang-rt-${llvm_version}-dev \
-        libc++-${llvm_version}-dev libc++abi-${llvm_version}-dev; \
+        clang-${llvm_version} \
+        llvm-${llvm_version} \
+        libclang-rt-${llvm_version}-dev \
+        libc++-${llvm_version}-dev \
+        libc++abi-${llvm_version}-dev; \
     done;
 CMD ["/bin/bash"]

@@ -28,7 +28,4 @@ runs:
         echo '::endgroup::'
         echo
 
-        if [[ $CXX == clang++-* ]]; then
-          export ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-${CXX#clang++-}"
-        fi
         ./run_answer_tests.sh ${{ matrix.TARGET.name }}
