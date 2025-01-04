@@ -68,7 +68,7 @@ jobs:
         run: |
           gcc_versions=${{ inputs.gcc-versions }}
           llvm_versions=${{ inputs.llvm-versions }}
-          IMAGE_VERSION="ubuntu-${{ inputs.ubuntu-version }}-gcc-${gcc_versions/,/-}-llvm-${llvm_versions/,/-}"
+          IMAGE_VERSION="ubuntu-${{ inputs.ubuntu-version }}-gcc-${gcc_versions/,/-}-llvm-${llvm_versions/,/-}-${{ hashFiles('.github/workflows/Dockerfile', '.github/workflows/docker-build.yml') }}"
           echo "image-version=$IMAGE_VERSION" >> $GITHUB_OUTPUT
           if docker manifest inspect $REGISTRY/$IMAGE_NAME:$IMAGE_VERSION; then
             echo "in-registry=true" >> $GITHUB_OUTPUT
