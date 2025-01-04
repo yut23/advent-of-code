@@ -10,10 +10,13 @@
 
 #include "lib.hpp"       // for DEBUG
 #include <algorithm>     // for ranges::sort
+#include <compare>       // for operator<(string, string)
+#include <functional>    // for greater
 #include <iostream>      // for istream, cerr
 #include <string>        // for string
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
+#include <utility>       // for move, pair
 #include <vector>        // for vector
 
 namespace aoc::day23 {
@@ -133,7 +136,7 @@ std::vector<std::string> ComputerGraph::find_password() const {
 
     std::vector<std::string> password_parts(maximum_clique.begin(),
                                             maximum_clique.end());
-    std::sort(password_parts.begin(), password_parts.end());
+    std::ranges::sort(password_parts);
     return password_parts;
 }
 

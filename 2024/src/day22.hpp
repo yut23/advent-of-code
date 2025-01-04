@@ -8,9 +8,6 @@
 #ifndef DAY22_HPP_A3Y597BB
 #define DAY22_HPP_A3Y597BB
 
-#include <iostream> // for istream
-#include <string>   // for string, getline
-
 namespace aoc::day22 {
 
 void xorshift(long &secret, int shift) {

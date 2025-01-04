@@ -14,11 +14,13 @@
 
 #include <cassert>       // for assert
 #include <cstddef>       // for size_t
+#include <functional>    // for hash (unordered_map, unordered_set)
 #include <iostream>      // for istream
 #include <string>        // for string, getline, to_string
 #include <unordered_map> // for unordered_map
 #include <unordered_set> // for unordered_set
 #include <utility>       // for move
+#include <vector>        // for vector
 
 namespace aoc::day24 {
 

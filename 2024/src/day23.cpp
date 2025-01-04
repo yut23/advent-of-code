@@ -15,10 +15,13 @@ int main(int argc, char **argv) {
 
     auto graph = aoc::day23::ComputerGraph::read(infile);
 
+    // part 1 ends up clearing the graph, so do part 2 first
     const auto password_parts = graph.find_password();
-    // this modifies the graph, so do it second
+
+    // part 1
     std::cout << graph.count_t_triangles() << "\n";
 
+    // output the password for part 2
     for (auto it = password_parts.begin(); it != password_parts.end(); ++it) {
         if (it != password_parts.begin()) {
             std::cout << ",";
