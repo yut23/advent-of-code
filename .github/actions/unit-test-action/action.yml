@@ -19,7 +19,7 @@ runs:
         USE_LIBCXX: ${{ inputs.stdlib == 'libc++' && 'TRUE' || 'FALSE' }}
       run: |
         echo
-        echo '::group::Compiler version info'
+        echo '::group::Compiler version'
         $CXX --version
         echo '::endgroup::'
         echo '::group::Build target'
@@ -28,4 +28,7 @@ runs:
         echo '::endgroup::'
         echo
 
+        if [[ $CXX == clang++-* ]]; then
+          export ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-${CXX#clang++-}"
+        fi
         make ${{ matrix.TARGET.name }}
