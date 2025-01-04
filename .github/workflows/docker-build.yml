@@ -54,6 +54,8 @@ jobs:
     name: Check ghcr.io for existing build
 
     steps:
+      - uses: actions/checkout@v4
+
       # Login against a Docker registry
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
