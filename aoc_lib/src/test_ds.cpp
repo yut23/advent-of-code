@@ -10,193 +10,211 @@
 #include "ds/pairing_heap.hpp" // IWYU pragma: associated
 
 #include "unit_test/pretty_print.hpp" // for repr
-#include "unit_test/unit_test.hpp"    // for ManualTest, fix_exit_code
+#include "unit_test/unit_test.hpp"    // for TestSuite, fix_exit_code
 #include "util/util.hpp"              // for demangle
 
 #include <array>      // for array
 #include <cstddef>    // for size_t
 #include <functional> // for greater
-#include <iostream>   // for cerr
+#include <sstream>    // for stringstream
 #include <string>     // for string
 #include <typeinfo>   // for type_info
+#include <vector>     // for vector
 
 namespace aoc::ds::test {
 
-#define DO_TEST(x)                                                             \
+#define HEAP_CHECK(op, value)                                                  \
     do {                                                                       \
-        test((x), #x);                                                         \
+        check_equal(heap.op(), value, "heap " #op " incorrect");               \
     } while (0)
 
 std::size_t test_pairing_heap_max() {
-    unit_test::ManualTest test("aoc::ds::pairing_heap<int>");
-    pairing_heap<int> heap;
-    int x = 1;
-    heap.push(x);
-    heap.push(1);
-    {
-        auto nh = heap.push(2);
-        heap.emplace(3);
-        DO_TEST(heap.top() == 3);
-        heap.update(nh, 4);
-    }
-    DO_TEST(heap.top() == 4);
-    heap.pop();
-    DO_TEST(heap.top() == 3);
-    DO_TEST(heap.size() == 3);
-    heap.pop();
-    DO_TEST(heap.top() == 1);
-    heap.pop();
-    DO_TEST(heap.top() == 1);
-    heap.pop();
-    DO_TEST(heap.size() == 0);
-    DO_TEST(heap.empty());
-    return test.done(), test.num_failed();
+    unit_test::TestSuite suite("aoc::ds::pairing_heap<int>");
+    using namespace unit_test::checks;
+    suite.test("", []() {
+        pairing_heap<int> heap;
+        int x = 1;
+        heap.push(x);
+        heap.push(1);
+        {
+            auto nh = heap.push(2);
+            heap.emplace(3);
+            HEAP_CHECK(top, 3);
+            heap.update(nh, 4);
+        }
+        HEAP_CHECK(top, 4);
+        heap.pop();
+        HEAP_CHECK(top, 3);
+        HEAP_CHECK(size, 3ul);
+        heap.pop();
+        HEAP_CHECK(top, 1);
+        heap.pop();
+        HEAP_CHECK(top, 1);
+        heap.pop();
+        HEAP_CHECK(size, 0ul);
+        check(heap.empty(), "heap not empty");
+    });
+    return suite.done(), suite.num_failed();
 }
 
 std::size_t test_pairing_heap_min() {
-    unit_test::ManualTest test("aoc::ds::pairing_heap<int, std::greater>");
-    pairing_heap<int, std::greater<int>> heap;
-    int x = 5;
-    heap.push(x);
-    heap.push(3);
-    {
-        auto nh = heap.push(10);
-        heap.emplace(7);
-        DO_TEST(heap.top() == 3);
-        heap.update(nh, 1);
-    }
-    DO_TEST(heap.top() == 1);
-    heap.pop();
-    DO_TEST(heap.top() == 3);
-    DO_TEST(heap.size() == 3);
-    heap.pop();
-    DO_TEST(heap.top() == 5);
-    heap.pop();
-    {
-        auto nh = heap.push(4);
-        DO_TEST(heap.top() == 4);
-        heap.update(nh, 5);
-        DO_TEST(heap.top() == 5);
-        heap.update(nh, 10);
-    }
-    DO_TEST(heap.top() == 7);
-    heap.pop();
-    DO_TEST(heap.size() == 1);
-    DO_TEST(heap.top() == 10);
-    heap.pop();
-    DO_TEST(heap.empty());
-    return test.done(), test.num_failed();
+    unit_test::TestSuite suite("aoc::ds::pairing_heap<int, std::greater>");
+    using namespace unit_test::checks;
+    suite.test("", []() {
+        pairing_heap<int, std::greater<int>> heap;
+        int x = 5;
+        heap.push(x);
+        heap.push(3);
+        {
+            auto nh = heap.push(10);
+            heap.emplace(7);
+            HEAP_CHECK(top, 3);
+            heap.update(nh, 1);
+        }
+        HEAP_CHECK(top, 1);
+        heap.pop();
+        HEAP_CHECK(top, 3);
+        HEAP_CHECK(size, 3ul);
+        heap.pop();
+        HEAP_CHECK(top, 5);
+        heap.pop();
+        {
+            auto nh = heap.push(4);
+            HEAP_CHECK(top, 4);
+            heap.update(nh, 5);
+            HEAP_CHECK(top, 5);
+            heap.update(nh, 10);
+        }
+        HEAP_CHECK(top, 7);
+        heap.pop();
+        HEAP_CHECK(size, 1ul);
+        HEAP_CHECK(top, 10);
+        heap.pop();
+        check(heap.empty(), "heap not empty");
+    });
+    return suite.done(), suite.num_failed();
+}
+
+#undef HEAP_CHECK
+
+template <class T>
+void test_grid_basic(unit_test::TestSuite &suite, const Grid<T> &grid) {
+    using namespace unit_test::checks;
+    suite.test("in_bounds", [&grid]() {
+        check(grid.in_bounds(4, 9));
+        check(!grid.in_bounds(5, 3));
+        check(!grid.in_bounds(0, 10));
+        check(!grid.in_bounds(-2, 4));
+    });
+}
+
+template <class T>
+void test_grid_iterators(unit_test::TestSuite &suite, Grid<T> grid) {
+    using namespace unit_test::checks;
+    suite.test("input iterator", [&grid]() {
+        auto col_it = grid.begin();
+        for (int y = 0; y < grid.height; ++y, ++col_it) {
+            check(col_it >= grid.begin());
+            check(col_it == grid.begin() + y);
+            auto row_it = col_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++row_it) {
+                check_equal(grid.at(x, y), *row_it, [&](auto &os) {
+                    os << "mismatch at " << x << ", " << y;
+                });
+            }
+            check_equal(row_it, col_it->end(), [&](auto &os) {
+                os << "iterator for row " << y << " not at end";
+            });
+        }
+        check_equal(col_it, grid.end(), "grid iterator not at end");
+    });
+    suite.test("input const_iterator", [&grid]() {
+        auto col_it = grid.cbegin();
+        for (int y = 0; y < grid.height; ++y, ++col_it) {
+            check(col_it >= grid.begin());
+            check(col_it == grid.begin() + y);
+            check(col_it >= grid.cbegin());
+            check(col_it == grid.cbegin() + y);
+            auto row_it = col_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++row_it) {
+                check_equal(grid.at(x, y), *row_it, [=](auto &os) {
+                    os << "mismatch at " << x << ", " << y;
+                });
+            }
+            check_equal(row_it, col_it->end(), [=](auto &os) {
+                os << "iterator for row " << y << " not at end";
+            });
+        }
+        check_equal(col_it, grid.cend(), "grid iterator not at end");
+    });
+    suite.test("output iterator", [&grid]() {
+        auto col_it = grid.begin();
+        for (int y = 0; y < grid.height; ++y, ++col_it) {
+            check(col_it >= grid.begin());
+            check(col_it == grid.begin() + y);
+            auto row_it = col_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++row_it) {
+                T new_val = 1 - *row_it;
+                *row_it = new_val;
+                check_equal(grid.at(x, y), new_val, [=](auto &os) {
+                    os << "writing failed at " << x << ", " << y;
+                });
+            }
+            check_equal(row_it, col_it->end(), [=](auto &os) {
+                os << "iterator for row " << y << " not at end";
+            });
+        }
+        check_equal(col_it, grid.end(), "grid iterator not at end");
+        return true;
+    });
 }
 
 template <class T>
 std::size_t test_grid() {
     const std::string type_name = util::demangle(typeid(T).name());
-    unit_test::ManualTest test("aoc::ds::Grid<" + type_name + ">");
+    unit_test::TestSuite suite("aoc::ds::Grid<" + type_name + ">");
+
     std::array<T, 50> arr;
-    {
-        int i = 0;
-        for (auto &x : arr) {
-            x = i++;
-        }
+    for (int i = 0; auto &x : arr) {
+        x = i++;
     }
     Grid<T> grid(5, 10, arr);
-    DO_TEST(grid.in_bounds(4, 9));
-    DO_TEST(!grid.in_bounds(5, 3));
-    DO_TEST(!grid.in_bounds(0, 10));
-    DO_TEST(!grid.in_bounds(-2, 4));
-    test(
-        [&grid]() {
-            using pretty_print::repr;
-            auto col_it = grid.begin();
-            for (int y = 0; y < grid.height; ++y, ++col_it) {
-                assert(col_it >= grid.begin());
-                assert(col_it == grid.begin() + y);
-                auto row_it = col_it->begin();
-                for (int x = 0; x < grid.width; ++x, ++row_it) {
-                    if (grid.at(x, y) != *row_it) {
-                        std::cerr
-                            << "mismatch at " << x << ", " << y << ": expected "
-                            << pretty_print::repr(grid.at(x, y), true)
-                            << ", got " << pretty_print::repr(*row_it, true)
-                            << "\n";
-                        return false;
-                    }
-                }
-                if (row_it != col_it->end()) {
-                    std::cerr << "iterator for row " << y << " not at end\n";
-                    return false;
-                }
-            }
-            if (col_it != grid.end()) {
-                std::cerr << "grid iterator not at end\n";
-                return false;
-            }
-            return true;
-        },
-        "input iterator");
-    test(
-        [&grid]() {
-            using pretty_print::repr;
-            auto col_it = grid.cbegin();
-            for (int y = 0; y < grid.height; ++y, ++col_it) {
-                assert(col_it >= grid.begin());
-                assert(col_it == grid.begin() + y);
-                assert(col_it >= grid.cbegin());
-                assert(col_it == grid.cbegin() + y);
-                auto row_it = col_it->begin();
-                for (int x = 0; x < grid.width; ++x, ++row_it) {
-                    if (grid.at(x, y) != *row_it) {
-                        std::cerr
-                            << "mismatch at " << x << ", " << y << ": expected "
-                            << pretty_print::repr(grid.at(x, y), true)
-                            << ", got " << pretty_print::repr(*row_it, true)
-                            << "\n";
-                        return false;
-                    }
-                }
-                if (row_it != col_it->end()) {
-                    std::cerr << "iterator for row " << y << " not at end\n";
-                    return false;
-                }
-            }
-            if (col_it != grid.cend()) {
-                std::cerr << "grid iterator not at end\n";
-                return false;
-            }
-            return true;
-        },
-        "input const_iterator");
-    test(
-        [&grid]() {
-            using pretty_print::repr;
-            auto col_it = grid.begin();
-            for (int y = 0; y < grid.height; ++y, ++col_it) {
-                assert(col_it >= grid.begin());
-                assert(col_it == grid.begin() + y);
-                auto row_it = col_it->begin();
-                for (int x = 0; x < grid.width; ++x, ++row_it) {
-                    auto new_val = 1 - *row_it;
-                    *row_it = new_val;
-                    if (grid.at(x, y) != new_val) {
-                        std::cerr << "writing failed at " << x << ", " << y
-                                  << "\n";
-                        return false;
-                    }
-                }
-                if (row_it != col_it->end()) {
-                    std::cerr << "iterator for row " << y << " not at end\n";
-                    return false;
-                }
-            }
-            if (col_it != grid.end()) {
-                std::cerr << "grid iterator not at end\n";
-                return false;
-            }
-            return true;
-        },
-        "output iterator");
 
-    return test.done(), test.num_failed();
+    test_grid_basic(suite, grid);
+    test_grid_iterators(suite, grid);
+    return suite.done(), suite.num_failed();
+}
+
+std::size_t test_grid_repr() {
+    unit_test::TestSuite suite("aoc::ds::Grid repr");
+
+    std::vector<int> data(12, 0);
+    for (int i = 0; auto &x : data) {
+        x = i++;
+    }
+    Grid<int> grid(3, 4, std::move(data));
+
+    using namespace unit_test::checks;
+    suite.test("default width", [&grid]() {
+        std::stringstream oss;
+        oss << pretty_print::repr(grid);
+        std::string expected = ("[[0 1 2],\n"
+                                " [3 4 5],\n"
+                                " [6 7 8],\n"
+                                " [9 10 11]]");
+        check_equal(oss.str(), expected);
+    });
+    suite.test("explicit width", [&grid]() {
+        std::ostringstream oss;
+        oss << std::setw(2);
+        oss << pretty_print::repr(grid);
+        std::string expected = ("[[ 0  1  2],\n"
+                                " [ 3  4  5],\n"
+                                " [ 6  7  8],\n"
+                                " [ 9 10 11]]");
+        check_equal(oss.str(), expected);
+    });
+    return suite.done(), suite.num_failed();
 }
 
 } // namespace aoc::ds::test
@@ -207,5 +225,6 @@ int main() {
     failed_count += aoc::ds::test::test_pairing_heap_min();
     failed_count += aoc::ds::test::test_grid<int>();
     failed_count += aoc::ds::test::test_grid<bool>();
+    failed_count += aoc::ds::test::test_grid_repr();
     return unit_test::fix_exit_code(failed_count);
 }

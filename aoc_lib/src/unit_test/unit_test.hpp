@@ -11,11 +11,12 @@
 #include <functional>       // for function, bind_front
 #include <initializer_list> // for initializer_list
 #include <iostream> // for cout, cerr, istream, ostream, endl, streambuf, rdbuf, clear
-#include <iterator>    // for back_inserter
-#include <limits>      // for numeric_limits
-#include <sstream>     // for ostringstream, stringstream
-#include <string>      // for string, getline
-#include <tuple>       // for tuple, get, make_tuple, apply
+#include <iterator>        // for back_inserter
+#include <limits>          // for numeric_limits
+#include <source_location> // for source_location
+#include <sstream>         // for ostringstream, stringstream
+#include <string>          // for string, getline
+#include <tuple>           // for tuple, get, make_tuple, apply
 #include <type_traits> // for remove_const_t, remove_cvref_t, decay_t, is_same_v, is_assignable_v, is_floating_point_v, is_convertible_v
 #include <unordered_map> // for unordered_map, operator==
 #include <utility>       // for index_sequence, move, index_sequence_for
@@ -112,11 +113,10 @@ arg_lookup_t<T, ToSelector> convert(arg_lookup_t<T, FromSelector> &x) {
 namespace detail {
 
 template <class T, typename FromSelector, typename ToSelector>
-concept has_convert_implementation =
-    requires(arg_lookup_t<T, FromSelector> x) {
-        argument_type_traits<T>::convert(
-            convert_tag<FromSelector, ToSelector>{}, x);
-    };
+concept has_convert_implementation = requires(arg_lookup_t<T, FromSelector> x) {
+    argument_type_traits<T>::convert(convert_tag<FromSelector, ToSelector>{},
+                                     x);
+};
 
 /**
  * A struct that effectively wraps argument_type_traits and provides defaults
@@ -270,11 +270,10 @@ struct tuple_like_arg_traits {
     convert(convert_tag<FromSelector, ToSelector>,
             arg_lookup_t<TupleLike<Ts...>, FromSelector> &x) {
         return [&x]<std::size_t... I>(std::index_sequence<I...>)
-            ->arg_lookup_t<TupleLike<Ts...>, ToSelector> {
+                   -> arg_lookup_t<TupleLike<Ts...>, ToSelector> {
             return {unit_test::convert<Ts, FromSelector, ToSelector>(
                 std::get<I>(x))...};
-        }
-        (std::index_sequence_for<Ts...>{});
+        }(std::index_sequence_for<Ts...>{});
     }
 };
 } // namespace detail
@@ -309,6 +308,8 @@ struct TestResult {
     std::string actual = "";
     std::string output = "";
     std::string note = "";
+    // additional lines to print after the test name, number, and arguments
+    std::vector<std::string> extra_info{};
 
     void print(std::ostream &, int test_num) const;
 };
@@ -317,7 +318,7 @@ void TestResult::print(std::ostream &os, int test_num) const {
     const TestResult &result = *this;
     // Extra info to print after the test name, number, and arguments in case
     // of a failure. Each element should have a final newline.
-    std::vector<std::string> extras{};
+    std::vector<std::string> extras(extra_info);
     if (!result.actual.empty() || !result.expected.empty()) {
         std::ostringstream ss{};
         ss << "       got: " << result.actual << "\n"
@@ -346,7 +347,13 @@ void TestResult::print(std::ostream &os, int test_num) const {
         }
         os << "\n";
         for (const std::string &extra : extras) {
+            if (!extra.starts_with(" ")) {
+                os << " ";
+            }
             os << extra;
+            if (extra.back() != '\n') {
+                os << '\n';
+            }
         }
     }
 }
@@ -634,33 +641,96 @@ template <class R, class... Args>
 PureTest(const std::string &, std::function<R(Args...)>, int)
     -> PureTest<R, Args...>;
 
-struct ManualTest : public BaseTest {
-    using runner_type = TestRunner<bool>;
+// A collection of test cases, xUnit style
+struct TestSuite : public BaseTest {
+    explicit TestSuite(const std::string &name) : BaseTest(name) {}
 
-    explicit ManualTest(const std::string &name) : BaseTest(name) {}
-
-    template <class T>
-    bool operator()(T &&passed, const std::string &note = "") {
-        if constexpr (std::predicate<T>) {
-            // passed is a function that takes no arguments and returns a
-            // boolean-testable result
-            ++test_num;
-            TestRunner<bool> runner(passed, 0);
-            TestResult result = runner.run_on_args(true, note);
-            record_result(result);
-            return result.passed;
-        } else {
-            return (*this)(bool(std::forward<T>(passed)), note);
-        }
-    }
-    bool operator()(bool passed, const std::string &note = "") {
+    void test(const std::string &test_name, auto &&test_func) {
+        // run a test function, catching any check failures
         ++test_num;
-        TestResult result{passed};
-        result.note = note;
-        record_result(result);
-        return passed;
+        try {
+            test_func();
+        } catch (TestResult &result) {
+            result.note = test_name;
+            record_result(result);
+            return;
+        }
+        record_result(TestResult{true});
     }
 };
+
+// checker functions to be used in TestSuite cases
+namespace checks {
+using SL = std::source_location;
+
+namespace detail {
+TestResult failure_helper(const SL loc, const std::string &info,
+                          const std::string &check_type = "check") {
+    TestResult result;
+    result.passed = false;
+    std::ostringstream msg_ss{};
+    msg_ss << loc.file_name() << ":" << loc.line() << ":" << loc.column()
+           << ": failed " << check_type;
+    if (!info.empty()) {
+        msg_ss << ": " << info;
+    }
+    result.extra_info.push_back(msg_ss.str());
+    return result;
+}
+
+TestResult equal_failure_helper(const auto &actual, const auto &expected,
+                                const SL loc, const std::string &info) {
+    TestResult result = failure_helper(loc, info, "equality check");
+    if constexpr (pretty_print::has_print_repr<
+                      std::remove_cvref_t<decltype(actual)>> &&
+                  pretty_print::has_print_repr<
+                      std::remove_cvref_t<decltype(expected)>>) {
+        // we can pretty-print the values being compared
+        std::ostringstream actual_ss, expected_ss;
+        actual_ss << pretty_print::repr(actual, true);
+        result.actual = actual_ss.str();
+        expected_ss << pretty_print::repr(expected, true);
+        result.expected = expected_ss.str();
+    }
+    return result;
+}
+} // namespace detail
+
+void check(auto &&condition, const std::string &info = "",
+           const SL loc = SL::current()) {
+    if (!condition) {
+        throw detail::failure_helper(loc, info);
+    }
+}
+
+void check(auto &&condition,
+           std::invocable<std::ostream &> auto &&info_callback,
+           const SL loc = SL::current()) {
+    if (!condition) {
+        std::ostringstream info_ss;
+        info_callback(info_ss);
+        throw detail::failure_helper(loc, info_ss.str());
+    }
+}
+
+void check_equal(const auto &actual, const auto &expected,
+                 const std::string &info = "", const SL loc = SL::current()) {
+    if (actual != expected) {
+        throw detail::equal_failure_helper(actual, expected, loc, info);
+    }
+}
+
+void check_equal(const auto &actual, const auto &expected,
+                 std::invocable<std::ostream &> auto &&info,
+                 const SL loc = SL::current()) {
+    if (actual != expected) {
+        std::ostringstream info_ss;
+        info(info_ss);
+        throw detail::equal_failure_helper(actual, expected, loc,
+                                           info_ss.str());
+    }
+}
+} // namespace checks
 
 namespace {
 [[maybe_unused]] void _lint_helper() {

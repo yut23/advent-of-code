@@ -393,7 +393,7 @@ SkipInputHelper<T> skip(int count = 1) {
 
 template <class T>
 ExpectInputHelper<std::remove_cvref_t<T>> expect_input(T &&expected) {
-    return ExpectInputHelper<std::remove_cvref_t<T>>(std::move(expected));
+    return ExpectInputHelper<std::remove_cvref_t<T>>(std::forward<T>(expected));
 }
 ExpectInputHelper<std::string> expect_input(const char *expected) {
     return ExpectInputHelper<std::string>{std::string{expected}};

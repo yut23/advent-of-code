@@ -19,58 +19,60 @@
 
 namespace aoc::test {
 
-std::size_t test_expect_input_skipws() {
+std::size_t test_expect_input() {
     using namespace std::string_literals;
-    unit_test::ManualTest test("aoc::expect_input, skipws");
-    std::istringstream ss{"foobar baz {a=1, bc=32}"};
-    std::string baz{"baz"};
-    char close_brace = '}';
-    ss >> std::skipws;
-    test(ss >> aoc::expect_input('f'), "reading 'f' from stream") &&
-        test(ss >> aoc::expect_input("oo"), "reading \"oo\" from stream") &&
-        test(ss >> aoc::expect_input(std::string{"bar"}),
-             "reading std::string{\"bar\"} from stream") &&
-        test(ss >> aoc::expect_input(baz),
-             "reading \"baz\"s as lvalue from stream") &&
-        test(ss >> aoc::expect_input('{'), "reading '{' from stream") &&
-        test(ss >> aoc::expect_input("a="s), "reading \"a=\"s from stream") &&
-        test(ss >> aoc::expect_input(1), "reading 1 from stream") &&
-        test(ss >> aoc::expect_input(","), "reading \",\" from stream") &&
-        test(ss >> aoc::expect_input("b"s + "c"),
-             "reading \"b\"s + \"c\" from stream") &&
-        test(ss >> aoc::expect_input("="s), "reading \"=\"s from stream") &&
-        test(ss >> aoc::expect_input('3') >> aoc::expect_input(2),
-             "reading '3' and 2 from stream") &&
-        test(ss >> aoc::expect_input(close_brace),
-             "reading '}' as lvalue from stream");
-    return test.done(), test.num_failed();
-}
+    using namespace unit_test::checks;
+    unit_test::TestSuite suite("aoc::expect_input");
 
-std::size_t test_expect_input_noskipws() {
-    using namespace std::string_literals;
-    unit_test::ManualTest test("aoc::expect_input, noskipws");
-    std::istringstream ss{"foobar  baz {a=1,bc=32}"};
-    std::string baz{" baz "};
-    char close_brace = '}';
-    ss >> std::noskipws;
-    test(ss >> aoc::expect_input('f'), "reading 'f' from stream") &&
-        test(ss >> aoc::expect_input("oo"), "reading \"oo\" from stream") &&
-        test(ss >> aoc::expect_input(std::string{"bar "}),
-             "reading std::string{\"bar\"} from stream") &&
-        test(ss >> aoc::expect_input(baz),
-             "reading \" baz \"s as lvalue from stream") &&
-        test(ss >> aoc::expect_input('{'), "reading '{' from stream") &&
-        test(ss >> aoc::expect_input("a="s), "reading \"a=\"s from stream") &&
-        test(ss >> aoc::expect_input(1), "reading 1 from stream") &&
-        test(ss >> aoc::expect_input(","), "reading \",\" from stream") &&
-        test(ss >> aoc::expect_input("b"s + "c"),
-             "reading \"b\"s + \"c\" from stream") &&
-        test(ss >> aoc::expect_input("="s), "reading \"=\"s from stream") &&
-        test(ss >> aoc::expect_input('3') >> aoc::expect_input(2),
-             "reading '3' and 2 from stream") &&
-        test(ss >> aoc::expect_input(close_brace),
-             "reading '}' as lvalue from stream");
-    return test.done(), test.num_failed();
+    suite.test("skipws", []() {
+        std::istringstream ss{"foobar baz {a=1, bc=32}"};
+        std::string baz{"baz"};
+        char close_brace = '}';
+        ss >> std::skipws;
+        check(ss >> aoc::expect_input('f'), "reading 'f' from stream");
+        check(ss >> aoc::expect_input("oo"), "reading \"oo\" from stream");
+        check(ss >> aoc::expect_input(std::string{"bar"}),
+              "reading std::string{\"bar\"} from stream");
+        check(ss >> aoc::expect_input(baz),
+              "reading \"baz\"s as lvalue from stream");
+        check(ss >> aoc::expect_input('{'), "reading '{' from stream");
+        check(ss >> aoc::expect_input("a="s), "reading \"a=\"s from stream");
+        check(ss >> aoc::expect_input(1), "reading 1 from stream");
+        check(ss >> aoc::expect_input(","), "reading \",\" from stream");
+        check(ss >> aoc::expect_input("b"s + "c"),
+              "reading \"b\"s + \"c\" from stream");
+        check(ss >> aoc::expect_input("="s), "reading \"=\"s from stream");
+        check(ss >> aoc::expect_input('3') >> aoc::expect_input(2),
+              "reading '3' and 2 from stream");
+        check(ss >> aoc::expect_input(close_brace),
+              "reading '}' as lvalue from stream");
+    });
+    return suite.done(), suite.num_failed();
+
+    suite.test("noskipws", []() {
+        std::istringstream ss{"foobar  baz {a=1,bc=32}"};
+        std::string baz{" baz "};
+        char close_brace = '}';
+        ss >> std::noskipws;
+        check(ss >> aoc::expect_input('f'), "reading 'f' from stream");
+        check(ss >> aoc::expect_input("oo"), "reading \"oo\" from stream");
+        check(ss >> aoc::expect_input(std::string{"bar "}),
+              "reading std::string{\"bar\"} from stream");
+        check(ss >> aoc::expect_input(baz),
+              "reading \" baz \"s as lvalue from stream");
+        check(ss >> aoc::expect_input('{'), "reading '{' from stream");
+        check(ss >> aoc::expect_input("a="s), "reading \"a=\"s from stream");
+        check(ss >> aoc::expect_input(1), "reading 1 from stream");
+        check(ss >> aoc::expect_input(","), "reading \",\" from stream");
+        check(ss >> aoc::expect_input("b"s + "c"),
+              "reading \"b\"s + \"c\" from stream");
+        check(ss >> aoc::expect_input("="s), "reading \"=\"s from stream");
+        check(ss >> aoc::expect_input('3') >> aoc::expect_input(2),
+              "reading '3' and 2 from stream");
+        check(ss >> aoc::expect_input(close_brace),
+              "reading '}' as lvalue from stream");
+    });
+    return suite.done(), suite.num_failed();
 }
 
 template <class CharT>
@@ -110,8 +112,7 @@ std::size_t test_as_number_insertion() {
 
 int main() {
     std::size_t failed_count = 0;
-    failed_count += aoc::test::test_expect_input_skipws();
-    failed_count += aoc::test::test_expect_input_noskipws();
+    failed_count += aoc::test::test_expect_input();
     failed_count += aoc::test::test_as_number_extraction<char>();
     failed_count += aoc::test::test_as_number_extraction<unsigned char>();
     failed_count += aoc::test::test_as_number_insertion<char>();
