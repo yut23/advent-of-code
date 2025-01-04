@@ -314,7 +314,7 @@ struct Grid {
     /**
      * Calls func(pos, value) for each position in the grid.
      */
-    template <typename Func>
+    template <std::invocable<const Pos &, const value_type &> Func>
     constexpr void for_each_with_pos(Func &&func) {
         Pos p;
         for (p.y = 0; p.y < height; ++p.y) {
@@ -327,7 +327,7 @@ struct Grid {
     /**
      * Calls func(pos, value) for each position in the grid.
      */
-    template <typename Func>
+    template <std::invocable<const Pos &, const value_type &> Func>
     constexpr void for_each_with_pos(Func &&func) const {
         Pos p;
         for (p.y = 0; p.y < height; ++p.y) {
@@ -338,10 +338,31 @@ struct Grid {
     }
 
     /**
+     * Calls func(value[, pos]) for each position in the grid.
+     */
+    template <typename Func>
+        requires std::invocable<Func, const value_type &, const Pos &> ||
+                 std::invocable<Func, const value_type &>
+    constexpr void for_each(Func &&func) const {
+        Pos p;
+        for (p.y = 0; p.y < height; ++p.y) {
+            for (p.x = 0; p.x < width; ++p.x) {
+                if constexpr (std::invocable<Func, const value_type &,
+                                             const Pos &>) {
+                    func((*this)[p], p);
+                } else {
+                    func((*this)[p]);
+                }
+            }
+        }
+    }
+
+    /**
      * Calls formatter(os, pos, value) for each position in the grid in
      * row-major order, and outputs a newline at the end of each row.
      */
-    template <typename Formatter>
+    template <std::invocable<std::ostream &, const Pos &, const value_type &>
+                  Formatter>
     constexpr void custom_print(std::ostream &os, Formatter &&formatter) const {
         Pos pos;
         for (pos.y = 0; pos.y < height; ++pos.y) {
@@ -349,6 +370,63 @@ struct Grid {
                 formatter(os, pos, (*this)[pos]);
             }
             os << '\n';
+        }
+    }
+
+    /**
+     * Calls func(value[, pos]) for each position within the given Chebyshev
+     * (8-way) distance from center.
+     */
+    template <typename Func>
+        requires std::invocable<Func, const value_type &, const Pos &> ||
+                 std::invocable<Func, const value_type &>
+    constexpr void chebyshev_kernel(const Pos &center, int distance,
+                                    Func &&func) const {
+        Pos pos;
+        for (pos.y = center.y - distance; pos.y <= center.y + distance;
+             ++pos.y) {
+            for (pos.x = center.x - distance; pos.x <= center.x + distance;
+                 ++pos.x) {
+                if (in_bounds(pos)) {
+                    if constexpr (std::invocable<Func, const value_type &,
+                                                 const Pos &>) {
+                        func((*this)[pos], pos);
+                    } else {
+                        func((*this)[pos]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Calls func(value[, pos[, distance]]) for each position within the given
+     * Manhattan (4-way) distance from center.
+     */
+    template <typename Func>
+        requires std::invocable<Func, const value_type &, const Pos &, int> ||
+                 std::invocable<Func, const value_type &, const Pos &> ||
+                 std::invocable<Func, const value_type &>
+    constexpr void manhattan_kernel(const Pos &center, int distance,
+                                    Func &&func) const {
+        Delta offset{0, 0};
+        for (offset.dy = -distance; offset.dy <= distance; ++offset.dy) {
+            int x_max = distance - std::abs(offset.dy);
+            for (offset.dx = -x_max; offset.dx <= x_max; ++offset.dx) {
+                Pos pos = center + offset;
+                if (in_bounds(pos)) {
+                    if constexpr (std::invocable<Func, const value_type &,
+                                                 const Pos &, int>) {
+                        func((*this)[pos], pos, offset.manhattan_distance());
+                    } else if constexpr (std::invocable<Func,
+                                                        const value_type &,
+                                                        const Pos &>) {
+                        func((*this)[pos], pos);
+                    } else {
+                        func((*this)[pos]);
+                    }
+                }
+            }
         }
     }
 };
@@ -434,6 +512,15 @@ constexpr bool _grid_lint_helper_constexpr() {
             ++y;
         }
     }
+
+    {
+        Grid<int> grid(5, 10);
+        grid.for_each([](int) {});
+        grid.for_each([](int, const Pos &) {});
+        grid.for_each([](int, Pos) {});
+    }
+
+    // TODO: add checks for kernel functions
 
     // an iterator should be assignable to a const_iterator
     static_assert(
