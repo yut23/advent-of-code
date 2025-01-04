@@ -9,10 +9,66 @@
 #include "unit_test/pretty_print.hpp" // IWYU pragma: associated
 
 #include "unit_test/unit_test.hpp"
+#include "util/util.hpp" // for demangle
 
-#include <sstream> // for ostringstream
+#include <source_location> // for source_location
+#include <sstream>         // for ostringstream
+#include <string>          // for string
+#include <typeinfo>        // for type_info
 
 namespace pretty_print::test {
+
+std::size_t test_repr() {
+    unit_test::TestSuite suite("pretty_print::repr");
+
+    const auto test = [&suite](auto &&value, const std::string &expected,
+                               bool result = false,
+                               const std::source_location loc =
+                                   std::source_location::current()) {
+        const std::string type_name =
+            util::demangle(typeid(std::remove_cvref_t<decltype(value)>).name());
+        suite.test(type_name, [&value, &expected, &result, &loc]() {
+            std::ostringstream oss{};
+            oss << pretty_print::repr(value, result);
+            unit_test::checks::check_equal(oss.str(), expected, "", loc);
+        });
+    };
+
+    using namespace std::string_literals;
+    // templated containers
+    test(std::vector<int>{1, 2, 3}, "{1, 2, 3}");
+    test(std::list<std::set<int>>{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}},
+         "{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}}");
+    test(std::array<float, 4>{1.5, 2.4, 3.2, -2.8}, "{1.5, 2.4, 3.2, -2.8}");
+    test(std::map<int, std::string>{{0, "a"}, {2, "b"}, {100, "c"}},
+         R"({0: "a", 2: "b", 100: "c"})");
+    test(std::tuple<int, float, int>{1, 0.3, 4}, "[1, 0.3, 4]");
+    test(std::optional<int>{15}, "15");
+    test(std::optional<int>{}, "{}");
+
+    // strings
+    test("asdf"s, R"("asdf")");
+    test("foo\r\nbar\" baz"s, R"("foo\r\nbar\" baz")");
+    test("foo\r\nbar\" baz", R"("foo\r\nbar\" baz")");
+    test(std::string_view{"string view"}, R"("string view")");
+
+    // other leaf types
+    test(std::strong_ordering::less, "less");
+    test(std::strong_ordering::greater, "greater");
+    test(std::strong_ordering::equal, "equal");
+    test(std::strong_ordering::equivalent, "equal");
+
+    test(true, "true");
+    test(false, "false");
+
+    test(1.4f, "1.4");
+    test(3.14, "3.14");
+    // includes hex format for results
+    test(1.4f, "1.4 (0x1.666666p+0)", true);
+    test(3.14, "3.14 (0x1.91eb851eb851fp+1)", true);
+
+    return suite.done(), suite.num_failed();
+}
 
 std::size_t test_char_escaping() {
     unit_test::PureTest test(
@@ -75,6 +131,7 @@ std::size_t test_char_escaping() {
 
 int main() {
     std::size_t failed_count = 0;
+    failed_count += pretty_print::test::test_repr();
     failed_count += pretty_print::test::test_char_escaping();
     return unit_test::fix_exit_code(failed_count);
 }
