@@ -6,17 +6,18 @@
 #include "util/concepts.hpp" // for any_convertible_range
 
 #include <algorithm> // for copy, move
+#include <array>     // for array
 #include <cassert>   // for assert
 #include <compare>   // for partial_ordering
 #include <concepts>  // for same_as, convertible_to
-#include <cstddef>   // for size_t, ptrdiff_t
+#include <cstdlib>   // for abs, size_t, ptrdiff_t
 #include <iomanip>   // for setw
 #include <iostream>  // for ostream
 #include <iterator>  // for begin, end, back_inserter, misc concepts
 #include <ranges>    // for range, range_value_t
 #include <span>      // for span, dynamic_extent // IWYU pragma: export
 #include <string>    // for string, basic_string
-#include <type_traits> // for is_same_v, conditional_t, is_rvalue_reference_v // IWYU pragma: export
+#include <type_traits> // for conditional_t, is_rvalue_reference_v // IWYU pragma: export
 #include <utility> // for move, pair, make_pair
 #include <vector>  // for vector, __cpp_lib_constexpr_vector
 
@@ -195,17 +196,19 @@ struct Grid {
     container_type m_data;
 
   public:
+    // construct with the same value everywhere
     constexpr Grid(size_type width, size_type height,
                    const value_type &value = value_type())
         : height(height), width(width), m_data(height * width, value) {}
-    // construct from a flat range
+    // construct from a flat range (note: not compatible with CTAD)
     template <util::concepts::any_convertible_range<value_type> R>
     constexpr Grid(size_type width, size_type height, R &&range)
         : height(height), width(width),
           m_data(std::begin(range), std::end(range)) {
         assert(static_cast<size_type>(m_data.size()) == height * width);
     }
-    // move-construct from a flat data container
+    // move-construct from a flat data container (note: not compatible with
+    // CTAD)
     constexpr Grid(size_type width, size_type height, container_type &&data)
         : height(height), width(width), m_data(std::move(data)) {
         assert(static_cast<size_type>(m_data.size()) == height * width);
@@ -458,9 +461,9 @@ std::ostream &print_repr(std::ostream &os, const aoc::ds::Grid<T> &grid,
     return os;
 }
 
-// instantiate templates in an anonymous namespace, so static analyzers will
-// check these functions
-namespace {
+// instantiate templates in a non-templated helper function, so static
+// analyzers will check these functions
+namespace test {
 #if __cpp_lib_constexpr_vector
 constexpr bool _grid_lint_helper_constexpr() {
     Grid<int> grid1(5, 10, 0);
@@ -473,41 +476,86 @@ constexpr bool _grid_lint_helper_constexpr() {
 }
 #endif
 [[maybe_unused]] void _grid_lint_helper() {
-    Grid<int> grid1a(10, 5);
-    Grid grid1b(10, 5, 10);
-    static_assert(std::is_same_v<decltype(grid1a), decltype(grid1b)>);
-
-    Grid<std::pair<int, std::string>> grid2a(3, 2);
-    Grid grid2b(3, 2, std::make_pair(1, std::string{"a"}));
-    static_assert(std::is_same_v<decltype(grid2a), decltype(grid2b)>);
-
-    std::vector<std::vector<bool>> bool_vec{{true, false}, {true, false}};
-    Grid<bool> grid3a(bool_vec);
-    Grid grid3b(bool_vec);
-    Grid grid3c(std::move(bool_vec));
-    static_assert(std::is_same_v<decltype(grid3a), decltype(grid3b)>);
-    static_assert(std::is_same_v<decltype(grid3a), decltype(grid3c)>);
-
-    [[maybe_unused]] Grid<float> grid4a(grid1a, 0.0);
-    [[maybe_unused]] Grid<int> grid4b(grid1a, 1);
-
-    static_assert(std::bidirectional_iterator<Grid<int>::iterator>);
-    static_assert(!std::random_access_iterator<Grid<int>::iterator>);
-    static_assert(!std::contiguous_iterator<Grid<int>::iterator>);
-
-    static_assert(std::bidirectional_iterator<Grid<bool>::iterator>);
-    static_assert(!std::random_access_iterator<Grid<bool>::iterator>);
-    static_assert(!std::contiguous_iterator<Grid<bool>::iterator>);
-
+    // reduce boilerplate
+    constexpr auto same_type = [](const auto &a, const auto &b) {
+        return std::same_as<decltype(a), decltype(b)>;
+    };
+    // construct with the same value everywhere
     {
+        Grid<int> int_grid(10, 5);
+        Grid int_grid_2(10, 5, 10);
+        static_assert(same_type(int_grid, int_grid_2));
+
+        Grid<std::pair<int, std::string>> pair_grid_1(3, 2);
+        Grid pair_grid_2(3, 2, std::make_pair(1, std::string{"a"}));
+        static_assert(same_type(pair_grid_1, pair_grid_2));
+    }
+
+    // construct from a flat range
+    {
+        std::array<float, 10> flat_arr;
+        Grid<float> grid_1(2, 5, flat_arr);
+        static_assert(
+            std::same_as<typename decltype(grid_1)::value_type, float>);
+        std::vector<float> flat_vec(10, 3.14f);
+        Grid<float> grid_2(2, 5, flat_vec);
+        static_assert(
+            std::same_as<typename decltype(grid_2)::value_type, float>);
+        static_assert(same_type(grid_1, grid_2));
+    }
+
+    // move-construct from a flat data container
+    {
+        std::vector<std::string> data(15, "foobar");
+        Grid<std::string> grid(3, 5, std::move(data));
+        static_assert(
+            std::same_as<typename decltype(grid)::value_type, std::string>);
+    }
+
+    // construct from nested ranges
+    {
+        std::vector<std::vector<bool>> bool_vec{{true, false}, {true, false}};
+        Grid<bool> bool_grid_1(bool_vec);
+        Grid bool_grid_2(bool_vec);
+        Grid bool_grid_3(std::move(bool_vec));
+        static_assert(same_type(bool_grid_1, bool_grid_2));
+        static_assert(same_type(bool_grid_1, bool_grid_3));
+    }
+
+    // construct with the same dimensions as another grid
+    {
+        Grid<int> grid_1(3, 4);
+        Grid<float> grid_2(grid_1, 0.0);
+        assert(grid_1.width == grid_2.width && grid_1.height == grid_2.height);
+        Grid<int> grid_3(grid_2, 1);
+        assert(grid_1.width == grid_3.width && grid_1.height == grid_3.height);
+    }
+
+    // check that iterators satisfy the expected constraints
+    {
+        constexpr auto check_iterator = []<typename Iterator>() {
+            static_assert(std::bidirectional_iterator<Iterator>);
+            static_assert(!std::random_access_iterator<Iterator>);
+            static_assert(!std::contiguous_iterator<Iterator>);
+        };
+        check_iterator.template operator()<Grid<int>::iterator>();
+        check_iterator.template operator()<Grid<int>::const_iterator>();
+        check_iterator.template operator()<Grid<bool>::iterator>();
+        check_iterator.template operator()<Grid<bool>::const_iterator>();
+    }
+
+    // basic iterator test
+    {
+        Grid<int> grid(5, 7, 1);
         int i = 0;
         int y = 0;
-        for (auto &row : grid1a) {
+        for (auto &row : grid) {
             int x = 0;
             for (auto &val : row) {
-                val = i++;
-                assert(grid1a.at(x, y) == i);
+                val = i;
+                assert(grid.at(x, y) == i);
                 ++x;
+                ++i;
             }
             ++y;
         }
@@ -532,7 +580,7 @@ constexpr bool _grid_lint_helper_constexpr() {
     static_assert(_grid_lint_helper_constexpr());
 #endif
 }
-} // namespace
+} // namespace test
 
 } // namespace aoc::ds
 

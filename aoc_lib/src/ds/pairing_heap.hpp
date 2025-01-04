@@ -290,9 +290,9 @@ pairing_heap(InputIt, InputIt, const Compare & = Compare())
     -> pairing_heap<typename std::iterator_traits<InputIt>::value_type,
                     Compare>;
 
-// instantiate templates in an anonymous namespace, so static analyzers will
-// check these functions
-namespace {
+// instantiate templates in a non-templated helper function, so static
+// analyzers will check these functions
+namespace test {
 [[maybe_unused]] void _pairing_heap_lint_helper() {
     // default constructor
     pairing_heap<int> h1a;
@@ -312,7 +312,7 @@ namespace {
 
     pairing_heap<std::pair<int, int *>, std::greater<std::pair<int, int *>>> h4;
 }
-} // namespace
+} // namespace test
 
 } // namespace aoc::ds
 

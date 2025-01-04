@@ -226,5 +226,8 @@ int main() {
     failed_count += aoc::ds::test::test_grid<int>();
     failed_count += aoc::ds::test::test_grid<bool>();
     failed_count += aoc::ds::test::test_grid_repr();
+    // run linter helper functions, to catch any failed asserts
+    aoc::ds::test::_pairing_heap_lint_helper();
+    aoc::ds::test::_grid_lint_helper();
     return unit_test::fix_exit_code(failed_count);
 }
