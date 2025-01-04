@@ -44,7 +44,7 @@ class CityMap {
   private:
     aoc::ds::Grid<unsigned char> block_costs;
 
-    void process_neighbors(bool ultra, const Key &key, auto &&visit) const;
+    void process_neighbors(bool ultra, const Key &key, auto &&process) const;
     int get_distance(const Key &from, const Key &to) const;
 
   public:
@@ -64,13 +64,13 @@ std::ostream &operator<<(std::ostream &os, const CityMap::Key &key) {
 }
 
 void CityMap::process_neighbors(bool ultra, const Key &key,
-                                auto &&visit) const {
+                                auto &&process) const {
     const int min_straight_moves = ultra ? 4 : 1;
     const int max_straight_moves = ultra ? 10 : 3;
     if (key.pos.x == 0 && key.pos.y == 0 &&
         key.orient == Orientation::horizontal) {
         // allow going down initially
-        visit({key.pos, Orientation::vertical});
+        process({key.pos, Orientation::vertical});
     }
     for (const auto orient : {Orientation::horizontal, Orientation::vertical}) {
         if (orient == key.orient) {
@@ -88,7 +88,7 @@ void CityMap::process_neighbors(bool ultra, const Key &key,
                 if (!block_costs.in_bounds(neighbor.pos)) {
                     continue;
                 }
-                visit(neighbor);
+                process(neighbor);
             }
         }
     }

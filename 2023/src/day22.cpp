@@ -46,8 +46,8 @@ int part_2(const aoc::day22::BrickStack &stack) {
         }
 
         const auto process_neighbors = [&stack](const Brick *brick,
-                                                auto &&visit) {
-            std::ranges::for_each(stack.supporting.at(brick), visit);
+                                                auto &&process) {
+            std::ranges::for_each(stack.supporting.at(brick), process);
         };
         const auto ordering = aoc::graph::topo_sort(root, process_neighbors);
 

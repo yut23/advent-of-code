@@ -236,8 +236,8 @@ int TrailMap::part_1() const {
         std::cerr << "}\n";
     }
     const auto process_neighbors = [&fwd_edges = fwd_edges](const Key key,
-                                                            auto &&visit) {
-        std::ranges::for_each(fwd_edges[key], visit);
+                                                            auto &&process) {
+        std::ranges::for_each(fwd_edges[key], process);
     };
     const auto is_target = [&target = target](const Key key) -> bool {
         return key == target;

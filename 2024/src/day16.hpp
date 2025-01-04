@@ -44,7 +44,7 @@ class Maze {
     Pos start_pos;
     Pos end_pos;
 
-    void process_neighbors(const Key &key, auto &&visit) const;
+    void process_neighbors(const Key &key, auto &&process) const;
     int get_distance(const Key &from, const Key &to) const;
     bool is_target(const Key &key) const { return key.pos == end_pos; }
 
@@ -89,15 +89,15 @@ std::ostream &operator<<(std::ostream &os, const Maze::Key &key) {
     return os;
 }
 
-void Maze::process_neighbors(const Key &key, auto &&visit) const {
+void Maze::process_neighbors(const Key &key, auto &&process) const {
     // try moving straight
     Key neighbor{key.pos + Delta(key.dir, true), key.dir};
     if (grid.in_bounds(neighbor.pos) && grid[neighbor.pos] != '#') {
-        visit(neighbor);
+        process(neighbor);
     }
     // try turning
-    visit(Key{key.pos, directions::turn(key.dir, RelDirection::left)});
-    visit(Key{key.pos, directions::turn(key.dir, RelDirection::right)});
+    process(Key{key.pos, directions::turn(key.dir, RelDirection::left)});
+    process(Key{key.pos, directions::turn(key.dir, RelDirection::right)});
 }
 
 int Maze::get_distance(const Key &from, const Key &to) const {

@@ -42,12 +42,12 @@ struct Garden {
         distances[source] = 0;
 
         const auto process_neighbors = [this, &distances](const Key &key,
-                                                          auto &&visit) {
+                                                          auto &&process) {
             for (const AbsDirection &dir : aoc::DIRECTIONS) {
                 Pos pos = key + Delta(dir, true);
                 if (stones.in_bounds(pos) && stones[pos] &&
                     distances[pos] == std::numeric_limits<int>::max()) {
-                    visit(std::move(pos));
+                    process(std::move(pos));
                 }
             }
         };

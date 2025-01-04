@@ -32,7 +32,7 @@ class IslandMap : public aoc::ds::Grid<height_t> {
     std::vector<Pos> peaks{};
 
     explicit IslandMap(std::vector<std::vector<height_t>> &&height_map);
-    void process_neighbors(const Pos &key, auto &&visit) const;
+    void process_neighbors(const Pos &key, auto &&process) const;
     template <aoc::Part part>
     aoc::ds::Grid<int> calc_scores() const;
 
@@ -99,8 +99,8 @@ aoc::ds::Grid<int> IslandMap::calc_scores() const {
         constexpr bool use_seen = part == PART_1;
         aoc::graph::dfs_rec<use_seen>(
             peak,
-            [this](const Pos &pos, auto &&visit) {
-                this->process_neighbors(pos, visit);
+            [this](const Pos &pos, auto &&process) {
+                this->process_neighbors(pos, process);
             },
             /*is_target*/ {}, visit_with_parent);
     }
@@ -109,7 +109,7 @@ aoc::ds::Grid<int> IslandMap::calc_scores() const {
 }
 
 // walk down from peaks to trailheads
-void IslandMap::process_neighbors(const Pos &pos, auto &&visit) const {
+void IslandMap::process_neighbors(const Pos &pos, auto &&process) const {
     height_t curr_height = at(pos);
     if (curr_height == 0) {
         return;
@@ -118,7 +118,7 @@ void IslandMap::process_neighbors(const Pos &pos, auto &&visit) const {
     for (const auto &dir : DIRECTIONS) {
         Pos neighbor = pos + Delta(dir, true);
         if (in_bounds(neighbor) && (*this)[neighbor] == curr_height - 1) {
-            visit(neighbor);
+            process(neighbor);
         }
     }
 }
