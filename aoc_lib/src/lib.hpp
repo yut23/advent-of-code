@@ -427,9 +427,8 @@ class as_number {
             util::concepts::same_as_any<std::remove_const_t<T>, char,
                                         signed char, unsigned char>;
         if constexpr (is_char) {
-            using int_type =
-                std::conditional_t<std::is_signed_v<T>, short, unsigned short>;
-            os << static_cast<int_type>(h.dest);
+            // all signed or unsigned 8-bit values will fit in a short
+            os << static_cast<short>(h.dest);
         } else {
             os << h.dest;
         }

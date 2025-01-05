@@ -27,6 +27,11 @@ namespace pretty_print {
 template <class T>
 class repr;
 
+struct repr_state {
+    bool hex_float : 1 = false;
+    bool char_as_number : 1 = false;
+};
+
 template <class T>
 struct has_custom_print_repr : std::false_type {};
 
@@ -58,13 +63,13 @@ template <template <class, class...> class C, class T>
                  std::iter_value_t<decltype(std::declval<C<T>>().begin())>> &&
              (!std::convertible_to<C<T>, std::string_view>)
 std::ostream &print_repr(std::ostream &os, const C<T> &container,
-                         const bool result) {
+                         const pretty_print::repr_state state) {
     os << "{";
     for (auto it = container.begin(); it != container.end(); ++it) {
         if (it != container.begin()) {
             os << ", ";
         }
-        os << pretty_print::repr(*it, result);
+        os << pretty_print::repr(*it, state);
     }
     os << "}";
     return os;
@@ -77,13 +82,13 @@ struct pretty_print::has_custom_print_repr<std::array<T, N>> : std::true_type {
 
 template <pretty_print::has_print_repr T, std::size_t N>
 std::ostream &print_repr(std::ostream &os, const std::array<T, N> &arr,
-                         const bool result) {
+                         const pretty_print::repr_state state) {
     os << "{";
     for (auto it = std::begin(arr); it != std::end(arr); ++it) {
         if (it != std::begin(arr)) {
             os << ", ";
         }
-        os << pretty_print::repr(*it, result);
+        os << pretty_print::repr(*it, state);
     }
     os << "}";
     return os;
@@ -99,14 +104,14 @@ template <template <class, class, class...> class M,
           pretty_print::has_print_repr K, pretty_print::has_print_repr V>
     requires util::concepts::any_iterable_mapping<M<K, V>, K, V>
 std::ostream &print_repr(std::ostream &os, const M<K, V> &mapping,
-                         const bool result) {
+                         const pretty_print::repr_state state) {
     using pretty_print::repr;
     os << "{";
     for (auto it = mapping.begin(); it != mapping.end(); ++it) {
         if (it != mapping.begin()) {
             os << ", ";
         }
-        os << repr(it->first, result) << ": " << repr(it->second, result);
+        os << repr(it->first, state) << ": " << repr(it->second, state);
     }
     os << "}";
     return os;
@@ -122,11 +127,11 @@ template <template <class...> class C, pretty_print::has_print_repr... Ts>
     requires std::same_as<C<Ts...>, std::tuple<Ts...>> ||
              std::same_as<C<Ts...>, std::pair<Ts...>>
 std::ostream &print_repr(std::ostream &os, const C<Ts...> &args,
-                         const bool result) {
+                         const pretty_print::repr_state state) {
     os << "[";
     [&]<std::size_t... I>(std::index_sequence<I...>) {
         ((os << (I == 0 ? "" : ", ")
-             << pretty_print::repr(std::get<I>(args), result)),
+             << pretty_print::repr(std::get<I>(args), state)),
          ...);
     }(std::index_sequence_for<Ts...>{});
     os << "]";
@@ -140,9 +145,9 @@ struct pretty_print::has_custom_print_repr<std::optional<T>> : std::true_type {
 
 template <pretty_print::has_print_repr T>
 std::ostream &print_repr(std::ostream &os, const std::optional<T> &opt,
-                         const bool result) {
+                         const pretty_print::repr_state state) {
     if (opt.has_value()) {
-        os << pretty_print::repr(*opt, result);
+        os << pretty_print::repr(*opt, state);
     } else {
         os << "{}";
     }
@@ -159,7 +164,7 @@ struct pretty_print::has_custom_print_repr<std::strong_ordering>
     : std::true_type {};
 
 std::ostream &print_repr(std::ostream &os, const std::strong_ordering &value,
-                         const bool /*result*/) {
+                         const pretty_print::repr_state /*state*/) {
     if (value < 0) {
         os << "less";
     } else if (value > 0) {
@@ -175,7 +180,8 @@ template <>
 struct pretty_print::has_custom_print_repr<bool> : std::true_type {};
 
 template <std::same_as<bool> B>
-std::ostream &print_repr(std::ostream &os, B b, const bool /*result*/) {
+std::ostream &print_repr(std::ostream &os, B b,
+                         const pretty_print::repr_state /*state*/) {
     os << (b ? "true" : "false");
     return os;
 }
@@ -220,7 +226,7 @@ template <std::convertible_to<std::string_view> S>
 struct pretty_print::has_custom_print_repr<S> : std::true_type {};
 
 std::ostream &print_repr(std::ostream &os, std::string_view sv,
-                         const bool /*result*/) {
+                         const pretty_print::repr_state /*state*/) {
     os << '"';
     for (char ch : sv) {
         write_escaped_char(os, ch, '"');
@@ -234,10 +240,16 @@ template <util::concepts::same_as_any<char, signed char, unsigned char> C>
 struct pretty_print::has_custom_print_repr<C> : std::true_type {};
 
 template <util::concepts::same_as_any<char, signed char, unsigned char> C>
-std::ostream &print_repr(std::ostream &os, C ch, const bool /*result*/) {
-    os << '\'';
-    write_escaped_char(os, ch, '\'');
-    os << '\'';
+std::ostream &print_repr(std::ostream &os, C ch,
+                         const pretty_print::repr_state state) {
+    if (state.char_as_number) {
+        // all signed or unsigned 8-bit values will fit in a short
+        os << static_cast<short>(ch);
+    } else {
+        os << '\'';
+        write_escaped_char(os, ch, '\'');
+        os << '\'';
+    }
     return os;
 }
 
@@ -246,9 +258,10 @@ template <std::floating_point FP>
 struct pretty_print::has_custom_print_repr<FP> : std::true_type {};
 
 template <std::floating_point FP>
-std::ostream &print_repr(std::ostream &os, FP x, const bool result) {
+std::ostream &print_repr(std::ostream &os, FP x,
+                         const pretty_print::repr_state state) {
     os << x;
-    if (result) {
+    if (state.hex_float) {
         os << " (" << std::hexfloat << x << std::defaultfloat << ")";
     }
     return os;
@@ -259,7 +272,8 @@ template <class T>
     requires(
         util::concepts::stream_insertable<T> &&
         !pretty_print::has_custom_print_repr<std::remove_cvref_t<T>>::value)
-std::ostream &print_repr(std::ostream &os, const T &t, const bool /*result*/) {
+std::ostream &print_repr(std::ostream &os, const T &t,
+                         const pretty_print::repr_state /*state*/) {
     os << t;
     return os;
 }
@@ -271,15 +285,15 @@ class repr {
     static_assert(has_print_repr<T>, "missing stream insertion operator (<<)");
 
     const T &val;
-    bool result;
+    repr_state state;
     friend std::ostream &operator<<(std::ostream &os, const repr &r) {
-        print_repr(os, r.val, r.result);
+        print_repr(os, r.val, r.state);
         return os;
     }
 
   public:
-    explicit repr(const T &val, bool result = false)
-        : val(val), result(result) {}
+    explicit repr(const T &val, const repr_state state = {})
+        : val(val), state(state) {}
 };
 
 } // namespace pretty_print
@@ -289,17 +303,22 @@ class repr {
 namespace {
 template <class T>
 void _lint_helper_template(std::ostream &os, const T &t = T()) {
-    print_repr(os, t, true);
-    print_repr(os, t, false);
+    print_repr(os, t, {.hex_float = false});
+    print_repr(os, t, {.hex_float = true, .char_as_number = true});
     os << pretty_print::repr(t);
-    os << pretty_print::repr(t, true);
-    os << pretty_print::repr(t, false);
+    os << pretty_print::repr(t, {.hex_float = true});
+    os << pretty_print::repr(t, {.char_as_number = true});
+    os << pretty_print::repr(t, {.hex_float = true, .char_as_number = true});
 }
 [[maybe_unused]] void _lint_helper(std::ostream &os) {
     _lint_helper_template<int>(os);
     _lint_helper_template<bool>(os);
     _lint_helper_template<double>(os);
+    _lint_helper_template<char>(os);
     _lint_helper_template<std::string>(os);
+    _lint_helper_template<std::string_view>(os);
+    _lint_helper_template<char *>(os);
+    _lint_helper_template<const char *>(os);
     _lint_helper_template<std::vector<int>>(os);
     _lint_helper_template<std::list<std::string>>(os);
     _lint_helper_template<std::set<long>>(os);

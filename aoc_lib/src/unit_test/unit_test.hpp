@@ -486,13 +486,14 @@ struct TestRunner {
         auto expected_comp = convert<R, Input, Compare>(expected);
         if (!test_equality(result_comp, expected_comp, float_ulps)) {
             std::ostringstream args_ss, expected_ss, actual_ss, output_ss;
-            args_ss << pretty_print::repr(get_args_for_printing(), false);
+            args_ss << pretty_print::repr(get_args_for_printing());
             // add indents to each line of the output
             for (std::string line; std::getline(captured_cout, line);) {
                 output_ss << "  # " << line << '\n';
             }
-            expected_ss << pretty_print::repr(expected_comp, true);
-            actual_ss << pretty_print::repr(result_comp, true);
+            expected_ss << pretty_print::repr(expected_comp,
+                                              {.hex_float = true});
+            actual_ss << pretty_print::repr(result_comp, {.hex_float = true});
             return {
                 .passed = false,
                 .num_args = sizeof...(Args),
@@ -687,9 +688,9 @@ TestResult equal_failure_helper(const auto &actual, const auto &expected,
                       std::remove_cvref_t<decltype(expected)>>) {
         // we can pretty-print the values being compared
         std::ostringstream actual_ss, expected_ss;
-        actual_ss << pretty_print::repr(actual, true);
+        actual_ss << pretty_print::repr(actual, {.hex_float = true});
         result.actual = actual_ss.str();
-        expected_ss << pretty_print::repr(expected, true);
+        expected_ss << pretty_print::repr(expected, {.hex_float = true});
         result.expected = expected_ss.str();
     }
     return result;

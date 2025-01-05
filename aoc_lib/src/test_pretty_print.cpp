@@ -22,14 +22,14 @@ std::size_t test_repr() {
     unit_test::TestSuite suite("pretty_print::repr");
 
     const auto test = [&suite](auto &&value, const std::string &expected,
-                               bool result = false,
+                               const pretty_print::repr_state state = {},
                                const std::source_location loc =
                                    std::source_location::current()) {
         const std::string type_name =
             util::demangle(typeid(std::remove_cvref_t<decltype(value)>).name());
-        suite.test(type_name, [&value, &expected, &result, &loc]() {
+        suite.test(type_name, [&value, &expected, &state, &loc]() {
             std::ostringstream oss{};
-            oss << pretty_print::repr(value, result);
+            oss << pretty_print::repr(value, state);
             unit_test::checks::check_equal(oss.str(), expected, "", loc);
         });
     };
@@ -37,6 +37,7 @@ std::size_t test_repr() {
     using namespace std::string_literals;
     // templated containers
     test(std::vector<int>{1, 2, 3}, "{1, 2, 3}");
+    test(std::initializer_list<short>{-4, 15, 6}, "{-4, 15, 6}");
     test(std::list<std::set<int>>{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}},
          "{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}}");
     test(std::array<float, 4>{1.5, 2.4, 3.2, -2.8}, "{1.5, 2.4, 3.2, -2.8}");
@@ -58,15 +59,24 @@ std::size_t test_repr() {
     test(std::strong_ordering::equal, "equal");
     test(std::strong_ordering::equivalent, "equal");
 
+    // bool
     test(true, "true");
     test(false, "false");
 
+    // floating point
     test(1.4f, "1.4");
     test(3.14, "3.14");
-    // includes hex format for results
-    test(1.4f, "1.4 (0x1.666666p+0)", true);
-    test(3.14, "3.14 (0x1.91eb851eb851fp+1)", true);
+    // include hex value as well
+    test(1.4f, "1.4 (0x1.666666p+0)", {.hex_float = true});
+    test(3.14, "3.14 (0x1.91eb851eb851fp+1)", {.hex_float = true});
 
+    // chars
+    test('a', R"('a')");
+    test('\x10', R"('\x10')");
+    test('\x10', R"(16)", {.char_as_number = true});
+    test(std::initializer_list<std::int8_t>{-2, 0, 15, -42, 127, -128},
+         "{-2, 0, 15, -42, 127, -128}", {.char_as_number = true});
+    test(std::vector<std::uint8_t>{254, 0, 15, 214, 127, 128}, "{254, 0, 15, 214, 127, 128}", {.char_as_number = true});
     return suite.done(), suite.num_failed();
 }
 
