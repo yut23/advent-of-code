@@ -11,17 +11,24 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    std::ifstream infile = aoc::parse_args(argc, argv).infile;
+    auto args = aoc::parse_args(argc, argv);
 
-    long total = 0;
-    long secret;
-    while (infile >> secret) {
+    std::uint64_t part_1 = 0;
+    std::uint32_t secret;
+    for (int monkey_number = 0; args.infile >> secret; ++monkey_number) {
+        aoc::day22::PriceSequence sequence{secret, monkey_number};
         for (int i = 0; i < 2000; ++i) {
-            aoc::day22::evolve_secret(secret);
+            sequence.evolve(i);
         }
-        total += secret;
+        part_1 += sequence.get_secret();
     }
-    std::cout << total << "\n";
+    std::cout << part_1 << "\n";
+    int part_2 = aoc::day22::PriceSequence::find_best_sell_sequence();
+    std::cout << part_2 << "\n";
+    if (args.input_type == aoc::InputType::MAIN && part_2 >= 1450) {
+        std::cerr << "\033[1;31mERROR:\033[0m result for part 2 is too high\n";
+        return 1;
+    }
 
     return 0;
 }
