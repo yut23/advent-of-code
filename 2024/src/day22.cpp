@@ -13,17 +13,12 @@
 int main(int argc, char **argv) {
     auto args = aoc::parse_args(argc, argv);
 
-    std::uint64_t part_1 = 0;
-    std::uint32_t secret;
-    for (int monkey_number = 0; args.infile >> secret; ++monkey_number) {
-        aoc::day22::PriceSequence sequence{secret, monkey_number};
-        for (int i = 0; i < 2000; ++i) {
-            sequence.evolve(i);
-        }
-        part_1 += sequence.get_secret();
+    auto market = aoc::day22::MonkeyMarket::read(args.infile);
+    for (int i = 0; i < 2000; ++i) {
+        market.evolve(i);
     }
-    std::cout << part_1 << "\n";
-    int part_2 = aoc::day22::PriceSequence::find_best_sell_sequence();
+    std::cout << market.get_sum() << "\n";
+    int part_2 = market.find_best_sell_sequence();
     std::cout << part_2 << "\n";
     if (args.input_type == aoc::InputType::MAIN && part_2 >= 1450) {
         std::cerr << "\033[1;31mERROR:\033[0m result for part 2 is too high\n";

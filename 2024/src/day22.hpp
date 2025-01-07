@@ -8,19 +8,21 @@
 #ifndef DAY22_HPP_A3Y597BB
 #define DAY22_HPP_A3Y597BB
 
-#include "lib.hpp"                    // for DEBUG
+#include "lib.hpp"                    // for as_number, DEBUG
 #include "unit_test/pretty_print.hpp" // for repr
 #include "util/hash.hpp"              // for make_hash
 
 #include <algorithm>     // for ranges::max_element
 #include <array>         // for array
 #include <cstddef>       // for size_t
-#include <cstdint>       // for uint8_t, uint32_t, uint64_t
-#include <functional>    // for hash
+#include <cstdint>       // for int8_t, uint32_t, uint64_t
+#include <functional>    // for plus, hash
 #include <iomanip>       // for setw
-#include <iostream>      // for cerr
+#include <iostream>      // for cerr, istream
+#include <tuple>         // for forward_as_tuple
 #include <unordered_map> // for unordered_map
-#include <utility>       // for pair (unordered_map)
+#include <utility>       // for pair (unordered_map), piecewise_construct
+#include <vector>        // for vector
 
 namespace aoc::day22 {
 struct ChangeSequence : public std::array<std::int8_t, 4> {};
@@ -44,28 +46,22 @@ ChangeSequence add_price_change(const ChangeSequence &changes,
     return ChangeSequence{changes[1], changes[2], changes[3], new_change};
 }
 
-class PriceSequence {
+class Buyer {
     std::uint32_t secret;
-    int monkey_number;
     ChangeSequence curr_changes{};
-    static std::unordered_map<ChangeSequence,
-                              std::unordered_map<int, std::int8_t>>
-        sequence_prices;
 
     void xorshift(int shift);
 
   public:
-    explicit PriceSequence(std::uint32_t initial_secret, int monkey_number)
-        : secret(initial_secret), monkey_number(monkey_number) {}
+    explicit Buyer(std::uint32_t initial_secret) : secret(initial_secret) {}
 
-    void evolve(int iter);
-    std::uint32_t get_secret() const { return secret; }
-    std::int8_t get_price() const { return secret % 10; }
+    void evolve();
+    std::int8_t price() const { return secret % 10; }
 
-    static int find_best_sell_sequence();
+    friend class MonkeyMarket;
 };
 
-void PriceSequence::xorshift(int shift) {
+void Buyer::xorshift(int shift) {
     std::uint32_t tmp = secret;
     if (shift < 0) {
         tmp >>= -shift;
@@ -75,7 +71,7 @@ void PriceSequence::xorshift(int shift) {
     secret = (secret ^ tmp) & 0xFF'FF'FF;
 }
 
-void PriceSequence::evolve(int iter) {
+void Buyer::evolve() {
     // save previous price
     std::int8_t old_price = secret % 10;
     xorshift(+6);
@@ -83,17 +79,59 @@ void PriceSequence::evolve(int iter) {
     xorshift(+11);
     std::int8_t new_price = secret % 10;
     curr_changes = add_price_change(curr_changes, new_price - old_price);
-    if (iter >= 3) {
-        // try_emplace does nothing if the key already exists
-        sequence_prices[curr_changes].try_emplace(monkey_number, new_price);
+}
+
+class MonkeyMarket {
+    std::vector<Buyer> buyers;
+    std::unordered_map<ChangeSequence, std::vector<std::int8_t>>
+        sequence_prices;
+
+  public:
+    void evolve(int iter);
+    std::uint64_t get_sum() const;
+    int find_best_sell_sequence() const;
+
+    static MonkeyMarket read(std::istream &);
+};
+
+void MonkeyMarket::evolve(int iter) {
+    for (std::size_t i = 0; i < buyers.size(); ++i) {
+        Buyer &buyer = buyers[i];
+        buyer.evolve();
+        if (iter >= 3) {
+            auto it = sequence_prices.find(buyer.curr_changes);
+            if (it == sequence_prices.end()) {
+                // fill price list with -1
+                it = sequence_prices
+                         .emplace(std::piecewise_construct,
+                                  std::forward_as_tuple(buyer.curr_changes),
+                                  std::forward_as_tuple(buyers.size(), -1))
+                         .first;
+                it->second[i] = buyer.price();
+            } else if (it->second[i] == -1) {
+                it->second[i] = buyer.price();
+            }
+        }
     }
 }
 
-int PriceSequence::find_best_sell_sequence() {
+std::uint64_t MonkeyMarket::get_sum() const {
+    std::uint64_t sum = 0;
+    for (const Buyer &buyer : buyers) {
+        // cppcheck-suppress useStlAlgorithm
+        sum += buyer.secret;
+    }
+    return sum;
+}
+
+int MonkeyMarket::find_best_sell_sequence() const {
     const auto sell_sequence_value = [](const auto &entry) -> int {
         int total = 0;
-        for (const auto &[_, price] : entry.second) {
-            total += price;
+        for (int price : entry.second) {
+            if (price != -1) {
+                // cppcheck-suppress useStlAlgorithm
+                total += price;
+            }
         }
         return total;
     };
@@ -105,16 +143,25 @@ int PriceSequence::find_best_sell_sequence() {
                          it->first, {.char_as_number = true})
                   << "\n";
         std::cerr << "prices:\n";
-        for (const auto &[monkey, price] : it->second) {
-            std::cerr << std::setw(5) << monkey << ": " << aoc::as_number(price)
-                      << "\n";
+        for (int monkey = 0; const auto price : it->second) {
+            if (price != -1) {
+                std::cerr << std::setw(5) << monkey << ": "
+                          << aoc::as_number(price) << "\n";
+            }
+            ++monkey;
         }
     }
     return sell_sequence_value(*it);
 }
 
-std::unordered_map<ChangeSequence, std::unordered_map<int, std::int8_t>>
-    PriceSequence::sequence_prices{};
+MonkeyMarket MonkeyMarket::read(std::istream &is) {
+    MonkeyMarket market;
+    std::uint32_t secret;
+    while (is >> secret) {
+        market.buyers.emplace_back(secret);
+    }
+    return market;
+}
 
 } // namespace aoc::day22
 
