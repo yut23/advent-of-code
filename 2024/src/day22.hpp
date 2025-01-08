@@ -8,42 +8,49 @@
 #ifndef DAY22_HPP_A3Y597BB
 #define DAY22_HPP_A3Y597BB
 
-#include "lib.hpp"                    // for as_number, DEBUG
-#include "unit_test/pretty_print.hpp" // for repr
-#include "util/hash.hpp"              // for make_hash
+#include "lib.hpp"       // for as_number, DEBUG
+#include "util/math.hpp" // for powi
 
-#include <algorithm>     // for ranges::max_element
-#include <array>         // for array
-#include <cstddef>       // for size_t
-#include <cstdint>       // for int8_t, uint32_t, uint64_t
-#include <functional>    // for plus, hash
-#include <iomanip>       // for setw
-#include <iostream>      // for cerr, istream
-#include <tuple>         // for forward_as_tuple
-#include <unordered_map> // for unordered_map
-#include <utility>       // for pair (unordered_map), piecewise_construct
-#include <vector>        // for vector
+#include <algorithm> // for max_element
+#include <compare>   // for strong_ordering
+#include <cstddef>   // for size_t
+#include <cstdint>   // for int8_t, uint32_t, uint64_t
+#include <iostream>  // for cerr, istream, ostream
+#include <iterator>  // for distance
+#include <vector>    // for vector
 
 namespace aoc::day22 {
-struct ChangeSequence : public std::array<std::int8_t, 4> {};
-} // namespace aoc::day22
 
-template <>
-struct std::hash<aoc::day22::ChangeSequence> {
-    std::size_t
-    operator()(const aoc::day22::ChangeSequence &changes) const noexcept {
-        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
-        std::size_t seed = 0xc17a07615bebc283ull;
-        util::make_hash(seed, changes[0], changes[1], changes[2], changes[3]);
-        return seed;
-    }
+struct ChangeSequence {
+    static constexpr std::uint32_t BASE = 19;
+    static constexpr std::uint32_t MODULUS = aoc::math::powi(BASE, 4);
+
+    std::uint32_t value{};
+
+    std::int8_t operator[](std::size_t index) const;
+
+    void add_price_change(std::int8_t new_change);
+
+    // implicit conversion to an integer index
+    operator std::size_t() const { return value; }
 };
 
-namespace aoc::day22 {
+std::int8_t ChangeSequence::operator[](std::size_t index) const {
+    return static_cast<std::int8_t>((value / aoc::math::powi(BASE, 3 - index)) %
+                                    BASE) -
+           9;
+}
 
-ChangeSequence add_price_change(const ChangeSequence &changes,
-                                std::int8_t new_change) {
-    return ChangeSequence{changes[1], changes[2], changes[3], new_change};
+void ChangeSequence::add_price_change(std::int8_t new_change) {
+    value *= BASE;
+    value += static_cast<std::uint8_t>(new_change + 9);
+    value %= MODULUS;
+}
+
+std::ostream &operator<<(std::ostream &os, const ChangeSequence &changes) {
+    os << aoc::as_number(changes[0]) << ',' << aoc::as_number(changes[1]) << ','
+       << aoc::as_number(changes[2]) << ',' << aoc::as_number(changes[3]);
+    return os;
 }
 
 class Buyer {
@@ -78,13 +85,27 @@ void Buyer::evolve() {
     xorshift(-5);
     xorshift(+11);
     std::int8_t new_price = secret % 10;
-    curr_changes = add_price_change(curr_changes, new_price - old_price);
+    curr_changes.add_price_change(new_price - old_price);
 }
 
 class MonkeyMarket {
     std::vector<Buyer> buyers;
-    std::unordered_map<ChangeSequence, std::vector<std::int8_t>>
-        sequence_prices;
+
+    struct PriceEntry {
+        // running total for each change sequence
+        std::uint32_t total_bananas = 0;
+
+      private:
+        // last monkey to encounter this sequence
+        std::uint32_t last_monkey_plus_1 = 0;
+
+      public:
+        void update(std::int8_t price, std::size_t monkey_index);
+
+        std::strong_ordering
+        operator<=>(const PriceEntry &other) const = default;
+    };
+    std::vector<PriceEntry> price_lookup{ChangeSequence::MODULUS};
 
   public:
     void evolve(int iter);
@@ -94,23 +115,25 @@ class MonkeyMarket {
     static MonkeyMarket read(std::istream &);
 };
 
-void MonkeyMarket::evolve(int iter) {
+void MonkeyMarket::PriceEntry::update(std::int8_t price,
+                                      std::size_t monkey_index) {
+    // this assumes we simulate the buyers individually (i.e. not interleaving
+    // evolve calls)
+    if (last_monkey_plus_1 != monkey_index + 1) {
+        total_bananas += price;
+        last_monkey_plus_1 = monkey_index + 1;
+    }
+}
+
+void MonkeyMarket::evolve(int num_iters) {
     for (std::size_t i = 0; i < buyers.size(); ++i) {
         Buyer &buyer = buyers[i];
         buyer.evolve();
-        if (iter >= 3) {
-            auto it = sequence_prices.find(buyer.curr_changes);
-            if (it == sequence_prices.end()) {
-                // fill price list with -1
-                it = sequence_prices
-                         .emplace(std::piecewise_construct,
-                                  std::forward_as_tuple(buyer.curr_changes),
-                                  std::forward_as_tuple(buyers.size(), -1))
-                         .first;
-                it->second[i] = buyer.price();
-            } else if (it->second[i] == -1) {
-                it->second[i] = buyer.price();
-            }
+        buyer.evolve();
+        buyer.evolve();
+        for (int iter = 3; iter < num_iters; ++iter) {
+            buyer.evolve();
+            price_lookup[buyer.curr_changes].update(buyer.price(), i);
         }
     }
 }
@@ -125,33 +148,13 @@ std::uint64_t MonkeyMarket::get_sum() const {
 }
 
 int MonkeyMarket::find_best_sell_sequence() const {
-    const auto sell_sequence_value = [](const auto &entry) -> int {
-        int total = 0;
-        for (int price : entry.second) {
-            if (price != -1) {
-                // cppcheck-suppress useStlAlgorithm
-                total += price;
-            }
-        }
-        return total;
-    };
-    auto it =
-        std::ranges::max_element(sequence_prices, {}, sell_sequence_value);
+    auto it = std::max_element(price_lookup.begin(), price_lookup.end());
     if constexpr (aoc::DEBUG) {
-        std::cerr << "best sequence: "
-                  << pretty_print::repr<std::array<std::int8_t, 4>>(
-                         it->first, {.char_as_number = true})
-                  << "\n";
-        std::cerr << "prices:\n";
-        for (int monkey = 0; const auto price : it->second) {
-            if (price != -1) {
-                std::cerr << std::setw(5) << monkey << ": "
-                          << aoc::as_number(price) << "\n";
-            }
-            ++monkey;
-        }
+        ChangeSequence changes{static_cast<std::uint32_t>(
+            std::distance(price_lookup.begin(), it))};
+        std::cerr << "best sequence: " << changes << "\n";
     }
-    return sell_sequence_value(*it);
+    return it->total_bananas;
 }
 
 MonkeyMarket MonkeyMarket::read(std::istream &is) {

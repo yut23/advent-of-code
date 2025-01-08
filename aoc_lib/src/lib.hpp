@@ -439,6 +439,9 @@ class as_number {
     explicit as_number(T &dest) : dest(dest) {}
 };
 
+template <class T>
+as_number(const T &) -> as_number<const T>;
+
 /**
  * Advent of Code problem part number.
  */
@@ -518,7 +521,7 @@ struct std::hash<aoc::GenericPos<int_type>> {
 // instantiate templates in an anonymous namespace, so static analyzers will
 // check these functions
 namespace {
-[[maybe_unused]] void _lint_helper(std::istream &is) {
+[[maybe_unused]] void _lint_helper(std::istream &is, std::ostream &os) {
     is >> aoc::skip<char>(2);
     is >> aoc::skip<int>(1);
     is >> aoc::skip<std::string>(3);
@@ -528,10 +531,14 @@ namespace {
     is >> aoc::expect_input<std::string>("foo");
     is >> aoc::expect_input(std::string{"bar"});
 
-    char ch;
-    unsigned char uch;
+    char ch{};
+    unsigned char uch{};
     is >> aoc::as_number(ch);
     is >> aoc::as_number(uch);
+
+    os << aoc::as_number(ch);
+    os << aoc::as_number(uch);
+    os << aoc::as_number('a');
 }
 } // namespace
 

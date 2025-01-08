@@ -30,7 +30,7 @@ constexpr std::array<IntegerT, max_digits> gen_powers_of_10() {
 }
 
 template <std::integral IntegerT>
-int num_digits(IntegerT value) {
+constexpr int num_digits(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
     int i;
     for (i = 0; i < static_cast<int>(POWERS.size()); ++i) {
@@ -55,7 +55,7 @@ IntegerT next_power_of_10(IntegerT value) {
 }
 
 template <typename IntegerT>
-IntegerT powi(IntegerT base, unsigned int exponent) {
+constexpr IntegerT powi(IntegerT base, unsigned int exponent) {
     if (exponent == 0) {
         return 1;
     } else if (exponent == 1) {

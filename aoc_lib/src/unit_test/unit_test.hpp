@@ -714,14 +714,16 @@ void check(auto &&condition,
     }
 }
 
-void check_equal(const auto &actual, const auto &expected,
+template <class T>
+void check_equal(const std::type_identity_t<T> &actual, const T &expected,
                  const std::string &info = "", const SL loc = SL::current()) {
     if (actual != expected) {
         throw detail::equal_failure_helper(actual, expected, loc, info);
     }
 }
 
-void check_equal(const auto &actual, const auto &expected,
+template <class T>
+void check_equal(const std::type_identity_t<T> &actual, const T &expected,
                  std::invocable<std::ostream &> auto &&info,
                  const SL loc = SL::current()) {
     if (actual != expected) {
@@ -760,6 +762,19 @@ namespace {
         test("abc", {{'a', 1}, {'b', 1}, {'c', 1}});
         test("banana", {{'a', 3}, {'b', 1}, {'n', 2}});
         test.done();
+    }
+    {
+        unit_test::TestSuite suite("foo");
+        suite.test("asdf", []() {
+            using namespace unit_test::checks;
+            check(true);
+            check(true, "info");
+            check(true, [](auto &os) { os << "lazy info"; });
+            check_equal(1, 1);
+            check_equal("a", "a", "info");
+            std::vector<int> expected{1, 2, 3};
+            check_equal({1, 2, 3}, expected, "info");
+        });
     }
 }
 } // namespace

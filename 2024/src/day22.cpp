@@ -14,9 +14,7 @@ int main(int argc, char **argv) {
     auto args = aoc::parse_args(argc, argv);
 
     auto market = aoc::day22::MonkeyMarket::read(args.infile);
-    for (int i = 0; i < 2000; ++i) {
-        market.evolve(i);
-    }
+    market.evolve(2000);
     std::cout << market.get_sum() << "\n";
     int part_2 = market.find_best_sell_sequence();
     std::cout << part_2 << "\n";
