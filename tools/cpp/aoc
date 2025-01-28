@@ -84,6 +84,11 @@ finalize_input_args
 finalize_target_args
 finalize_make_args
 
+# print a stacktrace on UBSan errors by default
+export UBSAN_OPTIONS=${UBSAN_OPTIONS:-print_stacktrace=1}
+# have ASan print a backtrace when an assertion fails (which triggers an abort)
+export ASAN_OPTIONS="${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1"
+
 if [[ $write_answer != y ]]; then
   echo "Day ${day#0}$suffix:"
 fi
@@ -105,15 +110,14 @@ if [[ $write_answer == y ]]; then
     rm -f "$tmp_output" || true
   fi
 elif [[ $memory_limit == none ]]; then
-  # have ASan print a backtrace when an assertion fails (which triggers an abort)
-  ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
+  "${args[@]}" || exit_code=$?
 else
   # limit memory usage using a systemd transient unit
   systemctl --quiet --user is-failed aoc.service && systemctl --user reset-failed aoc.service
   # explicitly stop the unit on SIGINT, as systemd-run doesn't seem to handle
   # it if any of the standard streams are redirected
   trap 'systemctl --quiet --user is-active aoc.service && systemctl --quiet --user stop aoc.service; exit 130' INT
-  systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS=${ASAN_OPTIONS:+${ASAN_OPTIONS}:}handle_abort=1 "${args[@]}" || exit_code=$?
+  systemd-run --unit=aoc.service --quiet --user --pipe --wait --pty --same-dir -p MemoryMax="$memory_limit" -p MemorySwapMax=0 -E ASAN_OPTIONS -E UBSAN_OPTIONS "${args[@]}" || exit_code=$?
   trap - INT
   if systemctl --quiet --user is-failed aoc.service; then
     result=$(systemctl --user show -p Result aoc | sed -ne 's/^Result=//p')
