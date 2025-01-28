@@ -76,7 +76,10 @@ std::size_t test_repr() {
     test('\x10', R"(16)", {.char_as_number = true});
     test(std::initializer_list<std::int8_t>{-2, 0, 15, -42, 127, -128},
          "{-2, 0, 15, -42, 127, -128}", {.char_as_number = true});
-    test(std::vector<std::uint8_t>{254, 0, 15, 214, 127, 128}, "{254, 0, 15, 214, 127, 128}", {.char_as_number = true});
+    std::vector<std::uint8_t> uint8_vec{254, 0, 15, 214, 127, 128};
+    test(uint8_vec, "{254, 0, 15, 214, 127, 128}", {.char_as_number = true});
+    test(aoc::as_number(uint8_vec), "{254, 0, 15, 214, 127, 128}");
+
     return suite.done(), suite.num_failed();
 }
 

@@ -1,6 +1,7 @@
 #ifndef PRETTY_PRINT_HPP
 #define PRETTY_PRINT_HPP
 
+#include "lib.hpp" // for as_number
 #include "util/concepts.hpp"
 #include <array>       // for array
 #include <cctype>      // for isprint
@@ -151,6 +152,15 @@ std::ostream &print_repr(std::ostream &os, const std::optional<T> &opt,
     } else {
         os << "{}";
     }
+    return os;
+}
+
+// aoc::as_number
+template <pretty_print::has_print_repr T>
+std::ostream &print_repr(std::ostream &os, const aoc::as_number<T> &h,
+                         pretty_print::repr_state state) {
+    state.char_as_number = true;
+    os << pretty_print::repr(h.dest, state);
     return os;
 }
 
@@ -328,6 +338,8 @@ void _lint_helper_template(std::ostream &os, const T &t = T()) {
     _lint_helper_template<std::tuple<std::string, long, double>>(os);
     _lint_helper_template<std::optional<int>>(os);
     _lint_helper_template(os, std::strong_ordering::equal);
+    std::vector<char> vec{'a', 'b', 'c'};
+    _lint_helper_template(os, aoc::as_number(vec));
 }
 } // namespace
 

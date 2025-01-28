@@ -402,7 +402,7 @@ ExpectInputHelper<std::string> expect_input(const char *expected) {
 // I/O manipulator that extracts an 8-bit number into a char instead of
 // a single ASCII character, and inserts a char as an 8-bit number.
 template <typename T>
-class as_number {
+struct as_number {
     T &dest;
     friend std::istream &operator>>(std::istream &is, as_number h) {
         static_assert(!std::is_const_v<T>,
@@ -435,7 +435,6 @@ class as_number {
         return os;
     }
 
-  public:
     explicit as_number(T &dest) : dest(dest) {}
 };
 
