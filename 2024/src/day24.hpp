@@ -102,8 +102,13 @@ class LogicSim {
     std::unordered_map<std::string, std::unordered_set<std::string>>
         connections;
 
+    /// cached topological ordering of the gates
+    std::vector<std::string> cached_eval_order{};
+
     void add_gate(Gate &&gate);
     bool eval_gate(const std::string &key) const;
+
+    const std::vector<std::string> &get_eval_order();
 
     /**
      * Returns the formatted gate name for a specific variable and bit index.
@@ -180,13 +185,9 @@ std::string LogicSim::get_indexed_name(char variable, int index) const {
     return key;
 }
 
-void LogicSim::evaluate(std::uint64_t x, std::uint64_t y) {
-    values.clear();
-    for (int i = 0; i < num_bits; ++i) {
-        values[get_indexed_name('x', i)] = x & 1;
-        values[get_indexed_name('y', i)] = y & 1;
-        x >>= 1;
-        y >>= 1;
+const std::vector<std::string> &LogicSim::get_eval_order() {
+    if (!cached_eval_order.empty()) {
+        return cached_eval_order;
     }
 
     const auto process_neighbors = [this](const std::string &key,
@@ -205,12 +206,24 @@ void LogicSim::evaluate(std::uint64_t x, std::uint64_t y) {
     };
 
     const std::string source = "";
-    std::vector<std::string> eval_order =
-        aoc::graph::topo_sort(source, process_neighbors);
+    cached_eval_order = aoc::graph::topo_sort(source, process_neighbors);
     if constexpr (aoc::DEBUG && false) {
-        std::cerr << "eval_order: " << pretty_print::repr(eval_order) << "\n";
+        std::cerr << "eval_order: " << pretty_print::repr(cached_eval_order)
+                  << "\n";
+    }
+    return cached_eval_order;
+}
+
+void LogicSim::evaluate(std::uint64_t x, std::uint64_t y) {
+    values.clear();
+    for (int i = 0; i < num_bits; ++i) {
+        values[get_indexed_name('x', i)] = x & 1;
+        values[get_indexed_name('y', i)] = y & 1;
+        x >>= 1;
+        y >>= 1;
     }
 
+    const std::vector<std::string> &eval_order = get_eval_order();
     for (const auto &key : eval_order) {
         if (key.empty() || values.contains(key)) {
             continue;
@@ -364,6 +377,7 @@ void LogicSim::swap_outputs(const SwapHandle &handle) {
     connections[gate_b.input_2].insert(gate_b.output);
     gate_a.swapped = true;
     gate_b.swapped = true;
+    cached_eval_order.clear();
 }
 
 void LogicSim::unswap_outputs(const SwapHandle &handle) {
