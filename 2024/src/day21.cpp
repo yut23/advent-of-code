@@ -7,7 +7,6 @@
 
 #include "day21.hpp"
 #include "lib.hpp"
-#include <cassert>  // for assert
 #include <fstream>  // for ifstream
 #include <iostream> // for cout
 
@@ -17,7 +16,7 @@ int main(int argc, char **argv) {
     using namespace aoc::day21;
     auto codes = read_input(args.infile);
 
-    int total = 0;
+    long total = 0;
     for (const auto &code : codes) {
         // one numeric keypad that a robot is using
         std::vector<DirKey> keys = control_numeric(code.keys);
@@ -25,7 +24,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < 2; ++i) {
             keys = control_directional(keys);
         }
-        int complexity = keys.size() * code.numeric_value();
+        long complexity = keys.size() * code.numeric_value();
         total += complexity;
         if constexpr (aoc::DEBUG) {
             std::cerr << code.code << ": ";

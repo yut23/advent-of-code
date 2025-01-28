@@ -8,14 +8,18 @@
 #ifndef DAY21_HPP_1U0ZBGSD
 #define DAY21_HPP_1U0ZBGSD
 
-#include "lib.hpp"                    // for Pos, Delta
-#include "unit_test/pretty_print.hpp" // for repr
-
-#include <iostream> // for istream
-#include <map>      // for map
-#include <sstream>  // for istringstream
-#include <string>   // for string, getline
-#include <vector>   // for vector
+#include "lib.hpp"     // for Pos, Delta, DEBUG
+#include <algorithm>   // for ranges::transform
+#include <cassert>     // for assert
+#include <cstddef>     // for size_t
+#include <functional>  // for identity (transform)
+#include <iostream>    // for istream, ostream, cerr,
+#include <map>         // for map
+#include <sstream>     // for istringstream
+#include <string>      // for string, getline, stoi
+#include <type_traits> // for underlying_type_t
+#include <utility>     // for move
+#include <vector>      // for vector
 
 namespace aoc::day21 {
 
@@ -41,7 +45,7 @@ std::istream &operator>>(std::istream &is, NumKey &key) {
     } else if (ch >= '0' && ch <= '9') {
         key = NumKey(ch - '0');
     } else {
-        is.setstate(std::ios::failbit);
+        is.setstate(std::ios_base::failbit);
     }
     return is;
 }
@@ -84,7 +88,7 @@ std::istream &operator>>(std::istream &is, DirKey &key) {
         key = ACTIVATE;
         break;
     default:
-        is.setstate(std::ios::failbit);
+        is.setstate(std::ios_base::failbit);
         break;
     }
     return is;
