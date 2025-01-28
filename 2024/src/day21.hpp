@@ -299,8 +299,8 @@ std::vector<Code> read_input(std::istream &is) {
     std::string line;
     while (std::getline(is, line)) {
         std::istringstream iss{line};
-        Code code(std::move(line));
-        NumKey key;
+        Code code{std::move(line)};
+        NumKey key{};
         while (iss >> key) {
             code.keys.push_back(key);
         }
