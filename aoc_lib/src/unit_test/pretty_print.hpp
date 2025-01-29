@@ -29,7 +29,9 @@ template <class T>
 class repr;
 
 struct repr_state {
+    /// include the hex representation of (IEEE-754) floating point numbers
     bool hex_float : 1 = false;
+    /// format chars as integers (32 -> 32) instead of chars (32 -> ' ')
     bool char_as_number : 1 = false;
 };
 
@@ -297,6 +299,7 @@ class repr {
     const T &val;
     repr_state state;
     friend std::ostream &operator<<(std::ostream &os, const repr &r) {
+        // this uses ADL
         print_repr(os, r.val, r.state);
         return os;
     }

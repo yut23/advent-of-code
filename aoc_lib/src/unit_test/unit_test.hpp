@@ -1,15 +1,14 @@
 #ifndef UNIT_TEST_HPP
 #define UNIT_TEST_HPP
 
-#include <algorithm>        // for transform, min
-#include <cassert>          // for assert
-#include <compare>          // for strong_ordering
-#include <concepts>         // for predicate
-#include <cstddef>          // for size_t
-#include <cstdlib>          // for abs
-#include <filesystem>       // for path
-#include <functional>       // for function, bind_front
-#include <initializer_list> // for initializer_list
+#include <algorithm>  // for transform, min
+#include <cassert>    // for assert
+#include <compare>    // for strong_ordering
+#include <concepts>   // for predicate
+#include <cstddef>    // for size_t
+#include <cstdlib>    // for abs
+#include <filesystem> // for path
+#include <functional> // for function, bind_front
 #include <iostream> // for cout, cerr, istream, ostream, endl, streambuf, rdbuf, clear
 #include <iterator>        // for back_inserter
 #include <limits>          // for numeric_limits
@@ -236,7 +235,8 @@ struct defaulted_argument_type_traits {
 // vector
 template <class T>
 struct argument_type_traits<std::vector<T>> {
-    using input_type = const std::initializer_list<arg_lookup_t<T, Input>>;
+    using input_type =
+        const std::vector<std::remove_const_t<arg_lookup_t<T, Input>>>;
     using storage_type = std::vector<arg_lookup_t<T, Storage>>;
     using compare_type =
         const std::vector<std::remove_const_t<arg_lookup_t<T, Compare>>>;
