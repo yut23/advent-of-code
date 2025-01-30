@@ -99,7 +99,7 @@ Warehouse::try_move(const Pos &pos, AbsDirection dir, bool wide_box) const {
     }
     if (tile == '.') {
         // move is valid
-        return {{}};
+        return {std::vector<Pos>{}};
     }
     if (tile == '[' || tile == ']') {
         // treat a wide box as two connected small boxes when moving vertically,
