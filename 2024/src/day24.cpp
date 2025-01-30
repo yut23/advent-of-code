@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
 
     // part 2
     // check addition for errors 1 bit at a time
-    const auto check_addition = [&sim](std::uint64_t x, std::uint64_t y,
-                                       bool mark) {
+    const auto check_addition = [&sim = sim](std::uint64_t x, std::uint64_t y,
+                                             bool mark) {
         std::uint64_t expected = x + y;
         sim.evaluate(x, y);
         std::uint64_t z = sim.z_value();
@@ -63,7 +63,8 @@ int main(int argc, char **argv) {
     };
 
     // check entire truth table for the adder for bit i
-    const auto check_bit = [&sim, &check_addition](int i, bool mark = false) {
+    const auto check_bit = [&sim = sim, &check_addition](int i,
+                                                         bool mark = false) {
         if (i >= sim.num_bits) {
             // the most-significant bit was tested as the carry out from the
             // previous bit
