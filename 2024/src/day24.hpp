@@ -103,12 +103,12 @@ class LogicSim {
         connections;
 
     /// cached topological ordering of the gates
-    std::vector<std::string> cached_eval_order{};
+    std::vector<std::size_t> cached_eval_order{};
 
     void add_gate(Gate &&gate);
-    bool eval_gate(const std::string &key) const;
+    bool eval_gate(const Gate &gate) const;
 
-    const std::vector<std::string> &get_eval_order();
+    const std::vector<std::size_t> &get_eval_order();
 
     /**
      * Returns the formatted gate name for a specific variable and bit index.
@@ -158,11 +158,10 @@ void LogicSim::add_gate(Gate &&gate) {
     gates.push_back(std::move(gate));
 }
 
-bool LogicSim::eval_gate(const std::string &key) const {
+bool LogicSim::eval_gate(const Gate &gate) const {
     if constexpr (!aoc::FAST) {
-        assert(!values.contains(key));
+        assert(!values.contains(gate.output));
     }
-    const Gate &gate = gates[gate_lookup.at(key)];
     bool input_0 = values.at(gate.input_1);
     bool input_1 = values.at(gate.input_2);
     switch (gate.op) {
@@ -185,28 +184,36 @@ std::string LogicSim::get_indexed_name(char variable, int index) const {
     return key;
 }
 
-const std::vector<std::string> &LogicSim::get_eval_order() {
+const std::vector<std::size_t> &LogicSim::get_eval_order() {
     if (!cached_eval_order.empty()) {
         return cached_eval_order;
     }
 
-    const auto process_neighbors = [this](const std::string &key,
+    const auto process_neighbors = [this](const std::size_t index,
                                           auto &&process) {
-        if (key.empty()) {
+        if (index == static_cast<std::size_t>(-1)) {
             // source placeholder, process all nodes that have an initial value
             for (const auto &[u, _] : values) {
-                process(u);
+                auto it = connections.find(u);
+                if (it == connections.end()) {
+                    continue;
+                }
+                for (const std::string &id : it->second) {
+                    process(gate_lookup.at(id));
+                }
             }
-        }
-        if (auto it = connections.find(key); it != connections.end()) {
+        } else if (auto it = connections.find(gates[index].output);
+                   it != connections.end()) {
             for (const std::string &id : it->second) {
-                process(gates[gate_lookup.at(id)].output);
+                process(gate_lookup.at(id));
             }
         }
     };
 
-    const std::string source = "";
+    const std::size_t source = -1;
     cached_eval_order = aoc::graph::topo_sort(source, process_neighbors);
+    // remove the placeholder source
+    std::erase(cached_eval_order, source);
     if constexpr (aoc::DEBUG && false) {
         std::cerr << "eval_order: " << pretty_print::repr(cached_eval_order)
                   << "\n";
@@ -215,7 +222,10 @@ const std::vector<std::string> &LogicSim::get_eval_order() {
 }
 
 void LogicSim::evaluate(std::uint64_t x, std::uint64_t y) {
-    values.clear();
+    if constexpr (!aoc::FAST) {
+        // this is not strictly necessary, and has a measurable performance hit
+        values.clear();
+    }
     for (int i = 0; i < num_bits; ++i) {
         values[get_indexed_name('x', i)] = x & 1;
         values[get_indexed_name('y', i)] = y & 1;
@@ -223,12 +233,10 @@ void LogicSim::evaluate(std::uint64_t x, std::uint64_t y) {
         y >>= 1;
     }
 
-    const std::vector<std::string> &eval_order = get_eval_order();
-    for (const auto &key : eval_order) {
-        if (key.empty() || values.contains(key)) {
-            continue;
-        }
-        values[key] = eval_gate(key);
+    const std::vector<std::size_t> &eval_order = get_eval_order();
+    for (const std::size_t index : eval_order) {
+        const Gate &gate = gates[index];
+        values[gate.output] = eval_gate(gate);
     }
     if constexpr (aoc::DEBUG && false) {
         std::cerr << "values: " << pretty_print::repr(values) << "\n";
