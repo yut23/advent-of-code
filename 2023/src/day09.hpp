@@ -8,6 +8,7 @@
 #ifndef DAY09_HPP_UZDLAO3M
 #define DAY09_HPP_UZDLAO3M
 
+#include "lib.hpp" // for read_vector
 #include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <sstream> // for istringstream
@@ -18,12 +19,7 @@ namespace aoc::day09 {
 
 std::vector<int> read_history(const std::string &line) {
     std::istringstream ss{line};
-    std::vector<int> history;
-    int x;
-    while (ss >> x) {
-        history.push_back(x);
-    }
-    return history;
+    return aoc::read_vector<int>(ss);
 }
 
 std::vector<int> diff(const std::vector<int> &vec) {

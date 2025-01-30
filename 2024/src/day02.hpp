@@ -8,12 +8,12 @@
 #ifndef DAY02_HPP_QMMUZCBK
 #define DAY02_HPP_QMMUZCBK
 
+#include "lib.hpp"   // for read_vector
 #include <algorithm> // for copy
 #include <cstdlib>   // for abs, size_t
 #include <iostream>  // for istream
 #include <sstream>   // for istringstream
 #include <string>    // for string, getline
-#include <utility>   // for move
 #include <vector>    // for vector
 
 namespace aoc::day02 {
@@ -57,12 +57,7 @@ auto read_input(std::istream &is) {
     std::vector<std::vector<int>> reports;
     while (std::getline(is, line)) {
         std::istringstream ss(line);
-        std::vector<int> levels;
-        int tmp;
-        while (ss >> tmp) {
-            levels.push_back(tmp);
-        }
-        reports.push_back(std::move(levels));
+        reports.push_back(aoc::read_vector<int>(ss));
     }
     return reports;
 }

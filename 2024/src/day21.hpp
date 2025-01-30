@@ -389,12 +389,7 @@ std::vector<Code> read_input(std::istream &is) {
     std::string line;
     while (std::getline(is, line)) {
         std::istringstream iss{line};
-        Code code{std::move(line)};
-        Key key{};
-        while (iss >> key) {
-            code.keys.push_back(key);
-        }
-        codes.push_back(std::move(code));
+        codes.push_back({std::move(line), aoc::read_vector<Key>(iss)});
     }
     return codes;
 }

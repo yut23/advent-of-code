@@ -9,7 +9,7 @@
 #define DAY24_HPP_PKLXENFE
 
 #include "ds/grid.hpp"      // for Grid
-#include "lib.hpp"          // for expect_input
+#include "lib.hpp"          // for expect_input, read_vector
 #include <cassert>          // for assert
 #include <cmath>            // for copysign
 #include <cstddef>          // for size_t
@@ -137,12 +137,7 @@ make_system(const std::vector<aoc::day24::Hailstone> &stones,
 }
 
 std::vector<Hailstone> read_stones(std::istream &is) {
-    std::vector<Hailstone> stones;
-    Hailstone stone{};
-    while (is >> stone) {
-        stones.push_back(std::move(stone));
-    }
-    return stones;
+    return aoc::read_vector<Hailstone>(is);
 }
 
 } // namespace aoc::day24

@@ -504,6 +504,19 @@ std::vector<std::string> read_lines(std::istream &is) {
     return lines;
 }
 
+/**
+ * @brief Reads arbitrary objects from a stream into a vector.
+ */
+template <typename T>
+std::vector<T> read_vector(std::istream &is) {
+    std::vector<T> vec;
+    T t{};
+    while (is >> t) {
+        vec.push_back(std::move(t));
+    }
+    return vec;
+}
+
 } // namespace aoc
 
 template <std::integral int_type>

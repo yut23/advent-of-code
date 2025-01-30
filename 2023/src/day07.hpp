@@ -8,6 +8,7 @@
 #ifndef DAY07_HPP_QKDJV1MU
 #define DAY07_HPP_QKDJV1MU
 
+#include "lib.hpp"    // for read_vector
 #include <algorithm>  // for sort
 #include <array>      // for array
 #include <cassert>    // for assert
@@ -180,6 +181,7 @@ struct Hand {
     int bid;
     HandType hand_type;
 
+    Hand() : Hand({}, 0) {}
     Hand(const std::array<Card, 5> &cards, int bid)
         : cards(cards), bid(bid), hand_type(identify_hand(cards)){};
     Hand(const Card &card1, const Card &card2, const Card &card3,
@@ -226,12 +228,7 @@ std::ostream &operator<<(std::ostream &os, const Hand &hand) {
 }
 
 std::vector<Hand> read_hands(std::istream &is) {
-    std::vector<Hand> hands;
-    Hand hand{{}, 0};
-    while (is >> hand) {
-        hands.push_back(std::move(hand));
-    }
-    return hands;
+    return aoc::read_vector<Hand>(is);
 }
 
 } // namespace aoc::day07

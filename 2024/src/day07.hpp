@@ -67,10 +67,7 @@ std::istream &operator>>(std::istream &is, Equation &eqn) {
     if (std::getline(is, line)) {
         std::istringstream iss{line};
         iss >> test_value >> expect_input(':');
-        long x;
-        while (iss >> x) {
-            operands.push_back(x);
-        }
+        operands = aoc::read_vector<long>(iss);
     }
     if (is) {
         eqn.test_value = test_value;
@@ -79,14 +76,7 @@ std::istream &operator>>(std::istream &is, Equation &eqn) {
     return is;
 }
 
-auto read_input(std::istream &is) {
-    std::vector<Equation> equations;
-    Equation eqn;
-    while (is >> eqn) {
-        equations.push_back(std::move(eqn));
-    }
-    return equations;
-}
+auto read_input(std::istream &is) { return aoc::read_vector<Equation>(is); }
 
 } // namespace aoc::day07
 
