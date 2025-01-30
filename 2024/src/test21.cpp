@@ -15,13 +15,8 @@
 namespace aoc::day21::test {
 
 std::vector<Key> operator""_k(const char *chars, std::size_t len) {
-    std::vector<Key> keys;
     std::istringstream iss(std::string{chars, len});
-    Key key{};
-    while (iss >> key) {
-        keys.push_back(key);
-    }
-    return keys;
+    return aoc::read_vector<Key>(iss);
 }
 
 std::size_t test_move_arm() {
@@ -45,21 +40,20 @@ std::size_t test_move_arm() {
 std::size_t test_control_arm() {
     unit_test::PureTest test("aoc::day21::control_arm", &control_arm);
 
-    using enum Key;
     test("^"_k, "<A"_k);
     test(">"_k, "vA"_k);
     test("v"_k, "<vA"_k);
     test("<"_k, "v<<A"_k);
 
     test("^A"_k, "<A>A"_k);
-    test({RIGHT, ACTIVATE}, "vA^A"_k);
-    test({DOWN, ACTIVATE}, "<vA^>A"_k);
-    test({LEFT, ACTIVATE}, "v<<A>>^A"_k);
+    test(">A"_k, "vA^A"_k);
+    test("vA"_k, "<vA^>A"_k);
+    test("<A"_k, "v<<A>>^A"_k);
 
-    test({UP, DOWN}, "<AvA"_k);
-    test({UP, LEFT}, "<Av<A"_k);
+    test("^v"_k, "<AvA"_k);
+    test("^<"_k, "<Av<A"_k);
 
-    test({UP, UP, UP}, "<AAA"_k);
+    test("^^^"_k, "<AAA"_k);
     test("<<>>^A>"_k, "v<<AA>>AA<^A>AvA"_k);
 
     return test.done(), test.num_failed();
