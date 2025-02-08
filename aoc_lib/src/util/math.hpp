@@ -9,11 +9,16 @@
 #ifndef MATH_HPP_VHRQFHXN
 #define MATH_HPP_VHRQFHXN
 
-#include <array>    // for array
-#include <cassert>  // for assert
-#include <concepts> // for integral
-#include <cstddef>  // for size_t
-#include <limits>   // for numeric_limits
+#include <array>       // for array
+#include <cassert>     // for assert
+#include <cmath>       // for signbit
+#include <concepts>    // for integral, same_as
+#include <cstddef>     // for size_t
+#include <limits>      // for numeric_limits
+#include <stdexcept>   // for invalid_argument
+#include <type_traits> // for remove_cvref_t
+#include <utility>     // for forward
+#include <vector>      // for vector
 
 namespace aoc::math {
 
@@ -70,6 +75,104 @@ constexpr IntegerT powi(IntegerT base, unsigned int exponent) {
         }
         return tmp;
     }
+}
+
+struct extended_gcd_result {
+    long gcd;
+    long bezout_a;
+    long bezout_b;
+    long quotient_a;
+    long quotient_b;
+
+    // needed for unit tests
+    bool operator==(const extended_gcd_result &) const = default;
+};
+
+extended_gcd_result extended_gcd(long a, long b) {
+    long old_r = a, r = b, old_s = 1, s = 0, old_t = 0, t = 1;
+
+    constexpr auto update = [](long &old_value, long &curr_value,
+                               const long quotient) {
+        auto tmp = curr_value;
+        curr_value = old_value - quotient * curr_value;
+        old_value = tmp;
+    };
+    while (r != 0) {
+        auto quotient = old_r / r;
+        update(old_r, r, quotient);
+        update(old_s, s, quotient);
+        update(old_t, t, quotient);
+    }
+
+    extended_gcd_result result{.gcd = old_r,
+                               .bezout_a = old_s,
+                               .bezout_b = old_t,
+                               .quotient_a = t,
+                               .quotient_b = s};
+
+    // fix signs
+    bool gcd_sign = std::signbit(result.gcd);
+    if (std::signbit(result.quotient_a) != (gcd_sign ^ std::signbit(a))) {
+        // flip sign of gcd / a
+        result.quotient_a = -result.quotient_a;
+    }
+    if (std::signbit(result.quotient_b) != (gcd_sign ^ std::signbit(b))) {
+        // flip sign of gcd / b
+        result.quotient_b = -result.quotient_b;
+    }
+    return result;
+}
+
+struct CRT {
+    struct crt_entry {
+        long remainder;
+        long modulus;
+
+        bool operator==(const crt_entry &) const = default;
+    };
+
+    std::vector<crt_entry> entries{};
+    static crt_entry solve_pair(const crt_entry &entry_a,
+                                const crt_entry &entry_b);
+
+    void add_entry(long remainder, long modulus) {
+        entries.push_back({remainder, modulus});
+    }
+    template <typename Entry>
+        requires std::same_as<std::remove_cvref_t<Entry>, crt_entry>
+    void add_entry(Entry &&entry) {
+        entries.push_back(std::forward<Entry>(entry));
+    }
+    crt_entry solve() const;
+};
+
+CRT::crt_entry CRT::solve_pair(const crt_entry &entry_a,
+                               const crt_entry &entry_b) {
+    // use extended Euclidean algorithm to get the Bézout coefficients
+    auto gcd = extended_gcd(entry_a.modulus, entry_b.modulus);
+    if (gcd.gcd != 1) {
+        throw std::invalid_argument("moduli must be coprime");
+    }
+    auto rem = entry_a.remainder * gcd.bezout_b * entry_b.modulus +
+               entry_b.remainder * gcd.bezout_a * entry_a.modulus;
+    // return the smallest positive remainder
+    crt_entry entry = {.remainder = rem,
+                       .modulus = entry_a.modulus * entry_b.modulus};
+    while (entry.remainder < 0) {
+        entry.remainder += entry.modulus;
+    }
+    return entry;
+}
+
+CRT::crt_entry CRT::solve() const {
+    if (entries.empty()) {
+        throw std::invalid_argument("CRT object must have at least 1 entry");
+    }
+    auto tmp = entries.front();
+    for (std::size_t i = 1; i < entries.size(); ++i) {
+        tmp = solve_pair(tmp, entries[i]);
+    }
+    return tmp;
 }
 
 } // namespace aoc::math

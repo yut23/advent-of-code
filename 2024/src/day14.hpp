@@ -9,20 +9,21 @@
 #define DAY14_HPP_5W9MWUPG
 
 #include "ds/grid.hpp" // for Grid
-#include "lib.hpp"     // for Pos, Delta, expect_input, DIRECTIONS
-#include <algorithm>   // for max_element
+#include "lib.hpp"     // for Pos, Delta, expect_input
 #include <array>       // for array
+#include <cmath>       // for log
+#include <cstddef>     // for size_t
 #include <iostream>    // for istream, ostream, noskipws, ws
-#include <utility>     // for move
+#include <string>      // for operator<<, operator== (expect_input)
+#include <utility>     // for move, pair
 #include <vector>      // for vector
-// IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
-// IWYU pragma: no_include <string>  // for operator== (expect_input)
 
 namespace aoc::day14 {
 
 struct Robot {
     Pos pos{0, 0};
     Delta vel{0, 0};
+    std::size_t grid_index{0};
 
     void update(const Pos &bounds);
 };
@@ -50,7 +51,7 @@ void Robot::update(const Pos &bounds) {
     }
 }
 
-class Robots {
+struct Robots {
     std::vector<Robot> robots;
     Pos bounds;
 
@@ -63,7 +64,7 @@ class Robots {
     static Robots read(std::istream &is, const Pos &bounds);
     void update();
     int safety_factor() const;
-    int largest_clump() const;
+    std::pair<double, double> calc_entropy() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Robots &robots);
 };
@@ -72,7 +73,8 @@ Robots Robots::read(std::istream &is, const Pos &bounds) {
     Robot robot;
     Robots robots(bounds);
     while (is >> robot) {
-        ++robots.robot_counts[robot.pos];
+        robot.grid_index = robots.robot_counts.get_index(robot.pos);
+        ++robots.robot_counts[robot.grid_index];
         robots.robots.push_back(std::move(robot));
     }
     return robots;
@@ -80,9 +82,10 @@ Robots Robots::read(std::istream &is, const Pos &bounds) {
 
 void Robots::update() {
     for (auto &robot : robots) {
-        --robot_counts[robot.pos];
+        --robot_counts[robot.grid_index];
         robot.update(bounds);
-        ++robot_counts[robot.pos];
+        robot.grid_index = robot_counts.get_index(robot.pos);
+        ++robot_counts[robot.grid_index];
     }
 }
 
@@ -107,35 +110,33 @@ int Robots::safety_factor() const {
     return quadrants[0] * quadrants[1] * quadrants[2] * quadrants[3];
 }
 
-int Robots::largest_clump() const {
-    std::vector<int> clumps;
-    aoc::ds::Grid<int> clump_indices(robot_counts, -1);
-    for (const Robot &robot : robots) {
-        // This isn't actually correct, and mislabels shapes with indents like
-        //  ..##
-        //  .##.
-        // but it's good enough to find a Christmas tree. See day 12 for a
-        // proper (and slower) implementation.
-        if (clump_indices[robot.pos] == -1) {
-            for (const auto &dir : DIRECTIONS) {
-                Pos neighbor = robot.pos + aoc::Delta(dir, true);
-                if (robot_counts.in_bounds(neighbor) &&
-                    robot_counts[neighbor] > 0) {
-                    if (clump_indices[neighbor] != -1) {
-                        clump_indices[robot.pos] = clump_indices[neighbor];
-                        ++clumps[clump_indices[robot.pos]];
-                        break;
-                    }
-                }
-            }
-            if (clump_indices[robot.pos] == -1) {
-                // new clump
-                clump_indices[robot.pos] = clumps.size();
-                clumps.push_back(1);
-            }
+/**
+ * Calculates the Shannon entropy of the x-coordinates and y-coordinates of the
+ * robot positions.
+ */
+std::pair<double, double> Robots::calc_entropy() const {
+    // coordinates can take on values in [0, bounds)
+    std::vector<std::size_t> x_counts(bounds.x, 0);
+    std::vector<std::size_t> y_counts(bounds.y, 0);
+    for (const auto &robot : robots) {
+        ++x_counts[robot.pos.x];
+        ++y_counts[robot.pos.y];
+    }
+    // calculate entropy as \sum -p log p
+    double x_entropy = 0, y_entropy = 0;
+    for (const std::size_t count : x_counts) {
+        if (count > 0) {
+            double p = static_cast<double>(count) / robots.size();
+            x_entropy -= p * std::log(p);
         }
     }
-    return *std::max_element(clumps.begin(), clumps.end());
+    for (const std::size_t count : y_counts) {
+        if (count > 0) {
+            double p = static_cast<double>(count) / robots.size();
+            y_entropy -= p * std::log(p);
+        }
+    }
+    return {x_entropy, y_entropy};
 }
 
 std::ostream &operator<<(std::ostream &os, const Robots &robots) {
