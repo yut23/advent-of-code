@@ -273,6 +273,8 @@ struct RobotController {
     long press_key(Key key, int depth = 0);
     long press_key_memo(Key key, int depth = 0);
 
+    long count_presses(const std::vector<Key> &keys, int layers);
+
   protected:
     virtual void on_keypress([[maybe_unused]] Key key,
                              [[maybe_unused]] int layer) {}
@@ -373,6 +375,14 @@ long count_presses_memo(const std::vector<Key> &keys, int layers) {
     long count = 0;
     for (Key key : keys) {
         count += controller.press_key_memo(key);
+    }
+    return count;
+}
+
+long RobotController::count_presses(const std::vector<Key> &keys, int layers) {
+    long count = 0;
+    for (Key key : keys) {
+        count += press_key_memo(key, this->layers - layers);
     }
     return count;
 }

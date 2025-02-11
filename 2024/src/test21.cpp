@@ -213,15 +213,46 @@ std::size_t test_count_presses_memo() {
     return test.done(), test.num_failed();
 }
 
+std::size_t test_RC_count_presses() {
+    unit_test::MethodTest test("aoc::day21::RobotController::count_presses",
+                               &RobotController::count_presses,
+                               RobotController(5));
+
+    test("029A"_k, 0, 4);
+    test("029A"_k, 1, 12);
+    test("029A"_k, 2, 28);
+    test("029A"_k, 3, 68);
+    test("029A"_k, 4, 164);
+    test("029A"_k, 5, 404);
+
+    test("127A"_k, 0, 4);
+    test("127A"_k, 1, 16);
+    test("127A"_k, 2, 34);
+    test("127A"_k, 3, 82);
+    test("127A"_k, 4, 204);
+    test("127A"_k, 5, 494);
+
+    test("084A"_k, 0, 4);
+    test("084A"_k, 1, 14);
+    test("084A"_k, 2, 32);
+    test("084A"_k, 3, 76);
+    test("084A"_k, 4, 186);
+    test("084A"_k, 5, 454);
+
+    return test.done(), test.num_failed();
+}
+
 } // namespace aoc::day21::test
 
 int main() {
     std::size_t num_failed = 0;
-    num_failed += aoc::day21::test::test_move_arm();
-    num_failed += aoc::day21::test::test_control_arm();
-    num_failed += aoc::day21::test::test_press_key_debug();
-    num_failed += aoc::day21::test::test_press_key_count();
-    num_failed += aoc::day21::test::test_count_presses_dfs();
-    num_failed += aoc::day21::test::test_count_presses_memo();
+    using namespace aoc::day21::test;
+    num_failed += test_move_arm();
+    num_failed += test_control_arm();
+    num_failed += test_press_key_debug();
+    num_failed += test_press_key_count();
+    num_failed += test_count_presses_dfs();
+    num_failed += test_count_presses_memo();
+    num_failed += test_RC_count_presses();
     return unit_test::fix_exit_code(num_failed);
 }

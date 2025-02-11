@@ -18,13 +18,14 @@ int main(int argc, char **argv) {
 
     long part_1 = 0;
     long part_2 = 0;
+    RobotController controller(1 + 25);
     for (const auto &code : codes) {
         // one numeric keypad that a robot is using
         std::vector<Key> keys = code.keys;
         // two directional keypads that robots are using
-        long part_1_size = count_presses_memo(keys, 1 + 2);
+        long part_1_size = controller.count_presses(keys, 1 + 2);
         // 25 directional keypads that robots are using
-        long part_2_size = count_presses_memo(keys, 1 + 25);
+        long part_2_size = controller.count_presses(keys, 1 + 25);
         long complexity_1 = part_1_size * code.numeric_value();
         part_1 += complexity_1;
         long complexity_2 = part_2_size * code.numeric_value();
