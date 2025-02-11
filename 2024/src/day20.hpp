@@ -8,166 +8,168 @@
 #ifndef DAY20_HPP_1NZBO0H2
 #define DAY20_HPP_1NZBO0H2
 
-#include "ds/grid.hpp"         // for Grid
-#include "graph_traversal.hpp" // for bfs
-#include "lib.hpp"             // for Pos, Delta, read_lines, DEBUG
-#include "util/hash.hpp"       // for make_hash
-#include <algorithm>           // for sort
-#include <assert.h>            // for assert
-#include <compare>             // for strong_ordering
-#include <cstddef>             // for size_t
-#include <functional>          // for hash
-#include <iomanip>             // for setw
-#include <iostream>            // for istream
-#include <string>              // for string
-#include <utility>             // for pair, move
-#include <vector>              // for vector
+#include "ds/grid.hpp"      // for Grid
+#include "lib.hpp"          // for Pos, Delta, read_lines, DIRECTIONS, DEBUG
+#include <algorithm>        // for sort
+#include <assert.h>         // for assert
+#include <compare>          // for strong_ordering
+#include <cstddef>          // for size_t
+#include <initializer_list> // for initializer_list (DIRECTIONS)
+#include <iostream>         // for istream, ostream, cerr
+#include <utility>          // for pair
+#include <vector>           // for vector
 
 namespace aoc::day20 {
 
+// only used for sorting debug output
 struct Cheat {
     int time_saved;
     Pos start;
     Pos end;
+    int length;
 
     std::strong_ordering operator<=>(const Cheat &) const = default;
 };
 
+std::ostream &operator<<(std::ostream &os, const Cheat &cheat) {
+    os << "cheat saves " << cheat.time_saved << " ps: " << cheat.start << " to "
+       << cheat.end << ", length=" << cheat.length;
+    return os;
+}
+
 class Racetrack {
-  public:
-    struct Key {
-        Pos pos;
-        bool cheated;
+    std::vector<std::pair<Pos, int>> race_path{};
+    Pos start_pos{-1, -1};
+    Pos end_pos{-1, -1};
 
-        std::strong_ordering operator<=>(const Key &) const = default;
-    };
-
-  private:
-    aoc::ds::Grid<char> grid;
-    Pos start_pos;
-    Pos end_pos;
-
-    int best_path_length(bool cheat) const;
+    void trace_path(aoc::ds::Grid<char> &grid);
 
   public:
-    std::vector<Cheat> find_cheats(int cheat_time_limit) const;
-    void print(std::ostream &, const std::vector<Key> &path = {}) const;
+    std::pair<int, int> count_cheats(int cheat_time_limit_1,
+                                     int cheat_time_limit_2,
+                                     int threshold) const;
 
-    explicit Racetrack(std::vector<std::string> &&grid_);
-    static Racetrack read(std::istream &is) {
-        return Racetrack{aoc::read_lines(is)};
-    }
+    static Racetrack read(std::istream &is);
 };
 
-} // namespace aoc::day20
-
-template <>
-struct std::hash<aoc::day20::Racetrack::Key> {
-    std::size_t
-    operator()(const aoc::day20::Racetrack::Key &key) const noexcept {
-        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
-        std::size_t seed = 0xc761224f8b32b561ull;
-        util::make_hash(seed, key.pos.x, key.pos.y, key.cheated);
-        return seed;
-    }
-};
-
-namespace aoc::day20 {
-
-std::vector<Cheat> Racetrack::find_cheats(int cheat_time_limit) const {
-    const auto process_neighbors = [this](const Pos &pos, auto &&process) {
-        grid.manhattan_kernel(pos, [&process](char tile, const Pos &neighbor) {
-            if (tile != '#') {
-                process(neighbor);
-            }
-        });
-    };
-    struct Dists {
-        int source_distance;
-        int target_distance;
-
-        bool is_wall() const { return source_distance == -1; }
-    };
-    aoc::ds::Grid<Dists> distances(grid, {-1, -1});
-    // get the distance from the start to each position without cheating
-    aoc::graph::bfs(start_pos, process_neighbors, {},
-                    [&distances](const Pos &pos, int depth) {
-                        // bfs visits each position once, with the shortest
-                        // distance
-                        distances[pos].source_distance = depth;
-                    });
-    // get the distance from each position to the end position without cheating
-    aoc::graph::bfs(end_pos, process_neighbors, {},
-                    [&distances](const Pos &pos, int depth) {
-                        distances[pos].target_distance = depth;
-                    });
-
-    int best_uncheated = distances[end_pos].source_distance;
+std::pair<int, int> Racetrack::count_cheats(int cheat_time_limit_1,
+                                            int cheat_time_limit_2,
+                                            int threshold) const {
+    int best_uncheated = race_path.back().second;
     if constexpr (aoc::DEBUG) {
         std::cerr << "best uncheated distance: " << best_uncheated << "\n";
     }
+    // keep track of the cheats so we can sort them in the debug output
+    std::vector<Cheat> part_1_cheats;
+    std::vector<Cheat> part_2_cheats;
 
-    std::vector<Cheat> cheats;
-    // for each position on the track, check all the other path tiles reachable
-    // within cheat_time_limit picoseconds to see if cheating to them is faster
-    distances.for_each([&distances, &cheats, best_uncheated, cheat_time_limit](
-                           const Dists &start_dists, const Pos &start) {
-        if (start_dists.is_wall()) {
-            return;
-        }
-        // track shouldn't have any dead ends
-        assert(start_dists.source_distance + start_dists.target_distance ==
-               best_uncheated);
-
-        // check each pair of neighboring tiles and see if they give a
-        // smaller total distance than best_uncheated
-        distances.manhattan_kernel(
-            start, cheat_time_limit,
-            [&start, &start_dists, &cheats, best_uncheated](
-                const Dists &end_dists, const Pos &end, int path_length) {
-                if (end_dists.is_wall()) {
-                    return;
-                }
-                int total_distance = start_dists.source_distance + path_length +
-                                     end_dists.target_distance;
-                if (total_distance < best_uncheated) {
-                    cheats.push_back(
-                        {best_uncheated - total_distance, start, end});
-                }
-            });
-    });
-    return cheats;
-}
-
-int count_cheats(std::vector<Cheat> &cheats, int threshold) {
-    int count = 0;
-    if constexpr (aoc::DEBUG) {
-        std::sort(cheats.begin(), cheats.end());
-    }
-    for (const auto &cheat : cheats) {
-        if (cheat.time_saved >= threshold) {
-            if constexpr (aoc::DEBUG) {
-                std::cerr << "cheat saves " << std::setw(3) << cheat.time_saved
-                          << " picoseconds: " << cheat.start << " to "
-                          << cheat.end << "\n";
+    int count_1 = 0, count_2 = 0;
+    // check each pair of tiles on the path and see if cheating between them
+    // saves more than the threshold
+    for (std::size_t i = 0; i < race_path.size(); ++i) {
+        const auto &[start, start_dist] = race_path[i];
+        // in order to save more than the threshold, we have to go at least
+        // this far along the race path (see input/day20/example2.txt)
+        for (std::size_t j = i + threshold + cheat_time_limit_1;
+             j < race_path.size(); ++j) {
+            const auto &[end, end_dist] = race_path[j];
+            // distance from cheat end point to the race end point is
+            // (best_uncheated - end_dist)
+            int path_length = (start - end).manhattan_distance();
+            if (path_length - cheat_time_limit_2 > 0) {
+                // We can't reach the cheat end point within the time limit,
+                // and it would have to move directly toward the cheat start
+                // point by (path_length - cheat_time_limit_2) tiles in order
+                // to be within range for part 2, so we can safely skip that
+                // far forward in the race path (minus 1 to account for the ++j
+                // from the for loop).
+                j += path_length - cheat_time_limit_2 - 1;
+                continue;
             }
-            ++count;
+            // this is equivalent to start_dist + path_length + (best_uncheated
+            // - end_dist) < best_uncheated - threshold
+            if (end_dist - start_dist - path_length >= threshold) {
+                if constexpr (aoc::DEBUG) {
+                    part_2_cheats.push_back(
+                        {end_dist - start_dist - path_length, start, end,
+                         path_length});
+                }
+                if (path_length <= cheat_time_limit_1) {
+                    ++count_1;
+                    if constexpr (aoc::DEBUG) {
+                        part_1_cheats.push_back(part_2_cheats.back());
+                    }
+                }
+                ++count_2;
+            }
         }
     }
-    return count;
+    if constexpr (aoc::DEBUG) {
+        std::sort(part_1_cheats.begin(), part_1_cheats.end());
+        std::cerr << "Part 1, time limit " << cheat_time_limit_1
+                  << " ps: " << part_1_cheats.size() << " cheats\n";
+        for (const auto &cheat : part_1_cheats) {
+            std::cerr << cheat << "\n";
+        }
+
+        std::sort(part_2_cheats.begin(), part_2_cheats.end());
+        std::cerr << "\nPart 2, time limit " << cheat_time_limit_2
+                  << " ps: " << part_2_cheats.size() << " cheats\n";
+        for (const auto &cheat : part_2_cheats) {
+            std::cerr << cheat << "\n";
+        }
+    }
+
+    return {count_1, count_2};
 }
 
-Racetrack::Racetrack(std::vector<std::string> &&grid_)
-    : grid(std::move(grid_)), start_pos(-1, -1), end_pos(-1, -1) {
-    grid.for_each([this](char value, const Pos &pos) {
+Racetrack Racetrack::read(std::istream &is) {
+    aoc::ds::Grid<char> grid(aoc::read_lines(is));
+
+    Racetrack track{};
+    grid.for_each([&track](char value, const Pos &pos) {
         if (value == 'S') {
-            this->start_pos = pos;
+            track.start_pos = pos;
         } else if (value == 'E') {
-            this->end_pos = pos;
+            track.end_pos = pos;
         }
     });
-    assert(start_pos.x != -1 && start_pos.y != -1);
-    assert(end_pos.x != -1 && end_pos.y != -1);
+    assert(track.start_pos.x != -1 && track.start_pos.y != -1);
+    assert(track.end_pos.x != -1 && track.end_pos.y != -1);
+
+    track.trace_path(grid);
+    return track;
+}
+
+void Racetrack::trace_path(aoc::ds::Grid<char> &grid) {
+    // find the race path
+    Pos pos = start_pos;
+    int source_distance = 0;
+    while (true) {
+        race_path.emplace_back(pos, source_distance);
+        ++source_distance;
+        if (pos == end_pos) {
+            break;
+        }
+        bool found_path = false;
+        Pos next_pos;
+        for (const AbsDirection dir : DIRECTIONS) {
+            Pos new_pos = pos + Delta(dir, true);
+            if (!grid.in_bounds(new_pos) || grid[new_pos] == '#') {
+                continue;
+            }
+            if (found_path) {
+                std::cerr << "error: racetrack branches at " << pos << "\n";
+                assert(false);
+            }
+            // block off the path back
+            grid[pos] = '#';
+            found_path = true;
+            next_pos = new_pos;
+        }
+        assert(found_path);
+        pos = next_pos;
+    }
 }
 
 } // namespace aoc::day20

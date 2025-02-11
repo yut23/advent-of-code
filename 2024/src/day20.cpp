@@ -13,7 +13,7 @@
 int main(int argc, char **argv) {
     auto args = aoc::parse_args(argc, argv);
     int threshold;
-    if (args.filename.ends_with("example1.txt")) {
+    if (args.input_type == aoc::InputType::EXAMPLE) {
         threshold = 50;
     } else {
         threshold = 100;
@@ -21,13 +21,8 @@ int main(int argc, char **argv) {
 
     auto track = aoc::day20::Racetrack::read(args.infile);
 
-    // part 1
-    auto cheats = track.find_cheats(2);
-    std::cout << aoc::day20::count_cheats(cheats, threshold) << "\n";
-
-    // part 2
-    cheats = track.find_cheats(20);
-    std::cout << aoc::day20::count_cheats(cheats, threshold) << "\n";
+    auto [part_1, part_2] = track.count_cheats(2, 20, threshold);
+    std::cout << part_1 << "\n" << part_2 << "\n";
 
     return 0;
 }
