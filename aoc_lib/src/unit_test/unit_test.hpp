@@ -575,6 +575,15 @@ struct MethodTest : public BaseTest {
         : BaseTest(filename, float_ulps), obj(std::move(obj)),
           runner(_wrap_test_function(this, func), float_ulps) {}
 
+    MethodTest(const std::string &filename, R (C::*func)(Args...), C &obj,
+               int float_ulps = 2)
+        : BaseTest(filename, float_ulps), obj(obj),
+          runner(_wrap_test_function(this, func), float_ulps) {}
+    MethodTest(const std::string &filename, R (C::*func)(Args...), C &&obj = {},
+               int float_ulps = 2)
+        : BaseTest(filename, float_ulps), obj(std::move(obj)),
+          runner(_wrap_test_function(this, func), float_ulps) {}
+
     void operator()(arg_lookup_t<Args, Input>... raw_inputs,
                     arg_lookup_t<R, Input> expected,
                     const std::string &note = "") {
