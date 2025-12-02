@@ -14,9 +14,10 @@ int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
     auto rotations = aoc::day01::read_input(infile);
+    int dial, part1, part2;
 
-    int dial = 50;
-    int part1 = 0;
+    dial = 50;
+    part1 = 0;
     for (const auto rot : rotations) {
         dial += rot;
         dial %= 100;
@@ -24,8 +25,21 @@ int main(int argc, char **argv) {
             ++part1;
         }
     }
-
     std::cout << part1 << "\n";
+
+    dial = 50;
+    part2 = 0;
+    for (const auto rot : rotations) {
+        int direction = rot < 0 ? -1 : 1;
+        for (int i = 0; i < std::abs(rot); ++i) {
+            dial += direction;
+            dial %= 100;
+            if (dial == 0) {
+                ++part2;
+            }
+        }
+    }
+    std::cout << part2 << "\n";
 
     return 0;
 }
