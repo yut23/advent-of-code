@@ -56,9 +56,10 @@ std::size_t test_powers_of_10() {
 
     constexpr auto POWERS_OF_10 = aoc::math::gen_powers_of_10<IntegerT>();
     std::size_t size = POWERS_OF_10.size();
+    test(size, std::numeric_limits<IntegerT>::digits10 + 1);
     IntegerT max = std::numeric_limits<IntegerT>::max();
     int i = 0;
-    IntegerT x = 10;
+    IntegerT x = 1;
     while (x <= max / 10) {
         test(POWERS_OF_10.at(i), x,
              "incorrect element at index " + std::to_string(i));
@@ -77,6 +78,71 @@ std::size_t test_powers_of_10() {
     test.done();
     if (test.num_failed() > 0) {
         std::cout << "POWERS_OF_10: " << pretty_print::repr(POWERS_OF_10)
+                  << "\n";
+    }
+    return test.num_failed();
+}
+
+template <class IntegerT>
+std::size_t test_next_power_of_10() {
+    const std::string type_name = util::demangle(typeid(IntegerT).name());
+    unit_test::PureTest test("aoc::math::next_power_of_10<" + type_name + ">",
+                             &aoc::math::next_power_of_10<IntegerT>);
+
+    test(0, 1);
+    test(1, 10);
+    test(2, 10);
+    test(9, 10);
+    test(10, 100);
+    test(11, 100);
+    test(99, 100);
+    for (unsigned int i = 0; i < std::numeric_limits<IntegerT>::digits10; ++i) {
+        IntegerT p10 = powi(static_cast<IntegerT>(10), i);
+        if (p10 >= 1) {
+            test(p10 - 1, p10);
+        }
+        if (IntegerT(p10 * 10) % IntegerT(10) == 0) {
+            test(p10, 10 * p10);
+            test(p10 + 1, 10 * p10);
+        }
+    }
+
+    test.done();
+    if (test.num_failed() > 0) {
+        std::cout << "POWERS_OF_10: "
+                  << pretty_print::repr(aoc::math::gen_powers_of_10<IntegerT>())
+                  << "\n";
+    }
+    return test.num_failed();
+}
+
+template <class IntegerT>
+std::size_t test_prev_power_of_10() {
+    const std::string type_name = util::demangle(typeid(IntegerT).name());
+    unit_test::PureTest test("aoc::math::prev_power_of_10<" + type_name + ">",
+                             &aoc::math::prev_power_of_10<IntegerT>);
+
+    test(0, 0);
+    test(1, 0);
+    test(2, 1);
+    test(9, 1);
+    test(10, 1);
+    test(11, 10);
+    test(99, 10);
+    for (unsigned int i = 1; i <= std::numeric_limits<IntegerT>::digits10;
+         ++i) {
+        IntegerT p10 = powi(static_cast<IntegerT>(10), i);
+        if (p10 >= 1) {
+            test(p10 - 1, p10 / 10);
+        }
+        test(p10, p10 / 10);
+        test(p10 + 1, p10);
+    }
+
+    test.done();
+    if (test.num_failed() > 0) {
+        std::cout << "POWERS_OF_10: "
+                  << pretty_print::repr(aoc::math::gen_powers_of_10<IntegerT>())
                   << "\n";
     }
     return test.num_failed();
@@ -183,6 +249,16 @@ int main() {
     failed_count += test_powers_of_10<unsigned int>();
     failed_count += test_powers_of_10<std::int64_t>();
     failed_count += test_powers_of_10<std::uint64_t>();
+
+    failed_count += test_next_power_of_10<int>();
+    failed_count += test_next_power_of_10<unsigned int>();
+    failed_count += test_next_power_of_10<std::int64_t>();
+    failed_count += test_next_power_of_10<std::uint64_t>();
+
+    failed_count += test_prev_power_of_10<int>();
+    failed_count += test_prev_power_of_10<unsigned int>();
+    failed_count += test_prev_power_of_10<std::int64_t>();
+    failed_count += test_prev_power_of_10<std::uint64_t>();
 
     failed_count += test_num_digits<int>();
     failed_count += test_num_digits<unsigned int>();

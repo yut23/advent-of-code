@@ -24,10 +24,11 @@ namespace aoc::math {
 
 template <typename IntegerT,
           int max_digits = std::numeric_limits<IntegerT>::digits10>
-constexpr std::array<IntegerT, max_digits> gen_powers_of_10() {
-    std::array<IntegerT, max_digits> arr;
+constexpr std::array<IntegerT, max_digits + 1> gen_powers_of_10() {
+    std::array<IntegerT, max_digits + 1> arr;
     IntegerT x = 1;
-    for (std::size_t i = 0; i < max_digits; ++i) {
+    arr[0] = 1;
+    for (std::size_t i = 1; i <= max_digits; ++i) {
         x *= 10;
         arr[i] = x;
     }
@@ -43,9 +44,13 @@ constexpr int num_digits(IntegerT value) {
             break;
         }
     }
-    return i + 1;
+    return i;
 }
 
+/**
+ * Throws std::overflow_error if the next power of 10 cannot be represented in
+ * an IntegerT.
+ */
 template <std::integral IntegerT>
 IntegerT next_power_of_10(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
@@ -56,7 +61,24 @@ IntegerT next_power_of_10(IntegerT value) {
             return pow;
         }
     }
-    assert(false);
+    throw std::overflow_error("overflow in aoc::math::next_power_of_10");
+}
+
+/**
+ * Returns 0 for values 0 and 1.
+ */
+template <std::integral IntegerT>
+IntegerT prev_power_of_10(IntegerT value) {
+    constexpr auto POWERS = gen_powers_of_10<IntegerT>();
+    // this array is small, so a linear search performs better
+    auto end = POWERS.rend();
+    for (auto it = POWERS.rbegin(); it != end; ++it) {
+        // cppcheck-suppress useStlAlgorithm
+        if (*it < value) {
+            return *it;
+        }
+    }
+    return 0;
 }
 
 template <typename IntegerT>
