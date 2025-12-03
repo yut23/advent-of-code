@@ -15,11 +15,13 @@ int main(int argc, char **argv) {
 
     auto banks = aoc::day03::read_input(infile);
 
-    int part1 = 0;
+    long part1 = 0, part2 = 0;
     for (const auto &bank : banks) {
-        part1 += aoc::day03::max_joltage(bank);
+        part1 += aoc::day03::max_joltage(bank, 2);
+        part2 += aoc::day03::max_joltage(bank, 12);
     }
     std::cout << part1 << "\n";
+    std::cout << part2 << "\n";
 
     return 0;
 }

@@ -25,12 +25,17 @@ auto read_input(std::istream &is) {
     return banks;
 }
 
-int max_joltage(const std::string &bank) {
-    // find maximum value excluding last battery
-    auto first = std::max_element(bank.begin(), bank.end() - 1);
-    // find maximum value after first value
-    auto second = std::max_element(first + 1, bank.end());
-    return (*first - '0') * 10 + (*second - '0');
+long max_joltage(const std::string &bank, int count) {
+    long value = 0;
+    std::string::const_iterator start = bank.begin();
+    for (int i = 1; i <= count; ++i) {
+        // find maximum value, excluding the last (count - i) batteries
+        start = std::max_element(start, bank.end() - (count - i));
+        value *= 10;
+        value += *start - '0';
+        ++start;
+    }
+    return value;
 }
 
 } // namespace aoc::day03
