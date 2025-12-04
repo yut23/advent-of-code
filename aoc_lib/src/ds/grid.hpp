@@ -340,6 +340,26 @@ struct Grid {
     }
 
     /**
+     * Calls func(value[, pos]) for each position in the grid. Allows in-place
+     * modification of the value.
+     */
+    template <typename Func>
+        requires std::invocable<Func, value_type &, const Pos &> ||
+                 std::invocable<Func, value_type &>
+    constexpr void for_each(Func &&func) {
+        Pos p;
+        for (p.y = 0; p.y < height; ++p.y) {
+            for (p.x = 0; p.x < width; ++p.x) {
+                if constexpr (std::invocable<Func, value_type &, const Pos &>) {
+                    func((*this)[p], p);
+                } else {
+                    func((*this)[p]);
+                }
+            }
+        }
+    }
+
+    /**
      * Calls formatter(value[, pos]) for each position in the grid in row-major
      * order, and outputs a newline at the end of each row.
      */

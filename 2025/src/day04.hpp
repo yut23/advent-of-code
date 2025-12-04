@@ -17,9 +17,10 @@ namespace aoc::day04 {
 
 using aoc::ds::Grid;
 
-int count_forklift_accessible(const Grid<char> &grid) {
+template <aoc::Part PART>
+int count_forklift_accessible(Grid<char> &grid) {
     int count = 0;
-    grid.for_each([&count, &grid](char c, const Pos &center) {
+    grid.for_each([&count, &grid](char &c, const Pos &center) {
         if (c != '@') {
             return;
         }
@@ -32,6 +33,9 @@ int count_forklift_accessible(const Grid<char> &grid) {
         // the 4 in the question doesn't include the center roll
         if (adj_count < 5) {
             ++count;
+            if constexpr (PART == aoc::PART_2) {
+                c = '.';
+            }
         }
     });
     return count;
