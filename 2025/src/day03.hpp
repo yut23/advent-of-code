@@ -11,6 +11,7 @@
 #include <algorithm> // for max_element
 #include <iostream>  // for istream
 #include <string>    // for string, getline
+#include <utility>   // for move
 #include <vector>    // for vector
 
 namespace aoc::day03 {

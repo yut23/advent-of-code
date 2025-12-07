@@ -10,14 +10,16 @@
 
 #include "lib.hpp"
 #include "util/math.hpp" // for next_power_of_10, prev_power_of_10
+#include <array>         // for array
 #include <cassert>       // for assert
+#include <cstdlib>       // for strtol, size_t
 #include <iostream>      // for istream
 #include <string>        // for string, getline
 
 namespace aoc::day02 {
 
 long sum_invalid_ids(const std::string &line) {
-    constexpr auto POWERS_OF_10 = aoc::math::gen_powers_of_10<long>();
+    constexpr std::array POWERS_OF_10 = aoc::math::gen_powers_of_10<long>();
 
     const char *ptr1 = line.c_str();
     const char *ptr2 = ptr1;

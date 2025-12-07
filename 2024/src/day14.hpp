@@ -14,7 +14,6 @@
 #include <cmath>       // for log
 #include <cstddef>     // for size_t
 #include <iostream>    // for istream, ostream, noskipws, ws
-#include <string>      // for operator<<, operator== (expect_input)
 #include <utility>     // for move, pair
 #include <vector>      // for vector
 

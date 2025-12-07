@@ -9,21 +9,22 @@
 #define DAY20_HPP_QRITMDTC
 
 #include "graph_traversal.hpp"
-#include "lib.hpp"       // for DEBUG
-#include <algorithm>     // for all_of, transform, lower_bound, sort
-#include <cassert>       // for assert
-#include <cstddef>       // for size_t
-#include <iostream>      // for istream, ostream, cerr, cout
-#include <iterator>      // for back_inserter, distance
-#include <memory>        // for unique_ptr, make_unique
-#include <numeric>       // for lcm
-#include <queue>         // for queue
-#include <set>           // for set (tarjan_scc)
-#include <sstream>       // for istringstream
-#include <string>        // for string, getline
-#include <unordered_map> // for unordered_map
-#include <utility>       // for move, forward
-#include <vector>        // for vector
+#include "lib.hpp"   // for DEBUG
+#include <algorithm> // for all_of, transform, lower_bound, sort, ranges::for_each
+#include <cassert>   // for assert
+#include <cstddef>   // for size_t
+#include <initializer_list> // for initializer_list (tarjan_scc)
+#include <iostream>         // for istream, ostream, cerr, cout
+#include <iterator>         // for back_inserter, distance
+#include <memory>           // for unique_ptr, make_unique
+#include <numeric>          // for lcm
+#include <queue>            // for queue
+#include <set>              // for set (tarjan_scc)
+#include <sstream>          // for istringstream
+#include <string>           // for string, getline
+#include <unordered_map>    // for unordered_map
+#include <utility>          // for move, forward
+#include <vector>           // for vector
 // IWYU pragma: no_include <functional>  // for hash (unordered_map)
 
 namespace aoc::day20 {

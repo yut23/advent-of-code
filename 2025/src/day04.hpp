@@ -12,6 +12,7 @@
 #include "lib.hpp"     // for Delta, Pos
 #include <iostream>    // for istream
 #include <string>      // for string, getline
+#include <vector>      // for vector
 
 namespace aoc::day04 {
 

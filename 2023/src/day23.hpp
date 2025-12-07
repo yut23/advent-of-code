@@ -10,8 +10,8 @@
 
 #include "ds/grid.hpp" // for Grid
 #include "graph_traversal.hpp"
-#include "lib.hpp"          // for Pos, AbsDirection, Delta
-#include <algorithm>        // for ranges::count
+#include "lib.hpp" // for Pos, AbsDirection, Delta, read_lines, DEBUG, DIRECTIONS
+#include <algorithm>        // for ranges::count, ranges::for_each
 #include <cassert>          // for assert
 #include <cstddef>          // for size_t
 #include <functional>       // for bind_front
@@ -20,6 +20,7 @@
 #include <map>              // for map
 #include <queue>            // for queue
 #include <string>           // for string, getline, basic_string
+#include <unordered_set>    // for unordered_set (longest_path_dag)
 #include <utility>          // for move, pair
 #include <vector>           // for vector, erase_if
 

@@ -9,12 +9,13 @@
 #define DAY04_HPP_MZNV9FEE
 
 #include "ds/grid.hpp"      // for Grid
-#include "lib.hpp"          // for Delta, Pos
+#include "lib.hpp"          // for Delta, Pos, read_lines
 #include <array>            // for array
 #include <cstddef>          // for size_t
 #include <initializer_list> // for initializer_list
 #include <iostream>         // for istream
-#include <vector>           // for vector
+#include <string>           // for string (read_lines)
+#include <vector>           // for vector (read_lines)
 
 namespace aoc::day04 {
 

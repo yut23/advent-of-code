@@ -16,6 +16,7 @@
 #include <unordered_set>       // for unordered_set
 #include <utility>             // for pair (unordered_set)
 #include <vector>              // for vector
+// IWYU pragma: no_include <unordered_map>  // for dijkstra in debug mode
 
 namespace aoc::day18 {
 

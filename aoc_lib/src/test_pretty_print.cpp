@@ -11,10 +11,12 @@
 #include "unit_test/unit_test.hpp"
 #include "util/util.hpp" // for demangle
 
-#include <source_location> // for source_location
-#include <sstream>         // for ostringstream
-#include <string>          // for string
-#include <typeinfo>        // for type_info
+#include <cstdint>          // for int8_t, uint8_t
+#include <initializer_list> // for initializer_list
+#include <source_location>  // for source_location
+#include <sstream>          // for ostringstream
+#include <string>           // for string
+#include <typeinfo>         // for type_info
 
 namespace pretty_print::test {
 

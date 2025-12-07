@@ -21,6 +21,9 @@
 # I get these from iostream
 { symbol: ["std::istream", "private", "<iostream>", "public" ] },
 { symbol: ["std::ostream", "private", "<iostream>", "public" ] },
+# I get these from fstream
+{ symbol: ["std::ifstream", "private", "<fstream>", "public" ] },
+{ symbol: ["std::ofstream", "private", "<fstream>", "public" ] },
 # this is internal
 { include: ["<bits/std_abs.h>", "private", "<cstdlib>", "public" ] },
 # IWYU thinks this is from <variant> if it's included from anywhere

@@ -8,6 +8,7 @@
 #ifndef DAY01_HPP_XFIW6CVE
 #define DAY01_HPP_XFIW6CVE
 
+#include <cstdlib>  // for atoi
 #include <iostream> // for istream
 #include <string>   // for string, getline
 #include <vector>   // for vector

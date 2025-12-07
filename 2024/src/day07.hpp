@@ -10,6 +10,7 @@
 
 #include "lib.hpp"       // for expect_input
 #include "util/math.hpp" // for next_power_of_10
+#include <array>         // for array (next_power_of_10)
 #include <cstddef>       // for size_t
 #include <iostream>      // for istream
 #include <sstream>       // for istringstream

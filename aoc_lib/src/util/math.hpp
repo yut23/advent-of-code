@@ -10,11 +10,12 @@
 #define MATH_HPP_VHRQFHXN
 
 #include <array>       // for array
-#include <cassert>     // for assert
 #include <cmath>       // for signbit
 #include <concepts>    // for integral, same_as
 #include <cstddef>     // for size_t
+#include <iterator>    // for operator==
 #include <limits>      // for numeric_limits
+#include <numeric>     // for accumulate
 #include <stdexcept>   // for invalid_argument
 #include <type_traits> // for remove_cvref_t
 #include <utility>     // for forward

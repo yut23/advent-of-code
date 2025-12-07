@@ -10,13 +10,14 @@
 
 #include "ds/grid.hpp"         // for Grid
 #include "graph_traversal.hpp" // for bfs_manual_dedupe
-#include "lib.hpp"             // for Pos, Delta, DIRECTIONS, DEBUG
-#include "unit_test/pretty_print.hpp"
-#include <functional> // for bind_front
-#include <iomanip>    // for setw
-#include <iostream>   // for istream
-#include <utility>    // for move
-#include <vector>     // for vector
+#include "lib.hpp"             // for Pos, Delta, DIRECTIONS, DEBUG, read_lines
+#include "unit_test/pretty_print.hpp" // for repr
+#include <functional>                 // for bind_front
+#include <iomanip>                    // for setw
+#include <iostream>                   // for cerr, istream
+#include <string>                     // for string (read_lines)
+#include <utility>                    // for move
+#include <vector>                     // for vector
 // IWYU pragma: no_include <initializer_list>  // for DIRECTIONS
 
 namespace aoc::day12 {

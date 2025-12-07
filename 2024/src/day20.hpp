@@ -16,6 +16,7 @@
 #include <cstddef>          // for size_t
 #include <initializer_list> // for initializer_list (DIRECTIONS)
 #include <iostream>         // for istream, ostream, cerr
+#include <string>           // for string (read_lines)
 #include <utility>          // for pair
 #include <vector>           // for vector
 

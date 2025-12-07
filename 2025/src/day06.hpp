@@ -9,11 +9,14 @@
 #define DAY06_HPP_FLCUWNB1
 
 #include "lib.hpp"
-#include <functional> // for multiplies, plus
-#include <iostream>   // for istream
-#include <numeric>    // for reduce
-#include <sstream>    // for istringstream
-#include <string>     // for string, getline
+#include <algorithm> // for transform
+#include <cstddef>   // for size_t
+#include <iostream>  // for istream
+#include <iterator>  // for back_inserter
+#include <numeric>   // for reduce
+#include <sstream>   // for istringstream
+#include <string>    // for string, getline
+#include <vector>    // for vector
 
 namespace aoc::day06 {
 
