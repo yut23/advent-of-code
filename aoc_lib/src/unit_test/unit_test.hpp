@@ -112,10 +112,11 @@ arg_lookup_t<T, ToSelector> convert(arg_lookup_t<T, FromSelector> &x) {
 namespace detail {
 
 template <class T, typename FromSelector, typename ToSelector>
-concept has_convert_implementation = requires(arg_lookup_t<T, FromSelector> x) {
-    argument_type_traits<T>::convert(convert_tag<FromSelector, ToSelector>{},
-                                     x);
-};
+concept has_convert_implementation =
+    requires(arg_lookup_t<T, FromSelector> x) {
+        argument_type_traits<T>::convert(
+            convert_tag<FromSelector, ToSelector>{}, x);
+    };
 
 /**
  * A struct that effectively wraps argument_type_traits and provides defaults
@@ -270,10 +271,11 @@ struct tuple_like_arg_traits {
     convert(convert_tag<FromSelector, ToSelector>,
             arg_lookup_t<TupleLike<Ts...>, FromSelector> &x) {
         return [&x]<std::size_t... I>(std::index_sequence<I...>)
-                   -> arg_lookup_t<TupleLike<Ts...>, ToSelector> {
+            ->arg_lookup_t<TupleLike<Ts...>, ToSelector> {
             return {unit_test::convert<Ts, FromSelector, ToSelector>(
                 std::get<I>(x))...};
-        }(std::index_sequence_for<Ts...>{});
+        }
+        (std::index_sequence_for<Ts...>{});
     }
 };
 } // namespace detail
@@ -733,11 +735,11 @@ void check_equal(const std::type_identity_t<T> &actual, const T &expected,
 
 template <class T>
 void check_equal(const std::type_identity_t<T> &actual, const T &expected,
-                 std::invocable<std::ostream &> auto &&info,
+                 std::invocable<std::ostream &> auto &&info_callback,
                  const SL loc = SL::current()) {
     if (actual != expected) {
         std::ostringstream info_ss;
-        info(info_ss);
+        info_callback(info_ss);
         throw detail::equal_failure_helper(actual, expected, loc,
                                            info_ss.str());
     }

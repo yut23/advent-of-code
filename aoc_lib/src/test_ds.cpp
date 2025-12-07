@@ -112,60 +112,71 @@ template <class T>
 void test_grid_iterators(unit_test::TestSuite &suite, Grid<T> grid) {
     using namespace unit_test::checks;
     suite.test("input iterator", [&grid]() {
-        auto col_it = grid.begin();
-        for (int y = 0; y < grid.height; ++y, ++col_it) {
-            check(col_it >= grid.begin());
-            check(col_it == grid.begin() + y);
-            auto row_it = col_it->begin();
-            for (int x = 0; x < grid.width; ++x, ++row_it) {
-                check_equal(grid.at(x, y), *row_it, [&](auto &os) {
+        auto row_it = grid.begin();
+        for (int y = 0; y < grid.height; ++y, ++row_it) {
+            check(row_it >= grid.begin());
+            check(row_it == grid.begin() + y);
+            auto col_it = row_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++col_it) {
+                check_equal(grid.at(x, y), *col_it, [&](auto &os) {
                     os << "mismatch at " << x << ", " << y;
                 });
             }
-            check_equal(row_it, col_it->end(), [&](auto &os) {
+            check_equal(col_it, row_it->end(), [&](auto &os) {
                 os << "iterator for row " << y << " not at end";
             });
         }
-        check_equal(col_it, grid.end(), "grid iterator not at end");
+        check_equal(row_it, grid.end(), "grid iterator not at end");
     });
     suite.test("input const_iterator", [&grid]() {
-        auto col_it = grid.cbegin();
-        for (int y = 0; y < grid.height; ++y, ++col_it) {
-            check(col_it >= grid.begin());
-            check(col_it == grid.begin() + y);
-            check(col_it >= grid.cbegin());
-            check(col_it == grid.cbegin() + y);
-            auto row_it = col_it->begin();
-            for (int x = 0; x < grid.width; ++x, ++row_it) {
-                check_equal(grid.at(x, y), *row_it, [=](auto &os) {
+        auto row_it = grid.cbegin();
+        for (int y = 0; y < grid.height; ++y, ++row_it) {
+            check(row_it >= grid.begin());
+            check(row_it == grid.begin() + y);
+            check(row_it >= grid.cbegin());
+            check(row_it == grid.cbegin() + y);
+            auto col_it = row_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++col_it) {
+                check_equal(grid.at(x, y), *col_it, [=](auto &os) {
                     os << "mismatch at " << x << ", " << y;
                 });
             }
-            check_equal(row_it, col_it->end(), [=](auto &os) {
+            check_equal(col_it, row_it->end(), [=](auto &os) {
                 os << "iterator for row " << y << " not at end";
             });
         }
-        check_equal(col_it, grid.cend(), "grid iterator not at end");
+        check_equal(row_it, grid.cend(), "grid iterator not at end");
     });
     suite.test("output iterator", [&grid]() {
-        auto col_it = grid.begin();
-        for (int y = 0; y < grid.height; ++y, ++col_it) {
-            check(col_it >= grid.begin());
-            check(col_it == grid.begin() + y);
-            auto row_it = col_it->begin();
-            for (int x = 0; x < grid.width; ++x, ++row_it) {
-                T new_val = 1 - *row_it;
-                *row_it = new_val;
+        auto row_it = grid.begin();
+        for (int y = 0; y < grid.height; ++y, ++row_it) {
+            check(row_it >= grid.begin());
+            check(row_it == grid.begin() + y);
+            auto col_it = row_it->begin();
+            for (int x = 0; x < grid.width; ++x, ++col_it) {
+                T new_val = 1 - *col_it;
+                *col_it = new_val;
                 check_equal(grid.at(x, y), new_val, [=](auto &os) {
                     os << "writing failed at " << x << ", " << y;
                 });
             }
-            check_equal(row_it, col_it->end(), [=](auto &os) {
+            check_equal(col_it, row_it->end(), [=](auto &os) {
                 os << "iterator for row " << y << " not at end";
             });
         }
-        check_equal(col_it, grid.end(), "grid iterator not at end");
-        return true;
+        check_equal(row_it, grid.end(), "grid iterator not at end");
+    });
+    suite.test("end iterator", [&grid]() {
+        auto end_it = grid.end();
+        for (int i = grid.height; i > 0; --i, --end_it) {
+            check_equal(end_it, grid.begin() + i, [=](auto &os) {
+                os << "grid.end() - " << grid.height - i
+                   << " != grid.begin() + " << i;
+            });
+        }
+        check_equal(end_it, grid.begin(), [=](auto &os) {
+            os << "grid.end() - " << grid.height << " != grid.begin()";
+        });
     });
 }
 

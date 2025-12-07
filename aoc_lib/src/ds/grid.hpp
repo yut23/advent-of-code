@@ -44,8 +44,13 @@ struct RowIterator {
 
     template <class R>
     explicit RowIterator(R &&range, std::size_t width)
-        : m_span(range), m_width(width), m_index(0),
-          m_curr_span(m_span.subspan(m_index * m_width, m_width)) {}
+        : RowIterator(std::forward<R>(range), width, 0) {}
+
+    template <class R>
+    explicit RowIterator(R &&range, std::size_t width, std::size_t index)
+        : m_span(std::forward<R>(range)), m_width(width), m_index(index) {
+        update_curr_span();
+    }
 
     // this is intentionally implicit to allow converting a non-const iterator
     // into a const one
@@ -269,9 +274,15 @@ struct Grid {
         return const_iterator(m_data, width);
     }
 
-    constexpr iterator end() noexcept { return iterator(); }
-    constexpr const_iterator end() const noexcept { return const_iterator(); }
-    constexpr const_iterator cend() const noexcept { return const_iterator(); }
+    constexpr iterator end() noexcept {
+        return iterator(m_data, width, height);
+    }
+    constexpr const_iterator end() const noexcept {
+        return const_iterator(m_data, width, height);
+    }
+    constexpr const_iterator cend() const noexcept {
+        return const_iterator(m_data, width, height);
+    }
 
     constexpr bool in_bounds(size_type x, size_type y) const noexcept {
         return y >= 0 && x >= 0 && y < height && x < width;
