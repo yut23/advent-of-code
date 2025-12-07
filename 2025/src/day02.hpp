@@ -33,7 +33,7 @@ long sum_invalid_ids(const std::string &line) {
     if constexpr (aoc::DEBUG)
         std::cerr << "range " << start << "-" << end << ":";
 
-    if (start_digits % 2 == 1 && end_digits % 2 == 1) {
+    if (start_digits % 2 == 1 && start_digits == end_digits) {
         // all values have an odd number of digits
         if constexpr (aoc::DEBUG)
             std::cerr << "\n";
