@@ -15,7 +15,6 @@
 #include <cstddef>     // for size_t
 #include <iterator>    // for operator==
 #include <limits>      // for numeric_limits
-#include <numeric>     // for accumulate
 #include <stdexcept>   // for invalid_argument
 #include <type_traits> // for remove_cvref_t
 #include <utility>     // for forward
@@ -37,9 +36,9 @@ constexpr std::array<IntegerT, max_digits + 1> gen_powers_of_10() {
 }
 
 template <std::integral IntegerT>
-constexpr int num_digits(IntegerT value) {
+constexpr unsigned int num_digits(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
-    int i;
+    unsigned int i;
     for (i = 0; i < static_cast<int>(POWERS.size()); ++i) {
         if (POWERS[i] > value) {
             break;
@@ -56,7 +55,7 @@ template <std::integral IntegerT>
 IntegerT next_power_of_10(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
     // this array is small, so a linear search performs better
-    for (const auto &pow : POWERS) {
+    for (IntegerT pow : POWERS) {
         // cppcheck-suppress useStlAlgorithm
         if (pow > value) {
             return pow;

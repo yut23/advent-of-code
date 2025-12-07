@@ -56,6 +56,16 @@ struct CaptureStream {
 template <typename...>
 inline constexpr bool always_false = false;
 
+template <auto Start, auto End, auto Inc = static_cast<decltype(Start)>(1),
+          class F>
+constexpr void constexpr_for(F const &f) {
+    static_assert(Inc > 0);
+    if constexpr (Start < End) {
+        f(std::integral_constant<decltype(Start), Start>());
+        constexpr_for<Start + Inc, End, Inc>(f);
+    }
+}
+
 } // namespace util
 
 #ifdef __GNUG__
