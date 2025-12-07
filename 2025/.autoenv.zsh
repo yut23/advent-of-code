@@ -2,7 +2,7 @@ local wrapper_cmd=${0:h}/make_wrapper.sh
 if [[ $autoenv_event == 'enter' ]]; then
   alias workon=${0:h}/workon
   alias aoc=${0:h}/aoc
-  alias iwyu=${0:h}/iwyu
+  alias iwyu="noreporttime ${0:h}/iwyu"
   alias profile=${0:h}/profile.sh
   alias run_answer_tests=${0:h}/run_answer_tests.sh
   alias benchmark=${0:h}/benchmark

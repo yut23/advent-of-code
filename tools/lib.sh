@@ -8,7 +8,7 @@ if ! [[ -v AOC_PWD ]] && [[ $PWD != "${PWD#"$AOC_ROOT/"}" ]]; then
   # PWD is under AOC_ROOT
   AOC_PWD=${PWD#"$AOC_ROOT/"}
   # try getting the year based on the current directory
-  if [[ $AOC_PWD =~ ^(20[1-9][0-9])(/|$) ]]; then
+  if [[ $AOC_PWD =~ ^(20[1-9][0-9]|aoc_lib)(/|$) ]]; then
     export AOC_YEAR=${BASH_REMATCH[1]}
   fi
 fi
