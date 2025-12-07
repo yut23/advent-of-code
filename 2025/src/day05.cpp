@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
         }
     }
     std::cout << part1 << "\n";
+    std::cout << lookup.count_covered() << "\n";
 
     return 0;
 }
