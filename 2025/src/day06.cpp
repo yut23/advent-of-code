@@ -13,13 +13,19 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
-    auto problems = aoc::day06::read_input(infile);
+    auto [problems1, problems2] = aoc::day06::read_input(infile);
 
     long part1 = 0;
-    for (const auto &problem : problems) {
+    for (const auto &problem : problems1) {
         part1 += problem.calculate();
     }
     std::cout << part1 << "\n";
+
+    long part2 = 0;
+    for (const auto &problem : problems2) {
+        part2 += problem.calculate();
+    }
+    std::cout << part2 << "\n";
 
     return 0;
 }
