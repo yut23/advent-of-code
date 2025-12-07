@@ -2,3 +2,10 @@ Diagnostics:
   ClangTidy:
     Remove:
       misc-definitions-in-headers
+  # these both conflict with IWYU in several cases
+  # Available in clangd-14
+  UnusedIncludes: None
+  # Require clangd-17
+  MissingIncludes: None
+
+# vim: ft=conf
