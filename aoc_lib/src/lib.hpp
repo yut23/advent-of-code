@@ -181,6 +181,10 @@ struct GenericDelta {
         return std::abs(dx) + std::abs(dy);
     }
 
+    constexpr int_type euclidean_distance_sq() const {
+        return dx * dx + dy * dy;
+    }
+
     // two Deltas can be added together
     GenericDelta &operator+=(const GenericDelta &rhs) {
         dx += rhs.dx;
@@ -330,6 +334,189 @@ using Pos = GenericPos<int>;
 
 using LongDelta = GenericDelta<long>;
 using LongPos = GenericPos<long>;
+
+template <std::integral T = int>
+struct GenericDelta3 {
+    using int_type = T;
+    int_type dx;
+    int_type dy;
+    int_type dz;
+
+    constexpr GenericDelta3(int_type dx, int_type dy, int_type dz)
+        : dx(dx), dy(dy), dz(dz) {}
+
+    constexpr int_type chebyshev_distance() const {
+        return std::max(std::abs(dx), std::abs(dy), std::abs(dz));
+    }
+
+    constexpr int_type manhattan_distance() const {
+        return std::abs(dx) + std::abs(dy) + std::abs(dz);
+    }
+
+    constexpr int_type euclidean_distance_sq() const {
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    // two Deltas can be added together
+    GenericDelta3 &operator+=(const GenericDelta3 &rhs) {
+        dx += rhs.dx;
+        dy += rhs.dy;
+        dz += rhs.dz;
+        return *this;
+    }
+
+    // two Deltas can be subtracted
+    GenericDelta3 &operator-=(const GenericDelta3 &rhs) {
+        dx -= rhs.dx;
+        dy -= rhs.dy;
+        dz -= rhs.dz;
+        return *this;
+    }
+
+    // can be scaled by an integer
+    GenericDelta3 &operator*=(int_type rhs) {
+        dx *= rhs;
+        dy *= rhs;
+        dz *= rhs;
+        return *this;
+    }
+    GenericDelta3 &operator/=(int_type rhs) {
+        dx /= rhs;
+        dy /= rhs;
+        dz /= rhs;
+        return *this;
+    }
+};
+// this takes lhs by copy, so it doesn't modify the original lhs
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator+(GenericDelta3<int_type> lhs,
+                                         const GenericDelta3<int_type> &rhs) {
+    lhs += rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator-(GenericDelta3<int_type> lhs,
+                                         const GenericDelta3<int_type> &rhs) {
+    lhs -= rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator*(GenericDelta3<int_type> lhs,
+                                         int_type rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator*(int_type lhs,
+                                         GenericDelta3<int_type> rhs) {
+    rhs *= lhs;
+    return rhs;
+}
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator/(GenericDelta3<int_type> lhs,
+                                         int_type rhs) {
+    lhs /= rhs;
+    return lhs;
+}
+// negation operator
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator-(GenericDelta3<int_type> delta) {
+    delta.dx *= -1;
+    delta.dy *= -1;
+    delta.dz *= -1;
+    return delta;
+}
+
+template <std::integral int_type>
+std::ostream &operator<<(std::ostream &os,
+                         const GenericDelta3<int_type> &delta) {
+    os << "Delta3(" << delta.dx << ", " << delta.dy << ", " << delta.dz << ")";
+    return os;
+}
+
+template <std::integral T = int>
+struct GenericPos3 {
+    using int_type = T;
+    int_type x;
+    int_type y;
+    int_type z;
+
+    constexpr GenericPos3() : x(0), y(0), z(0) {}
+    constexpr GenericPos3(int_type x, int_type y, int_type z)
+        : x(x), y(y), z(z) {}
+
+    // we can add a Delta3 to a Pos3, but not another Pos3
+    GenericPos3 &operator+=(const GenericDelta3<int_type> &rhs) {
+        x += rhs.dx;
+        y += rhs.dy;
+        z += rhs.dz;
+        return *this;
+    }
+    GenericPos3 &operator-=(const GenericDelta3<int_type> &rhs) {
+        x -= rhs.dx;
+        y -= rhs.dy;
+        z -= rhs.dz;
+        return *this;
+    }
+
+    // can scale by an integer
+    GenericPos3 &operator*=(int_type rhs) {
+        x *= rhs;
+        y *= rhs;
+        z *= rhs;
+        return *this;
+    }
+    GenericPos3 &operator/=(int_type rhs) {
+        x /= rhs;
+        y /= rhs;
+        z /= rhs;
+        return *this;
+    }
+
+    constexpr std::strong_ordering
+    operator<=>(const GenericPos3<int_type> &) const = default;
+};
+// this takes lhs by copy, so it doesn't modify the original lhs
+template <std::integral int_type>
+inline GenericPos3<int_type> operator+(GenericPos3<int_type> lhs,
+                                       const GenericDelta3<int_type> &rhs) {
+    lhs += rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericPos3<int_type> operator-(GenericPos3<int_type> lhs,
+                                       const GenericDelta3<int_type> &rhs) {
+    lhs -= rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericPos3<int_type> operator*(GenericPos3<int_type> lhs, int rhs) {
+    lhs *= rhs;
+    return lhs;
+}
+template <std::integral int_type>
+inline GenericPos3<int_type> operator/(GenericPos3<int_type> lhs, int rhs) {
+    lhs /= rhs;
+    return lhs;
+}
+// can subtract two Pos3, yielding a Delta3
+template <std::integral int_type>
+inline GenericDelta3<int_type> operator-(const GenericPos3<int_type> &lhs,
+                                         const GenericPos3<int_type> &rhs) {
+    return {lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
+}
+
+template <std::integral int_type>
+std::ostream &operator<<(std::ostream &os, const GenericPos3<int_type> &pos) {
+    os << "Pos3(" << pos.x << ", " << pos.y << ", " << pos.z << ")";
+    return os;
+}
+
+using Delta3 = GenericDelta3<int>;
+using Pos3 = GenericPos3<int>;
+
+using LongDelta3 = GenericDelta3<long>;
+using LongPos3 = GenericPos3<long>;
 
 template <class T>
 T intersect_ranges(const T &range_1, const T &range_2) {
@@ -526,6 +713,17 @@ struct std::hash<aoc::GenericPos<int_type>> {
         // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
         std::size_t seed = 0xbedb5bb0b473b6b7ull;
         util::make_hash(seed, pos.x, pos.y);
+        return seed;
+    }
+};
+
+template <std::integral int_type>
+struct std::hash<aoc::GenericPos3<int_type>> {
+    std::size_t
+    operator()(const aoc::GenericPos3<int_type> &pos) const noexcept {
+        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
+        std::size_t seed = 0x3d5fe89106c6a5cfull;
+        util::make_hash(seed, pos.x, pos.y, pos.z);
         return seed;
     }
 };
