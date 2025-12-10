@@ -32,7 +32,7 @@ namespace aoc::day08 {
 struct JunctionBoxPair {
     LongPos3 box1;
     LongPos3 box2;
-    int dist_sq;
+    long dist_sq;
 
     JunctionBoxPair(const LongPos3 &box1, const LongPos3 &box2)
         : box1(box1), box2(box2) {

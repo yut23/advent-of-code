@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     if constexpr (aoc::DEBUG) {
         std::cerr << "pair_heap.size() = " << pair_heap.size() << "\n";
         for (const auto &jbp : pair_heap) {
+            assert(jbp.dist_sq > 0);
             std::cerr << std::sqrt(jbp.dist_sq) << ": " << jbp.box1 << " - "
                       << jbp.box2 << "\n";
         }
