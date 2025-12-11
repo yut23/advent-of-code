@@ -11,6 +11,7 @@
 
 #include "util/concepts.hpp" // for same_as_any
 #include "util/hash.hpp"     // for make_hash
+#include "util/util.hpp"     // for reveal_type  // IWYU pragma: keep
 #include <algorithm>         // for max, min  // IWYU pragma: keep
 #include <cassert>           // for assert
 #include <compare>           // for strong_ordering
@@ -703,6 +704,75 @@ std::vector<T> read_vector(std::istream &is) {
     }
     return vec;
 }
+
+/**
+ * @brief Reads comma-separated values from a stream into a vector.
+ *
+ * Does not handle quoting.
+ */
+template <typename T>
+std::vector<T> read_csv(std::istream &is) {
+    std::vector<T> vec;
+    T t{};
+    while (true) {
+        if (is >> t) {
+            vec.push_back(std::move(t));
+        } else {
+            break;
+        }
+        // peek at the next character
+        char c = is.peek();
+        if (c == ',') {
+            // consume the comma
+            is.get();
+            continue;
+        }
+        // next character isn't a comma, so stop
+        break;
+    }
+    return vec;
+}
+
+template <typename T>
+struct csv_formatter {
+    using value_type = T;
+    using clean_value_type = std::remove_cvref_t<T>;
+    using container_type = std::vector<clean_value_type>;
+    std::conditional_t<std::is_const_v<T>, const container_type, container_type>
+        &dest;
+
+    friend std::istream &operator>>(std::istream &is, csv_formatter fmt) {
+        static_assert(!std::is_const_v<T>,
+                      "Cannot extract into a const reference");
+        auto vec = aoc::read_csv<clean_value_type>(is);
+        if (is) {
+            // cppcheck-suppress unreadVariable
+            fmt.dest = std::move(vec);
+        }
+        return is;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const csv_formatter &fmt) {
+        bool first = true;
+        for (const auto &value : fmt.dest) {
+            if (!first) {
+                os << ',';
+            }
+            os << value;
+            first = false;
+        }
+        return os;
+    }
+
+    explicit csv_formatter(container_type &dest) : dest(dest) {}
+    explicit csv_formatter(const container_type &dest) : dest(dest) {}
+};
+
+template <class T>
+csv_formatter(std::vector<T> &) -> csv_formatter<T>;
+template <class T>
+csv_formatter(const std::vector<T> &) -> csv_formatter<const T>;
 
 } // namespace aoc
 
