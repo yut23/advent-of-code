@@ -43,6 +43,7 @@ def test_get_transitive_dependencies():
             aoc_lib / "lib.hpp",
             aoc_lib / "util/hash.hpp",
             aoc_lib / "util/concepts.hpp",
+            aoc_lib / "util/util.hpp",
             aoc_lib / "graph_traversal.hpp",
         }
     )
