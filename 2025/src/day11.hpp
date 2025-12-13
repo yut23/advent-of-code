@@ -34,8 +34,9 @@ class DeviceMap {
     using Key = std::uint16_t;
 
     static DeviceMap read(std::istream &is);
-    int count_paths(const std::string_view source_name,
-                    const std::string_view target_name) const;
+    long count_paths(const std::string_view source_name,
+                     const std::string_view target_name) const;
+    bool contains(const std::string_view name) const;
 
   private:
     Key lookup(const std::string &name);
@@ -88,8 +89,12 @@ DeviceMap::Key DeviceMap::lookup(const std::string_view name) const {
     return it->second;
 }
 
-int DeviceMap::count_paths(const std::string_view source_name,
-                           const std::string_view target_name) const {
+bool DeviceMap::contains(const std::string_view name) const {
+    return name_lookup.contains(name);
+}
+
+long DeviceMap::count_paths(const std::string_view source_name,
+                            const std::string_view target_name) const {
     // DP: topo sort, then iterate backwards
     Key source = lookup(source_name), target = lookup(target_name);
 
@@ -100,9 +105,8 @@ int DeviceMap::count_paths(const std::string_view source_name,
     std::vector<Key> order = aoc::graph::topo_sort(source, process_neighbors_);
     assert(order.size() >= 2);
     assert(order[0] == source);
-    assert(order[order.size() - 1] == target);
 
-    std::vector<int> path_count(names.size());
+    std::vector<long> path_count(names.size());
     path_count[target] = 1;
     for (size_t i = order.size(); i-- > 0;) {
         Key u = order[i];
