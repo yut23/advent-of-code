@@ -11,9 +11,9 @@
 #include <iostream> // for cout
 
 int main(int argc, char **argv) {
-    auto args = aoc::parse_args(argc, argv);
+    std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
-    auto regions = aoc::day12::read_input(args.infile);
+    auto regions = aoc::day12::read_input(infile);
 
     int part1 = 0;
     for (const auto &region : regions) {
@@ -24,9 +24,7 @@ int main(int argc, char **argv) {
             ++part1;
         }
     }
-    if (args.input_type == aoc::InputType::MAIN) {
-        std::cout << part1 << "\n";
-    }
+    std::cout << part1 << "\n";
 
     return 0;
 }
