@@ -5,16 +5,15 @@
  * Created:     2025-12-24
  *****************************************************************************/
 
-#include "day10.hpp"      // IWYU pragma: associated
-#include "ds/grid.hpp"    // for Grid
-#include "gauss_elim.hpp" // for RowPermuter
-#include "lib.hpp"        // for Part
+#include "day10.hpp" // IWYU pragma: associated
+#include <cstdlib>   // for EXIT_FAILURE, EXIT_SUCCESS
+#include <fstream>   // for ifstream
+
+#include <version> // IWYU pragma: keep // for _LIBCPP_VERSION
+#ifndef _LIBCPP_VERSION
 #include "subprocess.hpp" // for popen
-#include <cstdlib>        // for size_t, EXIT_FAILURE, EXIT_SUCCESS
-#include <fstream>        // for ifstream
-#include <iostream>       // for ostream, cout, cerr
 #include <string>         // for to_string
-#include <vector>         // for vector
+#endif
 
 int main() {
     using namespace aoc::day10;
@@ -24,9 +23,12 @@ int main() {
     int line = 1;
     for (const Machine &machine : machines) {
         auto solver = Part2Solver(machine);
+#ifndef _LIBCPP_VERSION
         auto orig_mtx = solver.mtx;
         auto orig_rhs = solver.rhs;
+#endif
         solver.reduce_matrix();
+#ifndef _LIBCPP_VERSION
         subprocess::popen cmd("python3",
                               {"src/test10_helper.py", std::to_string(line)},
                               std::cout, std::cerr);
@@ -46,6 +48,7 @@ int main() {
         if (cmd.wait() != 0) {
             return EXIT_FAILURE;
         }
+#endif
         std::cout << machine.min_presses<aoc::PART_2>() << "\n";
         ++line;
         if (line > 10) {
