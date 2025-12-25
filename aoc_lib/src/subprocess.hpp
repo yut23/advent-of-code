@@ -12,57 +12,91 @@
 #include <vector>
 #include <iostream>
 #include <ext/stdio_filebuf.h>
+#include <cerrno>
 #include <cstdio>
+#include <cstdlib>
 #include <system_error>
+#include <concepts>
 
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 namespace subprocess
 {
 
+namespace detail
+{
+
+template <typename T>
+    requires std::same_as<T, std::ostream> || std::same_as<T, FILE*>
+int get_fd(T& obj)
+{
+    if constexpr (std::same_as<T, std::ostream>) {
+        if (&obj == &std::cout) {
+            return STDOUT_FILENO;
+        }
+        if (&obj == &std::cerr) {
+            return STDERR_FILENO;
+        }
+        auto filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(obj.rdbuf());
+        return filebuf->fd();
+    } else if constexpr (std::same_as<T, FILE*>) {
+        return fileno(obj);
+    }
+    return -1;
+}
+
+} // namespace detail
+
 class popen
 {
 public:
+    popen(const std::string& cmd, const std::vector<std::string>& argv, auto& pipe_stdout)
+        : popen(cmd, argv, detail::get_fd(pipe_stdout))
+    {
+    }
 
-    popen(const std::string& cmd, std::vector<std::string> argv)
+    popen(const std::string& cmd, const std::vector<std::string>& argv, auto& pipe_stdout, auto& pipe_stderr)
+        : popen(cmd, argv, detail::get_fd(pipe_stdout), detail::get_fd(pipe_stderr))
+    {
+    }
+
+    popen(const std::string& cmd, const std::vector<std::string>& argv, int out_fd = -1, int err_fd = -1)
         : in_filebuf(nullptr), out_filebuf(nullptr), err_filebuf(nullptr), in_stream(nullptr), out_stream(nullptr), err_stream(nullptr)
     {
-        if (pipe(in_pipe)  == -1 ||
-            pipe(out_pipe) == -1 ||
-            pipe(err_pipe) == -1 )
+        if (out_fd != -1) {
+            out_pipe[READ]  = -1;
+            out_pipe[WRITE] = out_fd;
+        } else {
+            if (pipe(out_pipe) == -1) {
+                throw std::system_error(errno, std::system_category());
+            }
+        }
+
+        if (err_fd != -1) {
+            err_pipe[READ]  = -1;
+            err_pipe[WRITE] = err_fd;
+        } else {
+            if (pipe(err_pipe) == -1) {
+                throw std::system_error(errno, std::system_category());
+            }
+        }
+
+        if (pipe(in_pipe) == -1)
         {
             throw std::system_error(errno, std::system_category());
         }
 
         run(cmd, argv);
     }
-
-    popen(const std::string& cmd, std::vector<std::string> argv, std::ostream& pipe_stdout)
-        : in_filebuf(nullptr), out_filebuf(nullptr), err_filebuf(nullptr), in_stream(nullptr), out_stream(nullptr), err_stream(nullptr)
-    {
-        auto filebuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(pipe_stdout.rdbuf());
-        out_pipe[READ]  = -1;
-        out_pipe[WRITE] = filebuf->fd();
-
-        if (pipe(in_pipe) == -1 ||
-            pipe(err_pipe) == -1 )
-        {
-            throw std::system_error(errno, std::system_category());
-        }
-
-        run(cmd, argv);
-    }
-
     ~popen()
     {
         delete in_filebuf;
         delete in_stream;
         if (out_filebuf != nullptr) delete out_filebuf;
         if (out_stream  != nullptr) delete out_stream;
-        delete err_filebuf;
-        delete err_stream;
+        if (err_filebuf != nullptr) delete err_filebuf;
+        if (err_stream  != nullptr) delete err_stream;
     }
 
     std::ostream& in()  { return *in_stream;  };
@@ -73,7 +107,10 @@ public:
         return *out_stream;
     };
 
-    std::istream& err() { return *err_stream; };
+    std::istream& err() {
+        if (err_stream == nullptr) throw std::system_error(EBADF, std::system_category());
+        return *err_stream;
+    };
 
     int wait()
     {
@@ -94,7 +131,7 @@ private:
 
     struct raii_char_str
     {
-        raii_char_str(std::string s) : buf(s.c_str(), s.c_str() + s.size() + 1) { };
+        explicit raii_char_str(const std::string& s) : buf(s.c_str(), s.c_str() + s.size() + 1) { };
         operator char*() const { return &buf[0]; };
         mutable std::vector<char> buf;
     };
@@ -108,8 +145,8 @@ private:
         if (pid == 0) child(argv);
 
         ::close(in_pipe[READ]);
-        ::close(out_pipe[WRITE]);
-        ::close(err_pipe[WRITE]);
+        if (out_pipe[WRITE] > STDERR_FILENO) ::close(out_pipe[WRITE]);
+        if (err_pipe[WRITE] > STDERR_FILENO) ::close(err_pipe[WRITE]);
 
         in_filebuf = new __gnu_cxx::stdio_filebuf<char>(in_pipe[WRITE], std::ios_base::out, 1);
         in_stream  = new std::ostream(in_filebuf);
@@ -120,8 +157,11 @@ private:
             out_stream  = new std::istream(out_filebuf);
         }
 
-        err_filebuf = new __gnu_cxx::stdio_filebuf<char>(err_pipe[READ], std::ios_base::in, 1);
-        err_stream  = new std::istream(err_filebuf);
+        if (err_pipe[READ] != -1)
+        {
+            err_filebuf = new __gnu_cxx::stdio_filebuf<char>(err_pipe[READ], std::ios_base::in, 1);
+            err_stream  = new std::istream(err_filebuf);
+        }
     }
 
     void child(const std::vector<std::string>& argv)
@@ -137,9 +177,9 @@ private:
         ::close(in_pipe[READ]);
         ::close(in_pipe[WRITE]);
         if (out_pipe[READ] != -1) ::close(out_pipe[READ]);
-        ::close(out_pipe[WRITE]);
-        ::close(err_pipe[READ]);
-        ::close(err_pipe[WRITE]);
+        if (out_pipe[WRITE] > STDERR_FILENO) ::close(out_pipe[WRITE]);
+        if (err_pipe[READ] != -1) ::close(err_pipe[READ]);
+        if (err_pipe[WRITE] > STDERR_FILENO) ::close(err_pipe[WRITE]);
 
         std::vector<raii_char_str> real_args(argv.begin(), argv.end());
         std::vector<char*> cargs(real_args.begin(), real_args.end());
