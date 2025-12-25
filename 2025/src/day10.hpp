@@ -8,29 +8,45 @@
 #ifndef DAY10_HPP_STNSRZ3A
 #define DAY10_HPP_STNSRZ3A
 
-#include "lib.hpp"  // for read_vector
-#include <iostream> // for istream
-#include <string>   // for basic_string
-#include <utility>  // for move
-#include <vector>   // for vector
+#include "ds/grid.hpp"         // for Grid
+#include "gauss_elim.hpp"      // for RowPermuter, gauss_jordan
+#include "graph_traversal.hpp" // for bfs
+#include "lib.hpp"             // for read_vector, expect_input, csv_formatter
+#ifdef DEBUG_MODE
+#include "unit_test/pretty_print.hpp"
+#endif
+
+#include <algorithm>  // for ranges::copy, ranges::max
+#include <cassert>    // for assert
+#include <compare>    // for strong_ordering
+#include <cstddef>    // for size_t
+#include <cstdint>    // for uint16_t
+#include <functional> // for identity, less (ranges::max)
+#include <iomanip>    // for setw
+#include <iostream>   // for istream, ostream, ios_base, ws
+#include <numeric>    // for reduce
+#include <optional>   // for optional
+#include <utility>    // for move
+#include <vector>     // for vector
 
 namespace aoc::day10 {
 
 struct Button {
     std::vector<int> light_indices;
-
-    friend std::istream &operator>>(std::istream &is, Button &dest);
-    friend std::ostream &operator<<(std::ostream &os, const Button &button);
 };
+std::istream &operator>>(std::istream &is, Button &dest);
+std::ostream &operator<<(std::ostream &os, const Button &button);
 
 struct Machine {
     std::vector<bool> target_lights;
     std::vector<Button> buttons;
-    std::vector<int> joltage_requirements;
+    std::vector<uint16_t> joltage_requirements;
 
-    friend std::istream &operator>>(std::istream &is, Machine &dest);
-    friend std::ostream &operator>>(std::ostream &os, const Machine &machine);
+    template <aoc::Part PART>
+    int min_presses() const;
 };
+std::istream &operator>>(std::istream &is, Machine &dest);
+std::ostream &operator<<(std::ostream &os, const Machine &machine);
 
 struct BfsEntry {
     const Machine &machine;
@@ -47,16 +63,13 @@ struct BfsEntry {
 
     bool operator==(const BfsEntry &other) const {
         return &machine == &other.machine &&
-               pressed_buttons == other.pressed_buttons &&
-               lights == other.lights;
+               pressed_buttons == other.pressed_buttons;
     }
-    // std::strong_ordering operator<=>(const BfsEntry &other) const {
-    //     if (auto cmp = &machine <=> &other.machine; cmp != 0)
-    //         return cmp;
-    //     if (auto cmp = pressed_buttons <=> other.pressed_buttons; cmp != 0)
-    //         return cmp;
-    //     return lights <=> other.lights;
-    // }
+    std::strong_ordering operator<=>(const BfsEntry &other) const {
+        if (auto cmp = &machine <=> &other.machine; cmp != 0)
+            return cmp;
+        return pressed_buttons <=> other.pressed_buttons;
+    }
 
     BfsEntry press_button(std::size_t i) const {
         assert(!pressed_buttons[i]);
@@ -81,19 +94,177 @@ struct BfsEntry {
         }
     }
 };
-} // namespace aoc::day10
 
 template <>
-struct std::hash<aoc::day10::BfsEntry> {
-    std::size_t operator()(const aoc::day10::BfsEntry &entry) const noexcept {
-        // random number (hexdump -n8 -e '"0x" 8/1 "%02x" "ull\n"'</dev/urandom)
-        std::size_t seed = 0x302e3ffbabe1fca6ull;
-        util::make_hash(seed, entry.lights, entry.pressed_buttons);
-        return seed;
-    }
+int Machine::min_presses<aoc::PART_1>() const {
+    // generalized BFS!
+    const auto process_neighbors = [](const BfsEntry &entry,
+                                      const auto &process) {
+        BfsEntry::process_neighbors(entry, process);
+    };
+    return aoc::graph::bfs(BfsEntry(*this), process_neighbors,
+                           BfsEntry::is_target, {});
+}
+
+struct Part2Solver {
+    const Machine &machine;
+    aoc::ds::Grid<int> mtx;
+    std::vector<int> rhs;
+    aoc::math::RowPermuter rp;
+
+    explicit Part2Solver(const Machine &machine_);
+
+    void reduce_matrix();
+    int min_presses();
+
+  private:
+    std::vector<int> free_vars{};
+    int upper_bound;
+
+    std::optional<int>
+    total_presses(const std::vector<int> &free_presses) const;
+
+    // returns the minimum number of presses, or {} if no valid assignments
+    // were found
+    std::optional<int> recurse_free_presses(std::vector<int> &presses) const;
 };
 
-namespace aoc::day10 {
+Part2Solver::Part2Solver(const Machine &machine_)
+    : machine(machine_),
+      mtx(machine.buttons.size(), machine.joltage_requirements.size()),
+      rhs(machine.joltage_requirements.size()), rp(mtx.height) {
+    // fill the matrix and right-hand side
+    for (std::size_t x = 0; x < machine.buttons.size(); ++x) {
+        for (int y : machine.buttons[x].light_indices) {
+            mtx.at(x, y) = 1;
+        }
+    }
+    std::ranges::copy(machine.joltage_requirements, rhs.begin());
+    upper_bound = std::ranges::max(machine.joltage_requirements);
+}
+
+template <>
+int Machine::min_presses<aoc::PART_2>() const {
+    const Machine &machine = *this;
+    if constexpr (aoc::DEBUG) {
+        std::cerr << machine << "\n";
+    }
+    auto result = Part2Solver(machine).min_presses();
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "result: " << result << " presses\n";
+    }
+    return result;
+}
+
+void Part2Solver::reduce_matrix() {
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "before:\n" << std::setw(2);
+        rp.pretty_print(std::cerr, mtx, rhs);
+    }
+    {
+        auto tmp = aoc::math::gauss_jordan(mtx, rhs);
+        if (tmp.has_value()) {
+            rp = std::move(tmp).value();
+        }
+    }
+    if constexpr (aoc::DEBUG) {
+        std::cerr << "after:\n" << std::setw(2);
+        rp.pretty_print(std::cerr, mtx, rhs);
+    }
+
+    for (int c = 0; c < mtx.width; ++c) {
+        int nonzero_count = 0;
+        for (int r = 0; r < mtx.height && nonzero_count <= 1; ++r) {
+            if (rp(mtx, r, c) != 0) {
+                ++nonzero_count;
+            }
+        }
+        if (nonzero_count != 1) {
+            free_vars.push_back(c);
+        }
+    }
+}
+
+int Part2Solver::min_presses() {
+    reduce_matrix();
+
+    if constexpr (aoc::DEBUG) {
+        if (free_vars.empty()) {
+            std::cerr << "exactly determined\n";
+        } else {
+            std::cerr << "underdetermined, " << free_vars.size()
+                      << " free variable" << (free_vars.size() == 1 ? "" : "s")
+                      << "\n";
+        }
+    }
+
+    if (free_vars.empty()) {
+        // number of presses == sum(rhs)
+        return std::reduce(rhs.begin(), rhs.end());
+    } else {
+        std::vector<int> presses;
+        auto count = recurse_free_presses(presses);
+        assert(count.has_value());
+        return *count;
+    }
+}
+
+std::optional<int>
+Part2Solver::total_presses(const std::vector<int> &free_presses) const {
+    auto free_vars_it = free_vars.begin();
+    auto free_presses_it = free_presses.begin();
+    int r = 0;
+    std::vector<int> presses(mtx.width);
+    for (int c = 0; c < mtx.width; ++c) {
+        if (free_vars_it != free_vars.end() && c == *free_vars_it) {
+            // free variable, substitute the value from the arguments
+            presses[c] = *free_presses_it++;
+            ++free_vars_it;
+        } else {
+            // constrained variable, calculate from matrix
+            //   mtx . [presses[c], *free_presses] = rhs[r]
+            //   presses[c] = (rhs[r] - sum_i(mtx[r, free_vars[i]]
+            //                                * free_presses[i])) / mtx[r, c]
+            int denom = rp(mtx, r, c);
+            if (denom != 0) {
+                int tmp = rp(rhs, r);
+                for (std::size_t i = 0; i < free_presses.size(); ++i) {
+                    tmp -= rp(mtx, r, free_vars[i]) * free_presses[i];
+                }
+                if (tmp % denom != 0) {
+                    return {};
+                }
+                presses[c] = tmp / denom;
+                ++r;
+            }
+        }
+        if (presses[c] < 0) {
+            return {};
+        }
+    }
+    return std::reduce(presses.begin(), presses.end());
+}
+
+std::optional<int>
+Part2Solver::recurse_free_presses(std::vector<int> &presses) const {
+    if (presses.size() == free_vars.size()) {
+        auto result = total_presses(presses);
+        return result;
+    }
+    // add a new free variable to the end
+    std::size_t i = presses.size();
+    presses.push_back(0);
+    std::optional<int> best = {};
+    for (int x = 0; x < upper_bound; ++x) {
+        presses[i] = x;
+        auto result = recurse_free_presses(presses);
+        if (result.has_value() && (!best.has_value() || *result < *best)) {
+            best = std::move(result);
+        }
+    }
+    presses.pop_back();
+    return best;
+}
 
 // I/O operations
 std::istream &operator>>(std::istream &is, Button &dest) {

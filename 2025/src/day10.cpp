@@ -6,7 +6,6 @@
  *****************************************************************************/
 
 #include "day10.hpp"
-#include "graph_traversal.hpp"
 #include "lib.hpp"
 #include <fstream>  // for ifstream
 #include <iostream> // for cout
@@ -17,18 +16,13 @@ int main(int argc, char **argv) {
 
     auto machines = read_input(infile);
 
-    int part1 = 0;
+    int part1 = 0, part2 = 0;
     for (const Machine &machine : machines) {
-        // generalized BFS!
-        std::initializer_list<BfsEntry> sources{BfsEntry(machine)};
-        const auto process_neighbors = [](const BfsEntry &entry,
-                                          const auto &process) {
-            BfsEntry::process_neighbors(entry, process);
-        };
-        part1 += aoc::graph::bfs(sources, process_neighbors,
-                                 BfsEntry::is_target, {});
+        part1 += machine.min_presses<aoc::PART_1>();
+        part2 += machine.min_presses<aoc::PART_2>();
     }
     std::cout << part1 << "\n";
+    std::cout << part2 << "\n";
 
     return 0;
 }
