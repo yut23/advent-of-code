@@ -7,21 +7,19 @@
 
 #include "day08.hpp"
 #include "ds/bounded_heap.hpp"
-#include "graph_traversal.hpp" // for tarjan_scc
+#include "ds/disjoint_set.hpp"
 #include "lib.hpp"
-#include "unit_test/pretty_print.hpp"
-#include <algorithm>     // for for_each
-#include <cassert>       // for assert
-#include <cmath>         // for sqrt
-#include <cstddef>       // for size_t
-#include <fstream>       // for ifstream
-#include <functional>    // for multiplies, hash, greater
-#include <iostream>      // for cout, cerr
-#include <numeric>       // for reduce
-#include <queue>         // for priority_queue
-#include <set>           // for set (tarjan_scc)
-#include <unordered_map> // for unordered_map
-#include <vector>        // for vector
+#include <cassert>    // for assert
+#include <cmath>      // for sqrt
+#include <cstddef>    // for size_t
+#include <fstream>    // for ifstream
+#include <functional> // for multiplies, greater
+#include <iostream>   // for cout, cerr
+#include <map>        // for map
+#include <numeric>    // for reduce
+#include <queue>      // for priority_queue
+#include <set>        // for set
+#include <vector>     // for vector
 
 int main(int argc, char **argv) {
     auto args = aoc::parse_args(argc, argv);
@@ -29,10 +27,15 @@ int main(int argc, char **argv) {
     using LongPos3 = aoc::LongPos3;
     std::vector<LongPos3> coords = read_input(args.infile);
 
+    aoc::ds::disjoint_set dset;
+    std::map<LongPos3, aoc::ds::disjoint_set::node_t *> ds_nodes{};
+
     std::priority_queue<JunctionBoxPair, std::vector<JunctionBoxPair>,
                         std::greater<JunctionBoxPair>>
         pqueue;
     for (std::size_t i = 0; i < coords.size(); ++i) {
+        auto ds_node = dset.new_set();
+        ds_nodes[coords[i]] = ds_node;
         // avoid duplicates by starting at i+1
         for (std::size_t j = i + 1; j < coords.size(); ++j) {
             pqueue.push({coords[i], coords[j]});
@@ -42,8 +45,8 @@ int main(int argc, char **argv) {
     const int part_1_count =
         args.input_type == aoc::InputType::EXAMPLE ? 10 : 1000;
 
-    // use disjoint-set or tarjan_scc
-    std::unordered_map<LongPos3, std::vector<LongPos3>> neighbors{};
+    // use disjoint-set
+    std::set<aoc::ds::disjoint_set::id_t> merged_ids{};
     for (int i = 0; i < part_1_count; ++i) {
         const JunctionBoxPair &jbp = pqueue.top();
         assert(jbp.dist_sq > 0);
@@ -51,29 +54,27 @@ int main(int argc, char **argv) {
             std::cerr << std::sqrt(jbp.dist_sq) << ": " << jbp.box1 << " - "
                       << jbp.box2 << "\n";
         }
-        neighbors[jbp.box1].push_back(jbp.box2);
-        neighbors[jbp.box2].push_back(jbp.box1);
+        auto node = ds_nodes.at(jbp.box1);
+        if (dset.merge(node, ds_nodes.at(jbp.box2))) {
+            merged_ids.insert(node->parent->id);
+        }
         pqueue.pop();
     }
-    const auto process_neighbors = [&](const LongPos3 &key, auto &&process) {
-        if (auto it = neighbors.find(key); it != neighbors.end()) {
-            std::ranges::for_each(it->second, process);
-        }
-    };
-    auto components = aoc::graph::tarjan_scc(coords, process_neighbors).first;
+    // deduplicate based on root
+    std::map<aoc::ds::disjoint_set::id_t, std::size_t> component_sizes{};
+    for (const auto &pos : coords) {
+        const auto *root = dset.find(ds_nodes.at(pos));
+        component_sizes[root->id] = root->size;
+    }
 
     // method from https://stackoverflow.com/a/2935995
     aoc::ds::bounded_heap<std::size_t, std::vector<std::size_t>,
                           std::greater<std::size_t>>
         largest_component_sizes(3);
-    for (const auto &component : components) {
-        largest_component_sizes.push(component.size());
+    for (const auto &[_, size] : component_sizes) {
+        largest_component_sizes.push(size);
     }
     if constexpr (aoc::DEBUG) {
-        std::cerr << "# components = " << components.size() << "\n";
-        for (const auto &component : components) {
-            std::cerr << pretty_print::repr(component) << "\n";
-        }
         std::cerr << largest_component_sizes.size()
                   << " largest component sizes:";
         for (auto x : largest_component_sizes) {
@@ -90,28 +91,22 @@ int main(int argc, char **argv) {
     }
 
     // part 2
-    // quick and dirty (actually slow and dirty, 1.7s in fast mode, 8.3s in
-    // release mode)
     long part2 = 0;
-    std::size_t prev_num_components = components.size();
-    while (components.size() > 1) {
+    std::size_t prev_count = dset.set_count();
+    while (dset.set_count() > 1) {
         const JunctionBoxPair &jbp = pqueue.top();
-        neighbors[jbp.box1].push_back(jbp.box2);
-        neighbors[jbp.box2].push_back(jbp.box1);
-        components = aoc::graph::tarjan_scc(coords, process_neighbors).first;
+        dset.merge(ds_nodes.at(jbp.box1), ds_nodes.at(jbp.box2));
+        std::size_t new_count = dset.set_count();
         if constexpr (aoc::DEBUG) {
-            if (prev_num_components != components.size()) {
-                std::cerr << "# components = " << components.size() << "\n";
-                for (const auto &component : components) {
-                    std::cerr << pretty_print::repr(component) << "\n";
-                }
-                prev_num_components = components.size();
+            if (prev_count != new_count) {
+                std::cerr << "# sets = " << new_count << "\n";
+                prev_count = new_count;
             }
         } else {
             // suppress dead store warning
-            (void)prev_num_components;
+            (void)prev_count;
         }
-        if (components.size() == 1) {
+        if (new_count == 1) {
             part2 = jbp.box1.x * jbp.box2.x;
         }
         pqueue.pop();
