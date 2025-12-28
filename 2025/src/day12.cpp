@@ -13,15 +13,27 @@
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv).infile;
 
-    auto regions = aoc::day12::read_input(infile);
+    auto [regions, present_sizes] = aoc::day12::read_input(infile);
 
     int part1 = 0;
     for (const auto &region : regions) {
         if constexpr (aoc::DEBUG) {
             std::cerr << region << "\n";
         }
-        if (region.area_3x3() >= region.present_area_3x3()) {
+        int area_3x3 = region.area_3x3();
+        if (area_3x3 < region.present_area_lower_bound(present_sizes)) {
+            continue;
+        } else if (area_3x3 >= region.present_area_upper_bound()) {
             ++part1;
+        } else {
+            if constexpr (!aoc::DEBUG) {
+                std::cerr << region << "\n";
+            }
+            std::cerr << "region falls between lower and upper bound: "
+                      << region.present_area_lower_bound(present_sizes) << " < "
+                      << area_3x3 << " < " << region.present_area_upper_bound()
+                      << "\n";
+            assert(false);
         }
     }
     std::cout << part1 << "\n";
