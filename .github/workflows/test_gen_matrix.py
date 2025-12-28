@@ -61,6 +61,12 @@ def test_get_transitive_dependencies():
         }
     )
 
+    assert get_transitive_dependencies(ROOT / "aoc_lib/Makefile") == frozenset(
+        {
+            ROOT / "tools/cpp/Makefile",
+        }
+    )
+
 
 def test_get_dependencies_workflows():
     assert get_dependencies(WORKFLOWS_DIR / "unit-tests.yml") == {
@@ -123,6 +129,8 @@ def test_matrix():
     matrix = Matrix("build")
     matrix.process_changed_file(ROOT / "aoc_lib/src/lib.hpp")
     assert all(target.base_dir != ROOT / "2022" for target in matrix.targets)
+
+    assert helper.get_targets("tools/cpp/Makefile") == everything
 
     # unit tests for aoc_lib
     assert helper.get_targets("aoc_lib/src/test_graph.cpp") == dict(

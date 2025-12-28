@@ -53,7 +53,7 @@ def get_dependencies(path: Path, *include_dirs: Path) -> frozenset[Path]:
 
         def find_include_paths(line: str) -> Generator[Path, None, None]:
             if line.strip().startswith("include "):
-                yield path.parent / line.strip().removeprefix("include ")
+                yield (path.parent / line.strip().removeprefix("include ")).resolve()
 
     else:
         return frozenset()
@@ -118,6 +118,10 @@ class Target:
         ):
             deps.add(included_file)
         deps.add((self.base_dir / "Makefile").resolve())
+        for included_file in get_transitive_dependencies(
+            (self.base_dir / "Makefile").resolve()
+        ):
+            deps.add(included_file)
         if mode == "answer":
             for answer_test in self.base_dir.glob(f"answer_tests/{self}/*"):
                 deps.add(answer_test)
