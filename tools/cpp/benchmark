@@ -4,7 +4,7 @@ set -euo pipefail
 # takes the same arguments as `aoc`
 
 usage() {
-  echo "Usage: benchmark [day] [-d|-f] [-s <binary suffix>] [-r <repeat count>] [-e [example number]|-i <input file name>]"
+  echo "Usage: benchmark [day] [-d|-f] [-s <binary suffix>] [-r <repeat count>] [-e [example number]|-i <input file name>] [hyperfine options...]"
 }
 
 AOC_ROOT="$(git rev-parse --show-toplevel)"
@@ -24,17 +24,23 @@ init_input_args
 init_target_args
 init_make_args
 
+hyperfine_args=()
 first_iter=y
 while [[ $# -gt 0 ]]; do
   case $1 in
     -r|--repeat)
       num_repeat=$2
-      shift
-      shift
+      shift 2
       ;;
     -h|--help)
       usage
       exit 0
+      ;;
+    --)
+      # pass all remaining args to hyperfine, except the --
+      shift
+      hyperfine_args+=("$@")
+      shift "$#"
       ;;
     -*)
       shift_count=0
@@ -45,14 +51,18 @@ while [[ $# -gt 0 ]]; do
       elif handle_make_arg "$@"; then
         shift "$shift_count"
       else
-        echo "Error: unrecognized option '$1'"
-        usage
-        exit 1
+        # pass to hyperfine
+        hyperfine_args+=("$1")
+        shift
       fi
       ;;
     *)
-      handle_day_arg "$@"
-      # we either consumed the day number or exited with an error
+      if [[ $first_iter == y ]]; then
+        handle_day_arg "$@"
+      else
+        # pass to hyperfine
+        hyperfine_args+=("$1")
+      fi
       shift
       ;;
   esac
@@ -65,5 +75,5 @@ finalize_target_args
 finalize_make_args
 
 for ((i=1; i <= num_repeat; i++)); do
-  hyperfine --shell none "$binary $input_path"
+  hyperfine --shell none "${hyperfine_args[@]}" "$binary $input_path"
 done
