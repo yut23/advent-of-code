@@ -186,6 +186,44 @@ struct GenericDelta {
         return dx * dx + dy * dy;
     }
 
+    /**
+     * Returns a unit vector in the direction of the current delta.
+     *
+     * Exactly one of dx and dy can be non-zero.
+     */
+    GenericDelta to_unit_vector() const {
+        GenericDelta delta(0, 0);
+        if (dx == 0) {
+            delta.dy = dy < 0 ? -1 : 1;
+        } else if (dy == 0) {
+            delta.dx = dx < 0 ? -1 : 1;
+        } else {
+            assert(false);
+        }
+        return delta;
+    }
+
+    /**
+     * Given a unit vector, return its direction.
+     */
+    AbsDirection to_direction() const {
+        assert((std::abs(dx) == 1 && dy == 0) ||
+               (std::abs(dy) == 1 && dx == 0));
+        if (dy == 1) {
+            return AbsDirection::north;
+        }
+        if (dy == -1) {
+            return AbsDirection::south;
+        }
+        if (dx == 1) {
+            return AbsDirection::east;
+        }
+        if (dx == -1) {
+            return AbsDirection::west;
+        }
+        assert(false);
+    }
+
     // two Deltas can be added together
     GenericDelta &operator+=(const GenericDelta &rhs) {
         dx += rhs.dx;

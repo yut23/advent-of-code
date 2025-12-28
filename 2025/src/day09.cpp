@@ -9,6 +9,7 @@
 #include "lib.hpp"
 #include <fstream>  // for ifstream
 #include <iostream> // for cout
+#include <set>      // for set
 #include <vector>   // for vector, max
 
 int main(int argc, char **argv) {
@@ -16,14 +17,22 @@ int main(int argc, char **argv) {
 
     auto points = aoc::day09::read_input(infile);
 
-    long max_area = 0;
+    long part_1 = 0;
+    // for path compression
+    std::set<int> x_values, y_values;
     for (std::size_t i = 0; i < points.size(); ++i) {
         auto p_i = points[i];
+        x_values.insert(p_i.x);
+        y_values.insert(p_i.y);
         for (std::size_t j = i + 1; j < points.size(); ++j) {
-            max_area = std::max(max_area, aoc::day09::area(p_i, points[j]));
+            part_1 = std::max(part_1, aoc::day09::calc_area(p_i, points[j]));
         }
     }
-    std::cout << max_area << "\n";
+
+    std::cout << part_1 << "\n";
+
+    long part_2 = aoc::day09::solve_part_2(points, x_values, y_values);
+    std::cout << part_2 << "\n";
 
     return 0;
 }
