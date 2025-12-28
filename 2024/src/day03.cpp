@@ -28,7 +28,11 @@ int main(int argc, char **argv) {
             std::cerr << "found match at " << match.position() << ": "
                       << match.str() << "\n";
         }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+        // false positive in libstdc++ with GCC 13.2.1
         if (match.length(1) > 0) {
+#pragma GCC diagnostic pop
             // mul
             int product = std::stoi(match[2].str()) * std::stoi(match[3].str());
             total_1 += product;
