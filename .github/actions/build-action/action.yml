@@ -23,4 +23,5 @@ runs:
         $CXX --version
         echo '::endgroup::'
         echo
+        make -s clean
         make -j4 DISABLE_SANITIZERS=TRUE build/release/${{ matrix.TARGET.name }} build/debug/${{ matrix.TARGET.name }} build/fast/${{ matrix.TARGET.name }}

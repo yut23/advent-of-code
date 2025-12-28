@@ -7,6 +7,11 @@ endif
 # finishes.
 INTERCEPT_WRAPPER ?=
 
+# Disable sanitizers and enable -Werror when running in CI
+ifeq ($(CI),true)
+	DISABLE_SANITIZERS ?= TRUE
+endif
+
 ifeq ($(USE_LIBCXX),TRUE)
 	STDLIB_CXXFLAGS = -stdlib=libc++ -fexperimental-library
 	STDLIB_LDFLAGS = $(STDLIB_CXXFLAGS)
