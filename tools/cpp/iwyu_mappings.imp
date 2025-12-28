@@ -10,7 +10,7 @@
 { symbol: ["std::pair", "private", "<utility>", "public" ] },
 { symbol: ["std::swap", "private", "<utility>", "public" ] },
 { symbol: ["std::hash", "private", "<functional>", "public" ] },
-# not in from <ranges>, according to cppreference
+# not in <ranges>, according to cppreference
 { symbol: ["std::ranges::find", "private", "<algorithm>", "public" ] },
 { symbol: ["std::ranges::__find_fn", "private", "<algorithm>", "public" ] },
 { symbol: ["std::ranges::find_if", "private", "<algorithm>", "public" ] },
@@ -18,14 +18,22 @@
 { symbol: ["std::ranges::mismatch", "private", "<algorithm>", "public" ] },
 { symbol: ["std::ranges::__mismatch_fn", "private", "<algorithm>", "public" ] },
 { symbol: ["std::ranges::mismatch_result", "private", "<algorithm>", "public" ] },
+# not in <queue>, according to cppreference
+{ symbol: ["std::push_heap", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::pop_heap", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::make_heap", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::sort_heap", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::is_heap", "private", "<algorithm>", "public" ] },
+{ symbol: ["std::is_heap_until", "private", "<algorithm>", "public" ] },
 # I get these from iostream
 { symbol: ["std::istream", "private", "<iostream>", "public" ] },
 { symbol: ["std::ostream", "private", "<iostream>", "public" ] },
 # I get these from fstream
 { symbol: ["std::ifstream", "private", "<fstream>", "public" ] },
 { symbol: ["std::ofstream", "private", "<fstream>", "public" ] },
-# this is internal
+# these are internal
 { include: ["<bits/std_abs.h>", "private", "<cstdlib>", "public" ] },
+{ include: ["<bits/uses_allocator.h>", "private", "<memory>", "public" ] },
 # IWYU thinks this is from <variant> if it's included from anywhere
 { symbol: ["std::tuple", "private", "<tuple>", "public" ] },
 # use cassert, not assert.h

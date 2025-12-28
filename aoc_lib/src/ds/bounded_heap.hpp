@@ -2,8 +2,8 @@
 #define BOUNDED_HEAP_HPP_UWDOHMCV
 
 #include <algorithm>  // for push_heap, pop_heap
-#include <cassert>    // for assert
 #include <functional> // for less
+#include <memory>     // for uses_allocator
 #include <optional>   // for optional
 #include <utility>    // for move, forward, swap
 #include <vector>     // for vector

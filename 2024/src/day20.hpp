@@ -11,7 +11,7 @@
 #include "ds/grid.hpp"      // for Grid
 #include "lib.hpp"          // for Pos, Delta, read_lines, DIRECTIONS, DEBUG
 #include <algorithm>        // for sort
-#include <assert.h>         // for assert
+#include <cassert>          // for assert
 #include <compare>          // for strong_ordering
 #include <cstddef>          // for size_t
 #include <initializer_list> // for initializer_list (DIRECTIONS)

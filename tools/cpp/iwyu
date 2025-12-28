@@ -44,9 +44,14 @@ done
 function run_iwyu-tool () {
   iwyu-tool "$@"
 }
-if [[ ${#sources[@]} -eq 0 ]] && [[ ${#headers[@]} -eq 0 ]]; then
+if [[ ${#headers[@]} -eq 0 ]]; then
+  # for some reason, absolute paths don't work for aoc_lib
+  # * paths appear to be relative to the "directory" entry in compile_commands.json
+  # * -Xiwyu --check_also handles globs
+  headers=("$AOC_ROOT/$AOC_YEAR/src/*.hpp" '../aoc_lib/src/*.hpp' '../aoc_lib/src/*/*.hpp')
+fi
+if [[ ${#sources[@]} -eq 0 ]]; then
   sources=("$AOC_ROOT/$AOC_YEAR"/src/*.cpp)
-  headers=("$AOC_ROOT/$AOC_YEAR"/src/**/*.hpp)
   tool_args+=(-j"$(nproc)" -o clang)
   function run_iwyu-tool () {
     iwyu-tool "$@" | { grep -v ' are correct' || true; } | LC_COLLATE=C sort -t: -k1,1 -k2,2n -k3,3n -k4 -u && echo 'all #includes/fwd-decls are correct'

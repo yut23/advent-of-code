@@ -13,7 +13,7 @@
 #include <cmath>       // for signbit
 #include <concepts>    // for integral, same_as
 #include <cstddef>     // for size_t
-#include <iterator>    // for operator==
+#include <iterator>    // for operator== (next_power_of_10) // IWYU pragma: keep
 #include <limits>      // for numeric_limits
 #include <stdexcept>   // for invalid_argument
 #include <type_traits> // for remove_cvref_t

@@ -1,10 +1,11 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include <iostream> // for ostream, cout, streambuf
-#include <sstream>  // for ostringstream
-#include <string>   // for string
-#include <typeinfo> // for type_info
+#include <iostream>    // for ostream, cout, streambuf
+#include <sstream>     // for ostringstream
+#include <string>      // for string
+#include <type_traits> // for integral_constant
+#include <typeinfo>    // for type_info
 
 template <typename... T>
 struct Debug; // IWYU pragma: keep
