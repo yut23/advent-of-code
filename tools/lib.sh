@@ -21,11 +21,12 @@ pad_day_number() {
 parse_day_args() {
   local day year
   read -r day month year < <(TZ='America/New_York' date +'%-d %m %Y')
-  if [[ $month -lt 12 ]] || [[ $day -gt 25 ]]; then
-    day=1
-  fi
   if [[ -v AOC_YEAR ]]; then
     year=$AOC_YEAR
+  fi
+  # since 2025, there are only 12 days of puzzles
+  if [[ $month -lt 12 ]] || [[ $day -gt $(( year < 2025 ? 25 : 12 )) ]]; then
+    day=1
   fi
   # use the arguments if present, and fall back to the current day/year otherwise
   day=${1:-$day}

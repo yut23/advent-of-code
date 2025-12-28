@@ -34,7 +34,8 @@ print_help() {
 }
 
 init_day_args() {
-  day=$(TZ='America/New_York' date +%-d)
+  # shellcheck disable=SC2119
+  day=$(parse_day_args | cut -d' ' -f1)
   first_iter=y
 }
 handle_day_arg() {
@@ -182,6 +183,7 @@ handle_make_arg() {
       return 1
       ;;
   esac
+  # shellcheck disable=SC2034
   shift_count=$(( init_nargs - $# ))
   return 0
 }
