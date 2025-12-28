@@ -8,8 +8,15 @@
 #include "lib.hpp"
 #include <fstream>  // for ifstream
 #include <iostream> // for cout, cerr
-#include <regex>    // for regex, smatch, sregex_iterator
 #include <string>   // for string, stoi
+
+#pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC specific diagnostic
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex> // for regex, smatch, sregex_iterator
+#pragma GCC diagnostic pop
 
 int main(int argc, char **argv) {
     std::ifstream infile = aoc::parse_args(argc, argv).infile;

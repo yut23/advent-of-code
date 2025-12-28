@@ -10,9 +10,16 @@
 #include <fstream>   // for ifstream
 #include <iostream>  // for cout
 #include <iterator>  // for distance
-#include <regex>     // for regex, sregex_iterator
 #include <string>    // for string, getline
 #include <vector>    // for vector
+
+#pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
+// GCC specific diagnostic
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex> // for regex, sregex_iterator
+#pragma GCC diagnostic pop
 
 const std::vector<std::string> digit_names{
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
