@@ -31,6 +31,12 @@ else
 	FAST_CXXFLAGS += -Werror
 endif
 
+# Error on any warnings when running in CI.
+ifeq ($(CI),true)
+	LOCAL_CXXFLAGS += -Werror
+	FAST_CXXFLAGS += -Werror
+endif
+
 REL_BUILD_DIR = build/release
 DEBUG_BUILD_DIR = build/debug
 FAST_BUILD_DIR = build/fast
