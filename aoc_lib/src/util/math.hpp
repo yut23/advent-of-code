@@ -48,6 +48,23 @@ constexpr unsigned int num_digits(IntegerT value) {
 }
 
 /**
+ * Same as num_digits for positive numbers, but includes sign for negative
+ * numbers.
+ */
+template <std::integral IntegerT>
+constexpr unsigned int num_chars(IntegerT value) {
+    bool negative = value < 0;
+    if (negative) {
+        value = -value;
+    }
+    unsigned int i = num_digits(value);
+    if (negative) {
+        ++i;
+    }
+    return i;
+}
+
+/**
  * Throws std::overflow_error if the next power of 10 cannot be represented in
  * an IntegerT.
  */
