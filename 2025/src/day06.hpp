@@ -88,7 +88,7 @@ read_input(std::istream &is) {
             transposed_lines.at(j).at(i) = lines.at(i).at(j);
         }
     }
-    MathProblem problem;
+    MathProblem problem{};
     for (std::size_t i = 0; i < transposed_lines.size(); ++i) {
         line = transposed_lines[i];
         if (line.find_first_not_of(' ') == std::string::npos) {

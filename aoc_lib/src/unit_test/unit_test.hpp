@@ -706,6 +706,16 @@ TestResult equal_failure_helper(const auto &actual, const auto &expected,
     }
     return result;
 }
+
+template <class T>
+bool are_equal(const std::type_identity_t<T> &actual, const T &expected) {
+    if constexpr (std::is_array_v<T>) {
+        // avoid deprecated array comparison warning (-Warray-compare in gcc)
+        return std::ranges::equal(actual, expected);
+    } else {
+        return actual == expected;
+    }
+}
 } // namespace detail
 
 void check(auto &&condition, const std::string &info = "",
@@ -728,7 +738,7 @@ void check(auto &&condition,
 template <class T>
 void check_equal(const std::type_identity_t<T> &actual, const T &expected,
                  const std::string &info = "", const SL loc = SL::current()) {
-    if (actual != expected) {
+    if (!detail::are_equal<T>(actual, expected)) {
         throw detail::equal_failure_helper(actual, expected, loc, info);
     }
 }
@@ -737,7 +747,7 @@ template <class T>
 void check_equal(const std::type_identity_t<T> &actual, const T &expected,
                  std::invocable<std::ostream &> auto &&info_callback,
                  const SL loc = SL::current()) {
-    if (actual != expected) {
+    if (!detail::are_equal<T>(actual, expected)) {
         std::ostringstream info_ss;
         info_callback(info_ss);
         throw detail::equal_failure_helper(actual, expected, loc,

@@ -39,7 +39,7 @@ template <std::integral IntegerT>
 constexpr unsigned int num_digits(IntegerT value) {
     constexpr auto POWERS = gen_powers_of_10<IntegerT>();
     unsigned int i;
-    for (i = 0; i < static_cast<int>(POWERS.size()); ++i) {
+    for (i = 0; i < POWERS.size(); ++i) {
         if (POWERS[i] > value) {
             break;
         }

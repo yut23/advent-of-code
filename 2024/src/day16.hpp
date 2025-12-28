@@ -127,7 +127,7 @@ Maze::dijkstra_multi(const Key &source) const {
     frontier.emplace(0, source);
 
     while (!frontier.empty()) {
-        auto [dist, current] = std::move(frontier.top());
+        auto [dist, current] = frontier.top();
         frontier.pop();
         if (dist != distances.at(current).distance) {
             continue;
