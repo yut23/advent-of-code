@@ -182,8 +182,8 @@ struct GenericDelta {
         return std::abs(dx) + std::abs(dy);
     }
 
-    constexpr int_type euclidean_distance_sq() const {
-        return dx * dx + dy * dy;
+    constexpr long euclidean_distance_sq() const {
+        return static_cast<long>(dx) * dx + static_cast<long>(dy) * dy;
     }
 
     /**
@@ -392,8 +392,9 @@ struct GenericDelta3 {
         return std::abs(dx) + std::abs(dy) + std::abs(dz);
     }
 
-    constexpr int_type euclidean_distance_sq() const {
-        return dx * dx + dy * dy + dz * dz;
+    constexpr long euclidean_distance_sq() const {
+        return static_cast<long>(dx) * dx + static_cast<long>(dy) * dy +
+               static_cast<long>(dz) * dz;
     }
 
     // two Deltas can be added together

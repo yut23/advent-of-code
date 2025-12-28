@@ -15,8 +15,8 @@
 
 namespace aoc {
 
-std::istream &operator>>(std::istream &is, LongPos3 &pos) {
-    LongPos3 tmp;
+std::istream &operator>>(std::istream &is, Pos3 &pos) {
+    Pos3 tmp;
     is >> tmp.x >> aoc::expect_input(',') >> tmp.y >> aoc::expect_input(',') >>
         tmp.z;
     if (is) {
@@ -30,11 +30,11 @@ std::istream &operator>>(std::istream &is, LongPos3 &pos) {
 namespace aoc::day08 {
 
 struct JunctionBoxPair {
-    LongPos3 box1;
-    LongPos3 box2;
+    Pos3 box1;
+    Pos3 box2;
     long dist_sq;
 
-    JunctionBoxPair(const LongPos3 &box1, const LongPos3 &box2)
+    JunctionBoxPair(const Pos3 &box1, const Pos3 &box2)
         : box1(box1), box2(box2) {
         dist_sq = (box1 - box2).euclidean_distance_sq();
     }
@@ -44,7 +44,7 @@ struct JunctionBoxPair {
     }
 };
 
-auto read_input(std::istream &is) { return aoc::read_vector<LongPos3>(is); }
+auto read_input(std::istream &is) { return aoc::read_vector<Pos3>(is); }
 
 } // namespace aoc::day08
 

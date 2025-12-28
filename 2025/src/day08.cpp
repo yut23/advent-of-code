@@ -24,11 +24,11 @@
 int main(int argc, char **argv) {
     auto args = aoc::parse_args(argc, argv);
     using namespace aoc::day08;
-    using LongPos3 = aoc::LongPos3;
-    std::vector<LongPos3> coords = read_input(args.infile);
+    using Pos3 = aoc::Pos3;
+    std::vector<Pos3> coords = read_input(args.infile);
 
     aoc::ds::disjoint_set dset;
-    std::map<LongPos3, aoc::ds::disjoint_set::node_t *> ds_nodes{};
+    std::map<Pos3, aoc::ds::disjoint_set::node_t *> ds_nodes{};
 
     std::priority_queue<JunctionBoxPair, std::vector<JunctionBoxPair>,
                         std::greater<JunctionBoxPair>>
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
             (void)prev_count;
         }
         if (new_count == 1) {
-            part2 = jbp.box1.x * jbp.box2.x;
+            part2 = static_cast<long>(jbp.box1.x) * jbp.box2.x;
         }
         pqueue.pop();
     }
